@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.26 -->
+<!-- Моя техническая база, версия 1.27 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -54,6 +54,12 @@ body.selon #toast,body.selon #top{bottom:150px}
 .cmprev{margin-left:8px;font:calc(.88rem*var(--cm-k,1)) ui-monospace,Consolas,monospace;color:var(--cm-tx,inherit);background:var(--key);border:var(--cm-bw,1px) solid var(--cm-bd,var(--line));border-radius:4px;padding:0 4px}
 .kbprev{display:inline-flex;align-items:center;gap:3px;margin-left:8px}
 .sizestep{display:flex;align-items:center;gap:12px;margin:4px 0 8px}.sizestep span{min-width:60px;text-align:center;font-weight:600}
+#btnSync{font-size:1.5rem}
+#btnSync.spin{animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#syncbusy{z-index:200}
+.sybox .inp,.sybox input{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);margin:4px 0 8px}
+.sybox .row2{display:flex;gap:8px;flex-wrap:wrap}
 #updbar{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:85;background:var(--acc);color:var(--accink);border-radius:12px;padding:8px 8px 8px 16px;display:flex;align-items:center;gap:8px;max-width:calc(100% - 24px);box-shadow:0 4px 16px rgba(0,0,0,.3);font-weight:600}
 #updbar[hidden]{display:none}
 #updbar .btn{background:var(--surf);color:var(--ink);border-color:transparent}
@@ -256,6 +262,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
     <button class="ibtn" id="btnFold" aria-label="Свернуть или развернуть все папки" hidden></button>
     <button class="ibtn" id="btnView" aria-label="Режим отображения" title="Режим отображения" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="16" rx="1"/><rect x="17" y="4" width="4" height="16" rx="1"/></svg></button>
     <button class="ibtn" id="btnReorder" aria-label="Режим порядка и перетаскивания" title="Порядок и перетаскивание" hidden>↕</button>
+    <button class="ibtn" id="btnSync" aria-label="Синхронизировать" title="Синхронизировать" hidden>⟳</button>
     <button class="ibtn" id="btnMenu" aria-label="Меню">☰</button>
   </div>
   <div class="row1">
@@ -285,7 +292,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.26';
+const APP_VERSION='1.27';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -358,13 +365,13 @@ const lst=x=>Array.isArray(x)?x.filter(i=>i&&typeof i==='object').map(i=>({a:Str
 function normalize(d,keep){
   const s={app:'tech-base',format:1,tabs:[],groups:[],entries:[],
     settings:keep||Object.assign({firstRun:Date.now(),lastExport:null,remind:true,snoozeUntil:0,lastTab:null},d.settings||{})};
-  s.tabs=d.tabs.map(t=>({id:String(t.id),name:String(t.name||'Без названия'),arch:t.arch==='hide'?'hide':'show',archOpen:!!t.archOpen}));
-  s.groups=d.groups.map((g,idx)=>({id:String(g.id),tabId:String(g.tabId),parentId:g.parentId?String(g.parentId):null,name:String(g.name||'Группа'),collapsed:!!g.collapsed,status:['active','archive','trash'].includes(g.status)?g.status:'active',bundle:g.bundle?String(g.bundle):null,meta:g.meta&&typeof g.meta==='object'?g.meta:null,o:typeof g.o==='number'?g.o:100000+idx*10}));
+  s.tabs=d.tabs.map(t=>({id:String(t.id),name:String(t.name||'Без названия'),arch:t.arch==='hide'?'hide':'show',archOpen:!!t.archOpen,o:typeof t.o==='number'?t.o:undefined,m:+t.m||0,sh:typeof t.sh==='string'?t.sh:''}));
+  s.groups=d.groups.map((g,idx)=>({id:String(g.id),tabId:String(g.tabId),parentId:g.parentId?String(g.parentId):null,name:String(g.name||'Группа'),collapsed:!!g.collapsed,status:['active','archive','trash'].includes(g.status)?g.status:'active',bundle:g.bundle?String(g.bundle):null,meta:g.meta&&typeof g.meta==='object'?g.meta:null,o:typeof g.o==='number'?g.o:100000+idx*10,m:+g.m||0,sh:typeof g.sh==='string'?g.sh:''}));
   s.entries=d.entries.map((e,idx)=>{
     const o={id:String(e.id),tabId:String(e.tabId),groupId:e.groupId?String(e.groupId):null,fav:!!e.fav,favG:typeof e.favG==='boolean'?e.favG:!!e.fav,
       status:['active','archive','trash'].includes(e.status)?e.status:'active',
       o:typeof e.o==='number'?e.o:idx*10+10,favO:typeof e.favO==='number'?e.favO:null,bundle:e.bundle?String(e.bundle):null,created:+e.created||Date.now(),updated:+e.updated||Date.now(),
-      keylist:lst(e.keylist),cmdlist:lst(e.cmdlist),attachments:Array.isArray(e.attachments)?e.attachments:[],meta:e.meta&&typeof e.meta==='object'?e.meta:null};
+      keylist:lst(e.keylist),cmdlist:lst(e.cmdlist),attachments:Array.isArray(e.attachments)?e.attachments:[],meta:e.meta&&typeof e.meta==='object'?e.meta:null,m:+e.m||0,sh:typeof e.sh==='string'?e.sh:''};
     FIELDS.forEach(([k])=>o[k]=typeof e[k]==='string'?e[k]:'');
     return o;
   });
@@ -380,6 +387,7 @@ function load(){
   S=defaults();save();
 }
 function save(){
+  try{stampAll()}catch(e){}
   try{localStorage.setItem(KEY,JSON.stringify(S));if(storageFailed){storageFailed=false;renderBanner()}return true}
   catch(e){storageFailed=true;renderBanner();return false}
 }
@@ -613,6 +621,7 @@ function renderHeader(){
   bf.hidden=!(isTab&&gs0.length);
   bf.innerHTML=anyOpen?'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4l5 5 5-5M7 20l5-5 5 5"/></svg>':'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 9l5-5 5 5M7 15l5 5 5-5"/></svg>';
   bf.title=anyOpen?'Свернуть все папки':'Развернуть все папки';
+  $('#btnSync').hidden=!syncCfg();
   const bv=$('#btnView');bv.hidden=!(isTab&&profile()==='pc');
   {const md=vset().mode,S0='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true">';
    const ic=md==='grid'?S0+'<rect x="3" y="4" width="8" height="7" rx="1"/><rect x="13" y="4" width="8" height="7" rx="1"/><rect x="3" y="13" width="8" height="7" rx="1"/><rect x="13" y="13" width="8" height="7" rx="1"/></svg>'
@@ -1140,6 +1149,7 @@ $('#tabs').addEventListener('click',e=>{
 $('#btnScope').onclick=()=>{scope=scope==='all'?'tab':'all';render()};
 $('#btnArch').onclick=()=>{inclArch=!inclArch;render()};
 $('#btnReorder').onclick=()=>{reorder=!reorder;render()};
+$('#btnSync').onclick=()=>syncNow();
 $('#tabDrop').onclick=openTabList;
 $('#tabSet').onclick=()=>openTabs();
 $('#btnView').onclick=()=>openViewMenu();
@@ -1827,10 +1837,10 @@ function openMenu(){
       '<button data-m="tabsmgr">Настройки вкладок</button><button data-m="look">Оформление</button>'+
       '<button data-m="trash">Корзина<span class="n">'+cnt('trash')+'</span></button>'+
       '<button data-m="export" class="mhl">Экспорт в файл (резервная копия)</button>'+
-      '<button data-m="import">Импорт из файла</button><button data-m="update">Проверить обновление</button>'+
+      '<button data-m="import">Импорт из файла</button><button data-m="sync">⟳ Синхронизировать</button><button data-m="update">Проверить обновление</button>'+
       '<button data-more>'+(more?'Свернуть ▴':'Ещё ▾')+'</button>'+
       (more?'<button data-m="settings">Настройки и резервная копия</button><button data-m="text">Экспорт в текстовый файл</button>':'')+
-      '<div class="ver">Версия программы: '+APP_VERSION+'<br>Последний экспорт: '+(S.settings.lastExport?fmt(S.settings.lastExport):'—')+'<br>Последний импорт: '+(S.settings.lastImport?fmt(S.settings.lastImport):'—')+'</div>';
+      '<div class="ver">Версия программы: '+APP_VERSION+'<br>Последний экспорт: '+(S.settings.lastExport?fmt(S.settings.lastExport):'—')+'<br>Последний импорт: '+(S.settings.lastImport?fmt(S.settings.lastImport):'—')+'<br>Синхронизация: '+(!syncCfg()?'не настроена':syncSt().lastSync?fmt(syncSt().lastSync):'ещё не было')+'</div>';
   };
   draw();
   const sh=sheet({title:'Меню',body:el});
@@ -1842,6 +1852,7 @@ function openMenu(){
     else if(m==='tabsmgr')openTabs();
     else if(m==='look')openLookMenu();
     else if(m==='update')checkUpdate();
+    else if(m==='sync')syncNow();
     else if(['fav','archive','trash'].includes(m)){view=m;reorder=false;render();window.scrollTo(0,0)}
     else if(m==='export')doExport();else if(m==='text')doTextExport();else if(m==='import')doImport();else openSettings();
   });
@@ -1858,6 +1869,7 @@ function openSettings(){
    '<h4 style="margin:16px 0 4px">Резервная копия перед заменой данных</h4><p class="hint">'+(b?'Сохранена '+fmt(b.at)+' ('+b.data.entries.length+' '+pl(b.data.entries.length,['запись','записи','записей'])+').':'Копии пока нет. Она создаётся автоматически перед операцией «Заменить все данные».')+'</p>'+
    (b?'<button class="btn" data-a="restore">Восстановить из резервной копии</button>':'')+
    '<p class="ver">Моя техническая база, версия '+APP_VERSION+'</p><p class="hint" style="margin-top:16px">Данные хранятся в браузере этого устройства. Их может стереть очистка данных сайтов или переустановка браузера, а внутренняя копия исчезнет вместе с ними. Периодически делайте экспорт в файл и держите файл вне браузера.</p>';
+  el.append(syncSettingsNode());
   const sh=sheet({title:'Настройки',body:el});
   $('#stRem',el).onchange=e=>{S.settings.remind=e.target.checked;if(e.target.checked)S.settings.snoozeUntil=0;save();renderBanner()};
   el.addEventListener('click',e=>{if(e.target.closest('[data-a=restore]')){sh.close();restoreBackup()}else if(e.target.closest('[data-a=tabsmgr]')){sh.close();openTabs()}else if(e.target.closest('[data-a=viewmenu]')){sh.close();openViewMenu()}else if(e.target.closest('[data-a=look]')){sh.close();openLookMenu()}else if(e.target.closest('[data-a=auto]')){sh.close();openAutoMenu()}});
@@ -1980,7 +1992,7 @@ async function importReplace(d){
   if(!makeBackup())return info('Замена не выполнена','Резервную копию текущей базы создать не удалось, поэтому данные не тронуты. Сделайте экспорт в файл и повторите.');
   const n=S.entries.length,m=d.entries.length;
   if(!await ask('Заменить все данные?','Текущая база ('+n+' '+pl(n,['запись','записи','записей'])+') будет заменена данными из файла ('+m+' '+pl(m,['запись','записи','записей'])+'). Резервная копия текущей базы создана, её можно восстановить в «Настройках».','Заменить данные',true))return;
-  const old=S;S=normalize(d,Object.assign({},old.settings,{lastImport:Date.now()}));
+  const old=S;S=normalize(d,Object.assign({},old.settings,{lastImport:Date.now()}));resetKnown();
   if(!save()){S=old;render();return info('Замена не выполнена','Не удалось записать данные в браузер. Текущая база сохранена без изменений.')}
   curTab=S.tabs[0]?S.tabs[0].id:null;view='tab';q='';$('#q').value='';render();window.scrollTo(0,0);
   toast('Данные заменены',()=>restoreBackup(true));
@@ -1991,7 +2003,7 @@ async function restoreBackup(silent){
   if(!silent&&!await ask('Восстановить из резервной копии?','Текущая база будет заменена копией от '+fmt(b.at)+'. Текущие данные при этом сами станут резервной копией, поэтому действие можно повторить в обратную сторону.','Восстановить',true))return;
   const cur=S;
   if(!makeBackup())return info('Восстановление не выполнено','Не удалось сохранить текущую базу как резервную копию. Данные не тронуты.');
-  S=normalize(b.data,cur.settings);
+  S=normalize(b.data,cur.settings);resetKnown();
   if(!save()){S=cur;return info('Восстановление не выполнено','Не удалось записать данные в браузер.')}
   curTab=S.tabs.some(t=>t.id===curTab)?curTab:(S.tabs[0]?S.tabs[0].id:null);view='tab';render();
   toast('База восстановлена из резервной копии');
@@ -2278,7 +2290,7 @@ async function restoreAuto(i){
   if(!await ask('Восстановить копию от '+fmt(a.at)+'?','Текущая база будет заменена. Перед этим она сохранится в «резервную копию перед заменой», поэтому действие можно повернуть назад из «Настроек».','Восстановить',true))return;
   const cur=S;
   if(!makeBackup())return info('Восстановление не выполнено','Не удалось сохранить текущую базу. Данные не тронуты.');
-  S=normalize(a.data,cur.settings);
+  S=normalize(a.data,cur.settings);resetKnown();
   if(!save()){S=cur;return info('Восстановление не выполнено','Не удалось записать данные в браузер.')}
   curTab=S.tabs.some(t=>t.id===curTab)?curTab:(S.tabs[0]?S.tabs[0].id:null);view='tab';selMode=false;sel.clear();render();
   toast('База восстановлена из автоматической копии');
@@ -2386,6 +2398,198 @@ try{
   if(pv&&pv!==APP_VERSION)setTimeout(()=>toast('Приложение обновлено до версии '+APP_VERSION),600);
   localStorage.setItem('techbase_seen_ver',APP_VERSION);
 }catch(e){}
+
+/* ===== Синхронизация через GitHub ===== */
+const SYNC_KEY='mrtekhnik.sync',SYNC_DIR='tech-base';
+function syncCfg(){try{const v=JSON.parse(localStorage.getItem(SYNC_KEY)||'null');return v&&v.repo&&v.token?v:null}catch(e){return null}}
+function setSyncCfg(v){try{if(v)localStorage.setItem(SYNC_KEY,JSON.stringify(v));else localStorage.removeItem(SYNC_KEY)}catch(e){}}
+function apiBase(){try{return localStorage.getItem('mrtekhnik.sync.api')||'https://api.github.com'}catch(e){return 'https://api.github.com'}}
+function syncSt(){const st=S.settings;if(!st.sync||typeof st.sync!=='object')st.sync={};if(!st.sync.known||typeof st.sync.known!=='object')st.sync.known={};if(typeof st.sync.lastSync!=='number')st.sync.lastSync=0;return st.sync}
+function resetKnown(){const ls=(S.settings.sync&&S.settings.sync.lastSync)||0;S.settings.sync={known:{},lastSync:ls}}
+async function gh(cfg,path,opt={}){
+  const h={Authorization:'Bearer '+cfg.token,Accept:opt.raw?'application/vnd.github.raw':'application/vnd.github+json'};if(opt.body)h['Content-Type']='application/json';
+  const r=await fetch(apiBase()+'/repos/'+cfg.repo+path,{method:opt.method||'GET',cache:'no-store',headers:h,body:opt.body?JSON.stringify(opt.body):undefined});
+  if(opt.allow404&&(r.status===404||r.status===409))return null;
+  if(!r.ok){const e=new Error('HTTP '+r.status);e.status=r.status;try{e.msg=(await r.json()).message}catch(_){}throw e}
+  return opt.raw?r.text():r.json();
+}
+function syncErrText(e){
+  if(e&&e.code==='empty')return 'Репозиторий пустой. Создайте его с галочкой «Add a README file».';
+  if(e&&e.status===401)return 'GitHub не принял токен: проверьте его или выпустите новый (возможно, истёк срок действия).';
+  if(e&&e.status===403)return 'У токена нет прав на запись. При создании токена нужно право Contents: Read and write.';
+  if(e&&e.status===404)return 'Репозиторий не найден. Проверьте имя (вид: имя/репозиторий) и что токен выдан именно для этого репозитория.';
+  if(e instanceof TypeError)return 'Нет связи с GitHub. Проверьте интернет.';
+  return 'Ошибка: '+((e&&(e.msg||e.message))||e);
+}
+const devName=()=>/Android/i.test(navigator.userAgent)?'Android':/Windows/i.test(navigator.userAgent)?'Windows':'устройство';
+function b64Utf8(str){const b=new TextEncoder().encode(str);let s='';for(let i=0;i<b.length;i+=8192)s+=String.fromCharCode.apply(null,b.subarray(i,i+8192));return btoa(s)}
+/* отпечатки содержимого: любое изменение записи, группы или вкладки даёт новый отпечаток и время изменения */
+const SYF={e:['id','tabId','groupId','title','hotkey','command','desc','steps','note','keylist','cmdlist','fav','favG','status','bundle','meta','created','updated','attachments'],g:['id','tabId','parentId','name','status','bundle','meta'],t:['id','name','arch']};
+const SYO={e:['o','favO'],g:['o'],t:['o']};
+function stab(v){if(Array.isArray(v))return '['+v.map(stab).join(',')+']';if(v&&typeof v==='object')return '{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+stab(v[k])).join(',')+'}';return JSON.stringify(v===undefined?null:v)}
+function h53(str){let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<str.length;i++){const c=str.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return (4294967296*(2097151&h2)+(h1>>>0)).toString(36)}
+function sigOf(k,x,noOrd){return h53(stab(SYF[k].concat(noOrd?[]:SYO[k]).map(f=>x[f])))}
+function stampAll(){
+  if(!S)return;const now=Date.now();
+  S.tabs.forEach((t,i)=>{t.o=(i+1)*10});
+  [['t',S.tabs],['g',S.groups],['e',S.entries]].forEach(([k,a])=>a.forEach(x=>{const sh=sigOf(k,x);if(x.sh!==sh){x.sh=sh;x.m=now}}));
+}
+const KS3=[['tabs','t'],['groups','g'],['entries','e']];
+const LOCALONLY={t:['archOpen'],g:['collapsed'],e:[]};
+function syncMerge(L,R,B,PR,now){
+  const st={up:0,down:0,del:0,conf:0,grp:0},purged=Object.assign({},PR),F={tabs:[],groups:[],entries:[]};
+  for(const [key,k] of KS3){
+    const l=new Map(L[key].map(x=>[x.id,x])),r=new Map(R[key].map(x=>[x.id,x]));
+    const bump=d=>{if(k==='e')st[d]++;else st.grp++};
+    for(const id of new Set([...l.keys(),...r.keys()])){
+      const li=l.get(id),ri=r.get(id),b=B[id];
+      if(li&&ri){
+        if(li.sh===ri.sh){li.m=Math.max(li.m||0,ri.m||0);F[key].push(li)}
+        else if(li.sh===b){F[key].push(ri);bump('down')}
+        else if(ri.sh===b){F[key].push(li);bump('up')}
+        else{
+          const w=(li.m||0)>=(ri.m||0)?li:ri,lo=w===li?ri:li;
+          F[key].push(w);bump(w===li?'up':'down');
+          if(sigOf(k,li,true)!==sigOf(k,ri,true)){
+            if(k==='e'){
+              const cp=JSON.parse(JSON.stringify(lo));cp.id=uid();cp.title=(lo.title||titleOf(lo))+' (другая версия)';cp.fav=false;cp.favG=false;cp.favO=null;cp.m=now;cp.sh=sigOf('e',cp);
+              F.entries.push(cp);st.conf++;st.up++;
+            }else st.grp++;
+          }
+        }
+      }else if(li){
+        if(purged[id]&&b!==undefined&&li.sh===b){bump('del')}
+        else{F[key].push(li);bump('up');delete purged[id]}
+      }else if(ri){
+        if(b!==undefined&&ri.sh===b){purged[id]=now;bump('del')}
+        else{F[key].push(ri);bump('down');delete purged[id]}
+      }
+    }
+  }
+  const lim=now-400*864e5;for(const id in purged)if(!(purged[id]>lim))delete purged[id];
+  return {F,purged,st};
+}
+/* целостность ссылок после объединения; изменённые элементы получают новое время изменения */
+function syncFix(F,now){
+  const fx=new Set();
+  F.tabs.sort((a,b)=>((a.o===undefined?1e12:a.o)-(b.o===undefined?1e12:b.o))||(a.id<b.id?-1:1));
+  F.tabs.forEach((t,i)=>{if(t.o!==(i+1)*10){t.o=(i+1)*10;fx.add(t)}});
+  const tabIds=new Set(F.tabs.map(t=>t.id));
+  const act2=F.entries.filter(e=>e.status!=='trash');
+  const orphan=[...F.groups,...act2].filter(x=>!tabIds.has(x.tabId));
+  if(orphan.length){
+    const t={id:uid(),name:'Восстановленное',arch:'show',archOpen:false,o:(F.tabs.length+1)*10,m:now,sh:''};
+    F.tabs.push(t);fx.add(t);orphan.forEach(x=>{x.tabId=t.id;fx.add(x)});
+  }
+  const gm=new Map(F.groups.map(g=>[g.id,g]));
+  F.groups.forEach(g=>{
+    const pr=g.parentId&&gm.get(g.parentId);
+    if(g.parentId&&(!pr||pr.tabId!==g.tabId)){g.parentId=null;fx.add(g)}
+    if(g.bundle&&!gm.has(g.bundle)){g.bundle=null;fx.add(g)}
+  });
+  F.groups.forEach(g=>{let p=g.parentId,n=0;while(p&&n<=F.groups.length){p=gm.get(p)?gm.get(p).parentId:null;n++}if(n>F.groups.length){g.parentId=null;fx.add(g)}});
+  F.entries.forEach(e=>{
+    const g=e.groupId&&gm.get(e.groupId);
+    if(e.groupId&&(!g||(e.status!=='trash'&&g.tabId!==e.tabId))){e.groupId=null;fx.add(e)}
+    if(e.bundle&&!gm.has(e.bundle)){e.bundle=null;fx.add(e)}
+  });
+  fx.forEach(x=>{const k=F.tabs.includes(x)?'t':F.groups.includes(x)?'g':'e';x.m=now;x.sh=sigOf(k,x)});
+}
+const syncCore=(F,purged)=>{
+  const strip=(k,a)=>a.map(x=>{const c=JSON.parse(JSON.stringify(x));LOCALONLY[k].forEach(f=>delete c[f]);return c});
+  return {tabs:strip('t',F.tabs),groups:strip('g',F.groups).sort((a,b)=>a.id<b.id?-1:1),entries:strip('e',F.entries).sort((a,b)=>a.id<b.id?-1:1),purged};
+};
+let syncing=false;
+function syncBusy(on,text){
+  let o=$('#syncbusy');
+  if(!on){if(o)o.remove();return}
+  if(!o){o=document.createElement('div');o.id='syncbusy';o.className='ov center';o.innerHTML='<div class="dlg" role="alertdialog"><h3>Синхронизация</h3><div class="dbody"><p></p></div></div>';document.body.append(o)}
+  $('p',o).textContent=text;
+}
+async function syncOnce(cfg){
+  stampAll();
+  const ref=await gh(cfg,'/git/ref/heads/main',{allow404:true});
+  if(!ref){const e=new Error('empty');e.code='empty';throw e}
+  const head=ref.object.sha,commit=await gh(cfg,'/git/commits/'+head);
+  const txt=await gh(cfg,'/contents/'+SYNC_DIR+'/index.json?ref='+head,{raw:true,allow404:true});
+  let Rd={tabs:[],groups:[],entries:[]},PR={};
+  if(txt){
+    let d;try{d=JSON.parse(txt)}catch(e){throw new Error('файл index.json в репозитории повреждён')}
+    const er=validate(d,false);if(er)throw new Error('данные в репозитории не прошли проверку: '+er);
+    const n=normalize(d,{});Rd={tabs:n.tabs,groups:n.groups,entries:n.entries};
+    if(d.purged&&typeof d.purged==='object')for(const k in d.purged)if(typeof d.purged[k]==='number')PR[k]=d.purged[k];
+  }
+  KS3.forEach(([key,k])=>Rd[key].forEach(x=>{x.sh=sigOf(k,x)}));
+  const before=stab(syncCore(Rd,PR));
+  const now=Date.now(),sy=syncSt();
+  const L=JSON.parse(JSON.stringify({tabs:S.tabs,groups:S.groups,entries:S.entries}));
+  /* устройство только что установлено: свои вкладки по умолчанию не дублируем, берём из репозитория */
+  if(!Object.keys(sy.known).length&&!L.entries.length&&!L.groups.length&&Rd.tabs.length&&L.tabs.length===DEF_TABS.length&&L.tabs.every(t=>DEF_TABS.includes(t.name)))L.tabs=[];
+  const M=syncMerge(L,Rd,sy.known,PR,now);
+  syncFix(M.F,now);
+  const bad=validate({tabs:M.F.tabs,groups:M.F.groups,entries:M.F.entries},false);
+  if(bad)throw new Error('после объединения данные не прошли проверку: '+bad);
+  const core=syncCore(M.F,M.purged),after=stab(core);
+  if(after!==before){
+    const iso=new Date(now).toISOString();
+    const doc=Object.assign({app:'tech-base',format:1,syncV:1,appVersion:APP_VERSION,exportedAt:iso,savedAt:iso},core);
+    syncBusy(true,'Синхронизация… отправка');
+    const bl=await gh(cfg,'/git/blobs',{method:'POST',body:{content:b64Utf8(JSON.stringify(doc)),encoding:'base64'}});
+    const t=await gh(cfg,'/git/trees',{method:'POST',body:{base_tree:commit.tree.sha,tree:[{path:SYNC_DIR+'/index.json',mode:'100644',type:'blob',sha:bl.sha}]}});
+    const c=await gh(cfg,'/git/commits',{method:'POST',body:{message:'Моя техническая база: синхронизация ('+devName()+')',tree:t.sha,parents:[head]}});
+    await gh(cfg,'/git/refs/heads/main',{method:'PATCH',body:{sha:c.sha,force:false}});
+  }
+  /* применяем на устройстве только после успешной отправки */
+  const lg=new Map(S.groups.map(g=>[g.id,g])),lt=new Map(S.tabs.map(t=>[t.id,t]));
+  M.F.groups.forEach(g=>{const o=lg.get(g.id);g.collapsed=o?!!o.collapsed:false});
+  M.F.tabs.forEach(t=>{const o=lt.get(t.id);t.archOpen=o?!!o.archOpen:false});
+  S.tabs=M.F.tabs;S.groups=M.F.groups;S.entries=M.F.entries;
+  const known={};KS3.forEach(([key,k])=>M.F[key].forEach(x=>{known[x.id]=x.sh}));
+  S.settings.sync={known,lastSync:now};
+  if(!S.tabs.some(t=>t.id===curTab))curTab=S.tabs[0]?S.tabs[0].id:null;
+  selMode=false;sel.clear();
+  save();
+  return M.st;
+}
+async function syncNow(){
+  const cfg=syncCfg();
+  if(!cfg){await info('Синхронизация не настроена','Подключите репозиторий в настройках: Меню → Ещё → Настройки и резервная копия → «Синхронизация через GitHub».');openSettings();return}
+  if(syncing)return;
+  syncing=true;$('#btnSync').classList.add('spin');syncBusy(true,'Синхронизация…');
+  try{
+    let res;
+    for(let a=0;a<3;a++){try{res=await syncOnce(cfg);break}catch(e){if((e.status===422||e.status===409)&&a<2){syncBusy(true,'Синхронизация… повтор');continue}throw e}}
+    syncBusy(false);render();
+    const parts=[];
+    if(res.up)parts.push('отправлено '+res.up);if(res.down)parts.push('получено '+res.down);if(res.del)parts.push('удалено '+res.del);if(res.grp)parts.push('обновлены вкладки и группы');
+    if(res.conf)info('Синхронизация завершена',(parts.length?parts.join(', ')+'. ':'')+'Конфликтов: '+res.conf+'. Запись меняли на обоих устройствах: основной осталась более новая версия, другая сохранена рядом с пометкой «(другая версия)». Ничего не потеряно, лишнюю запись можно удалить.');
+    else toast(parts.length?'Синхронизировано: '+parts.join(', '):'Всё уже синхронизировано');
+  }catch(e){syncBusy(false);info('Синхронизация не удалась',syncErrText(e)+' Данные на устройстве не изменены.')}
+  finally{syncing=false;$('#btnSync').classList.remove('spin')}
+}
+function syncSettingsNode(){
+  const cfg=syncCfg(),box=document.createElement('div');box.className='sybox';
+  box.innerHTML='<h4 style="margin:18px 0 4px">Синхронизация через GitHub</h4><p class="hint">Телефон и компьютер обмениваются записями через ваш <b>приватный</b> репозиторий по кнопке ⟳ в шапке или пункту меню «Синхронизировать». Подключение общее для всех ваших приложений на этом сайте. Первую синхронизацию делайте на устройстве, где больше данных, потом на втором.</p>'+
+    '<label class="hint">Репозиторий (имя/репозиторий)</label><input class="inp repo" placeholder="mrtekhnik/sync" autocomplete="off" autocapitalize="off" spellcheck="false">'+
+    '<label class="hint">Токен доступа</label><input class="inp tok" type="password" placeholder="github_pat_…" autocomplete="off" autocapitalize="off" spellcheck="false">'+
+    '<div class="row2"><button class="btn sy1">Сохранить и проверить</button><button class="btn sy0">Отключить</button></div><p class="hint sst"></p>';
+  const q=x=>box.querySelector(x);q('.repo').value=cfg?cfg.repo:'';if(cfg)q('.tok').placeholder='токен сохранён (скрыт)';
+  q('.sst').textContent=cfg?'Подключено: '+cfg.repo+'. Последняя синхронизация: '+(syncSt().lastSync?fmt(syncSt().lastSync):'ещё не было')+'.':'Не подключено.';
+  q('.sy0').onclick=()=>{setSyncCfg(null);q('.tok').value='';q('.tok').placeholder='github_pat_…';q('.sst').textContent='Отключено. Данные на устройстве не затронуты.';render()};
+  q('.sy1').onclick=async()=>{
+    const repo=q('.repo').value.trim().replace(/^https?:\/\/github\.com\//,'').replace(/\/+$/,''),token=q('.tok').value.trim()||(cfg&&cfg.repo===repo?cfg.token:'');
+    if(!/^[\w.-]+\/[\w.-]+$/.test(repo)||!token){q('.sst').textContent='Укажите репозиторий в виде имя/репозиторий и токен.';return}
+    q('.sst').textContent='Проверка…';
+    try{
+      const info2=await gh({repo,token},'');
+      if(!info2.private){q('.sst').textContent='Репозиторий публичный: записи были бы видны всем. Нужен приватный репозиторий. Настройка не сохранена.';return}
+      const ref=await gh({repo,token},'/git/ref/heads/main',{allow404:true});
+      if(!ref){q('.sst').textContent='Репозиторий пустой. Создайте его с галочкой «Add a README file».';return}
+      setSyncCfg({repo,token});q('.sst').textContent='Подключено: '+repo+' (приватный) ✓';render();
+    }catch(e){q('.sst').textContent=syncErrText(e)}
+  };
+  return box;
+}
 
 /* ===== Запуск ===== */
 initTreeDnD();
