@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.27 -->
+<!-- Моя техническая база, версия 1.28 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -54,7 +54,8 @@ body.selon #toast,body.selon #top{bottom:150px}
 .cmprev{margin-left:8px;font:calc(.88rem*var(--cm-k,1)) ui-monospace,Consolas,monospace;color:var(--cm-tx,inherit);background:var(--key);border:var(--cm-bw,1px) solid var(--cm-bd,var(--line));border-radius:4px;padding:0 4px}
 .kbprev{display:inline-flex;align-items:center;gap:3px;margin-left:8px}
 .sizestep{display:flex;align-items:center;gap:12px;margin:4px 0 8px}.sizestep span{min-width:60px;text-align:center;font-weight:600}
-#btnSync{font-size:1.5rem}
+#btnSync{font-size:1.5rem;position:relative}
+#btnSync.has::after{content:'';position:absolute;top:7px;right:7px;width:10px;height:10px;border-radius:50%;background:#ffd600;box-shadow:0 0 0 1.5px rgba(0,0,0,.4)}
 #btnSync.spin{animation:sp 1s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 #syncbusy{z-index:200}
@@ -292,7 +293,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.27';
+const APP_VERSION='1.28';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -621,7 +622,7 @@ function renderHeader(){
   bf.hidden=!(isTab&&gs0.length);
   bf.innerHTML=anyOpen?'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4l5 5 5-5M7 20l5-5 5 5"/></svg>':'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 9l5-5 5 5M7 15l5 5 5-5"/></svg>';
   bf.title=anyOpen?'Свернуть все папки':'Развернуть все папки';
-  $('#btnSync').hidden=!syncCfg();
+  $('#btnSync').hidden=!syncCfg();updateSyncDot();
   const bv=$('#btnView');bv.hidden=!(isTab&&profile()==='pc');
   {const md=vset().mode,S0='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true">';
    const ic=md==='grid'?S0+'<rect x="3" y="4" width="8" height="7" rx="1"/><rect x="13" y="4" width="8" height="7" rx="1"/><rect x="3" y="13" width="8" height="7" rx="1"/><rect x="13" y="13" width="8" height="7" rx="1"/></svg>'
@@ -2345,7 +2346,7 @@ async function openAutoMenu(){
     }else if(b.hasAttribute('data-nodir')){try{await idb(st=>st.delete('dir'))}catch(_){}fsName=null;fsNeedPerm=false;draw()}
   });
 }
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S)try{autoBackup(false)}catch(e){}});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S)try{autoBackup(false);updateSyncDot()}catch(e){}});
 setInterval(()=>{try{if(S)autoBackup(false)}catch(e){}},30*60*1000);
 
 /* ===== Обновление программы (PWA) ===== */
@@ -2404,8 +2405,8 @@ const SYNC_KEY='mrtekhnik.sync',SYNC_DIR='tech-base';
 function syncCfg(){try{const v=JSON.parse(localStorage.getItem(SYNC_KEY)||'null');return v&&v.repo&&v.token?v:null}catch(e){return null}}
 function setSyncCfg(v){try{if(v)localStorage.setItem(SYNC_KEY,JSON.stringify(v));else localStorage.removeItem(SYNC_KEY)}catch(e){}}
 function apiBase(){try{return localStorage.getItem('mrtekhnik.sync.api')||'https://api.github.com'}catch(e){return 'https://api.github.com'}}
-function syncSt(){const st=S.settings;if(!st.sync||typeof st.sync!=='object')st.sync={};if(!st.sync.known||typeof st.sync.known!=='object')st.sync.known={};if(typeof st.sync.lastSync!=='number')st.sync.lastSync=0;return st.sync}
-function resetKnown(){const ls=(S.settings.sync&&S.settings.sync.lastSync)||0;S.settings.sync={known:{},lastSync:ls}}
+function syncSt(){const st=S.settings;if(!st.sync||typeof st.sync!=='object')st.sync={};if(!st.sync.known||typeof st.sync.known!=='object')st.sync.known={};if(typeof st.sync.lastSync!=='number')st.sync.lastSync=0;if(typeof st.sync.delay!=='number')st.sync.delay=3600000;if(typeof st.sync.dirtySince!=='number')st.sync.dirtySince=0;return st.sync}
+function resetKnown(){const sy=syncSt();sy.known={};sy.dirtySince=0}
 async function gh(cfg,path,opt={}){
   const h={Authorization:'Bearer '+cfg.token,Accept:opt.raw?'application/vnd.github.raw':'application/vnd.github+json'};if(opt.body)h['Content-Type']='application/json';
   const r=await fetch(apiBase()+'/repos/'+cfg.repo+path,{method:opt.method||'GET',cache:'no-store',headers:h,body:opt.body?JSON.stringify(opt.body):undefined});
@@ -2429,10 +2430,42 @@ const SYO={e:['o','favO'],g:['o'],t:['o']};
 function stab(v){if(Array.isArray(v))return '['+v.map(stab).join(',')+']';if(v&&typeof v==='object')return '{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+stab(v[k])).join(',')+'}';return JSON.stringify(v===undefined?null:v)}
 function h53(str){let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<str.length;i++){const c=str.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return (4294967296*(2097151&h2)+(h1>>>0)).toString(36)}
 function sigOf(k,x,noOrd){return h53(stab(SYF[k].concat(noOrd?[]:SYO[k]).map(f=>x[f])))}
+function syncChanges(){
+  /* что изменилось после последней синхронизации: [есть ли изменения, самое раннее время изменения] */
+  const sy=syncSt(),k=sy.known;let n=0,first=0,dirty=false;
+  [['t',S.tabs],['g',S.groups],['e',S.entries]].forEach(([kk,a])=>a.forEach(x=>{
+    n++;if(k[x.id]!==x.sh){dirty=true;if(x.m&&(!first||x.m<first))first=x.m}
+  }));
+  if(!dirty&&Object.keys(k).length!==n)dirty=true;   /* что-то удалено окончательно */
+  return {dirty,first};
+}
+function syncTrack(){
+  if(!S||!syncCfg())return;
+  const sy=syncSt(),c=syncChanges();
+  if(!c.dirty)sy.dirtySince=0;
+  else if(!sy.dirtySince)sy.dirtySince=c.first||Date.now();
+}
+function updateSyncDot(){
+  const b=$('#btnSync');if(!b||!S)return;
+  const cfg=syncCfg();clearTimeout(window.__syDotT);
+  let dot=false;
+  if(cfg){
+    const sy=syncSt();syncTrack();
+    if(!sy.lastSync)dot=true;
+    else if(sy.dirtySince){
+      const left=sy.dirtySince+sy.delay-Date.now();
+      if(left<=0)dot=true;
+      else window.__syDotT=setTimeout(updateSyncDot,Math.min(left+500,2147483000));
+    }
+  }
+  b.classList.toggle('has',dot);
+  const t=dot?'Есть несинхронизированные изменения':'Синхронизировать';b.title=t;b.setAttribute('aria-label',t);
+}
 function stampAll(){
   if(!S)return;const now=Date.now();
   S.tabs.forEach((t,i)=>{t.o=(i+1)*10});
   [['t',S.tabs],['g',S.groups],['e',S.entries]].forEach(([k,a])=>a.forEach(x=>{const sh=sigOf(k,x);if(x.sh!==sh){x.sh=sh;x.m=now}}));
+  syncTrack();
 }
 const KS3=[['tabs','t'],['groups','g'],['entries','e']];
 const LOCALONLY={t:['archOpen'],g:['collapsed'],e:[]};
@@ -2545,7 +2578,7 @@ async function syncOnce(cfg){
   M.F.tabs.forEach(t=>{const o=lt.get(t.id);t.archOpen=o?!!o.archOpen:false});
   S.tabs=M.F.tabs;S.groups=M.F.groups;S.entries=M.F.entries;
   const known={};KS3.forEach(([key,k])=>M.F[key].forEach(x=>{known[x.id]=x.sh}));
-  S.settings.sync={known,lastSync:now};
+  Object.assign(syncSt(),{known,lastSync:now,dirtySince:0});
   if(!S.tabs.some(t=>t.id===curTab))curTab=S.tabs[0]?S.tabs[0].id:null;
   selMode=false;sel.clear();
   save();
@@ -2559,7 +2592,7 @@ async function syncNow(){
   try{
     let res;
     for(let a=0;a<3;a++){try{res=await syncOnce(cfg);break}catch(e){if((e.status===422||e.status===409)&&a<2){syncBusy(true,'Синхронизация… повтор');continue}throw e}}
-    syncBusy(false);render();
+    syncBusy(false);render();updateSyncDot();
     const parts=[];
     if(res.up)parts.push('отправлено '+res.up);if(res.down)parts.push('получено '+res.down);if(res.del)parts.push('удалено '+res.del);if(res.grp)parts.push('обновлены вкладки и группы');
     if(res.conf)info('Синхронизация завершена',(parts.length?parts.join(', ')+'. ':'')+'Конфликтов: '+res.conf+'. Запись меняли на обоих устройствах: основной осталась более новая версия, другая сохранена рядом с пометкой «(другая версия)». Ничего не потеряно, лишнюю запись можно удалить.');
@@ -2572,9 +2605,12 @@ function syncSettingsNode(){
   box.innerHTML='<h4 style="margin:18px 0 4px">Синхронизация через GitHub</h4><p class="hint">Телефон и компьютер обмениваются записями через ваш <b>приватный</b> репозиторий по кнопке ⟳ в шапке или пункту меню «Синхронизировать». Подключение общее для всех ваших приложений на этом сайте. Первую синхронизацию делайте на устройстве, где больше данных, потом на втором.</p>'+
     '<label class="hint">Репозиторий (имя/репозиторий)</label><input class="inp repo" placeholder="mrtekhnik/sync" autocomplete="off" autocapitalize="off" spellcheck="false">'+
     '<label class="hint">Токен доступа</label><input class="inp tok" type="password" placeholder="github_pat_…" autocomplete="off" autocapitalize="off" spellcheck="false">'+
-    '<div class="row2"><button class="btn sy1">Сохранить и проверить</button><button class="btn sy0">Отключить</button></div><p class="hint sst"></p>';
+    '<div class="row2"><button class="btn sy1">Сохранить и проверить</button><button class="btn sy0">Отключить</button></div><p class="hint sst"></p>'+
+    '<div class="vh">Напоминать о синхронизации (жёлтая точка на ⟳)</div><div class="segs sd">'+[[0,'Сразу'],[3600000,'Через 1 ч'],[10800000,'Через 3 ч'],[86400000,'Через сутки']].map(([v,l])=>'<button class="seg" data-d="'+v+'">'+l+'</button>').join('')+'</div><p class="hint">Отсчёт идёт от первого несинхронизированного изменения. Изменения, сделанные на другом устройстве, точка не показывает.</p>';
   const q=x=>box.querySelector(x);q('.repo').value=cfg?cfg.repo:'';if(cfg)q('.tok').placeholder='токен сохранён (скрыт)';
   q('.sst').textContent=cfg?'Подключено: '+cfg.repo+'. Последняя синхронизация: '+(syncSt().lastSync?fmt(syncSt().lastSync):'ещё не было')+'.':'Не подключено.';
+  const mkD=()=>box.querySelectorAll('.sd button').forEach(b=>b.classList.toggle('on',+b.dataset.d===syncSt().delay));mkD();
+  box.querySelectorAll('.sd button').forEach(b=>b.onclick=()=>{syncSt().delay=+b.dataset.d;save();mkD();updateSyncDot()});
   q('.sy0').onclick=()=>{setSyncCfg(null);q('.tok').value='';q('.tok').placeholder='github_pat_…';q('.sst').textContent='Отключено. Данные на устройстве не затронуты.';render()};
   q('.sy1').onclick=async()=>{
     const repo=q('.repo').value.trim().replace(/^https?:\/\/github\.com\//,'').replace(/\/+$/,''),token=q('.tok').value.trim()||(cfg&&cfg.repo===repo?cfg.token:'');
