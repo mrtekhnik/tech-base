@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.34 -->
+<!-- Моя техническая база, версия 1.35 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -91,8 +91,12 @@ body.selon #updbar{bottom:160px}
 .colx{display:flex;flex-direction:column;gap:14px;min-width:0}
 main.m-grid .items.root,main.m-grid .gb{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
 main.m-grid .gblock,main.m-grid .gempty{grid-column:1/-1}
-.vh{margin:14px 0 6px;font-size:.8rem;color:var(--mut);font-weight:600}
-.vh:first-child{margin-top:0}
+.vh{margin:20px 0 10px;padding-top:16px;border-top:1px solid var(--line);font-size:1rem;line-height:1.3;font-weight:650;color:var(--ink)}
+.vh:first-child{margin-top:0;padding-top:0;border-top:0}
+.sybox>.vh:first-child{margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
+.lsub{margin:12px 0 5px;font-size:.85rem;line-height:1.3;font-weight:600;color:var(--mut)}
+.vh+.lsub{margin-top:0}
+.btn.rst{margin-top:6px}
 .segs{display:flex;gap:6px;flex-wrap:wrap}
 .orow{display:block;width:100%;text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:10px 12px;margin-bottom:8px}
 .orow.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset}
@@ -159,7 +163,7 @@ main{max-width:var(--wmain,860px);margin:0 auto;padding:12px 10px}
 .c-title{font-weight:650;overflow-wrap:anywhere}
 .c-keys{margin-top:5px;display:flex;flex-wrap:wrap;gap:3px;align-items:center}
 .plus{color:var(--mut);font-size:var(--kb-fs,.82rem)}
-kbd{font:var(--kb-fw,600) var(--kb-fs,.82rem) ui-monospace,Consolas,"Courier New",monospace;color:var(--kb-tx,var(--ink));background:var(--key);border:1px solid var(--kb-bd,var(--line));border-bottom-width:var(--kb-bw,2px);border-radius:5px;padding:.1em .5em}
+kbd{font:var(--kb-fw,600) var(--kb-fs,.82rem) var(--kbf,system-ui,"Segoe UI",Roboto,Arial,sans-serif);color:var(--kb-tx,var(--ink));background:var(--key);border:1px solid var(--kb-bd,var(--line));border-bottom-width:var(--kb-bw,2px);border-radius:5px;padding:.1em .5em}
 .txt .cpyb,.c-desc .cpyb{padding:0 1px;display:inline;vertical-align:baseline}
 .c-cmd{font:var(--cm-fw,400) calc(.85rem*var(--cm-k,1)) ui-monospace,Consolas,monospace;color:var(--cm-ct,var(--mut));margin-top:4px;overflow-wrap:anywhere}
 .c-desc{color:var(--cdc,var(--mut));font-size:.92rem;margin-top:3px;display:-webkit-box;-webkit-line-clamp:var(--cl,3);-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;white-space:pre-wrap}
@@ -306,7 +310,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.34';
+const APP_VERSION='1.35';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -1925,9 +1929,9 @@ function readBackup(){
 function openSettings(){
   const el=document.createElement('div'),st=S.settings,b=readBackup();
   const size=(JSON.stringify(S).length/1024).toFixed(0);
-  el.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-a="tabsmgr">Настройки вкладок</button><button class="btn" data-a="viewmenu">Вид и профиль отображения</button><button class="btn" data-a="look">Оформление</button><button class="btn" data-a="auto">Автоматические копии</button></div>'+'<div class="chk"><input type="checkbox" id="stRem"'+(st.remind?' checked':'')+'><label for="stRem">Напоминать об экспорте, если прошло больше 14 дней</label></div>'+
+  el.innerHTML='<div class="vh">Разделы настроек</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-a="tabsmgr">Настройки вкладок</button><button class="btn" data-a="viewmenu">Вид и профиль отображения</button><button class="btn" data-a="look">Оформление</button><button class="btn" data-a="auto">Автоматические копии</button></div>'+'<div class="vh">Напоминания и данные</div><div class="chk"><input type="checkbox" id="stRem"'+(st.remind?' checked':'')+'><label for="stRem">Напоминать об экспорте, если прошло больше 14 дней</label></div>'+
    '<p class="hint">Последний экспорт: '+(st.lastExport?fmt(st.lastExport):'ещё не выполнялся')+'.<br>Последний импорт: '+(st.lastImport?fmt(st.lastImport):'ещё не выполнялся')+'.<br>Размер базы: около '+size+' КБ. Записей: '+S.entries.length+'.</p>'+
-   '<h4 style="margin:16px 0 4px">Резервная копия перед заменой данных</h4><p class="hint">'+(b?'Сохранена '+fmt(b.at)+' ('+b.data.entries.length+' '+pl(b.data.entries.length,['запись','записи','записей'])+').':'Копии пока нет. Она создаётся автоматически перед операцией «Заменить все данные».')+'</p>'+
+   '<div class="vh">Резервная копия перед заменой данных</div><p class="hint">'+(b?'Сохранена '+fmt(b.at)+' ('+b.data.entries.length+' '+pl(b.data.entries.length,['запись','записи','записей'])+').':'Копии пока нет. Она создаётся автоматически перед операцией «Заменить все данные».')+'</p>'+
    (b?'<button class="btn" data-a="restore">Восстановить из резервной копии</button>':'')+
    '<p class="ver">Моя техническая база, версия '+APP_VERSION+'</p><p class="hint" style="margin-top:16px">Данные хранятся в браузере этого устройства. Их может стереть очистка данных сайтов или переустановка браузера, а внутренняя копия исчезнет вместе с ними. Периодически делайте экспорт в файл и держите файл вне браузера.</p>';
   el.append(syncSettingsNode());
@@ -2238,7 +2242,7 @@ async function massMerge(){
 })();
 
 /* ===== Оформление ===== */
-const LOOK_DEF={theme:'auto',size:'m',accent:'blue',custom:'#245B8F',tint:'none',kbs:'2',kbc:'2',cms:'2',cmc:'2',cl:'3',cd:'m',cx:'2'};
+const LOOK_DEF={theme:'auto',size:'m',accent:'blue',custom:'#245B8F',tint:'none',kbs:'2',kbc:'2',cms:'2',cmc:'2',cl:'3',cd:'m',cx:'2',kf:'1'};
 const CLS=[['1','1 строка'],['2','2 строки'],['3','3 строки'],['5','5 строк'],['8','8 строк'],['99','Весь текст']];
 const CDS=[['s','Компактная',4],['m','Обычная',10],['l','Свободная',16]];
 const CMC=[['Минимум',{ct:'color-mix(in srgb,var(--mut) 75%,var(--surf))',tx:'color-mix(in srgb,var(--ink) 75%,var(--surf))',bd:'var(--line)',bw:'1px',fw:'400'}],['Мягкий',{ct:'var(--mut)',tx:'inherit',bd:'var(--line)',bw:'1px',fw:'400'}],['Средний',{ct:'color-mix(in srgb,var(--ink) 60%,var(--mut))',tx:'var(--ink)',bd:'color-mix(in srgb,var(--mut) 55%,var(--line))',bw:'1px',fw:'500'}],['Сильный',{ct:'var(--ink)',tx:'var(--ink)',bd:'var(--mut)',bw:'2px',fw:'600'}]];
@@ -2281,6 +2285,7 @@ function applyLook(){
   const ks=Math.max(0,Math.min(KBS.length-1,+L.kbs||0)),kc=KBC[Math.max(0,Math.min(KBC.length-1,(+L.kbc||1)-1))][1];
   root.style.setProperty('--kb-fs',(0.82*KBS[ks]/ KBS[2]*1).toFixed(3)+'rem');
   const cs=Math.max(0,Math.min(KBS.length-1,+L.cms||0)),cc=CMC[Math.max(0,Math.min(CMC.length-1,(+L.cmc||1)-1))][1];
+  root.style.setProperty('--kbf',L.kf==='2'?'ui-monospace,Consolas,"Courier New",monospace':'system-ui,"Segoe UI",Roboto,Arial,sans-serif');
   root.style.setProperty('--cdc',(CXL.find(x=>x[0]===L.cx)||CXL[1])[2]);
   root.style.setProperty('--cm-k',(KBS[cs]/KBS[2]).toFixed(3));
   root.style.setProperty('--cm-ct',cc.ct);root.style.setProperty('--cm-tx',cc.tx);root.style.setProperty('--cm-bd',cc.bd);root.style.setProperty('--cm-bw',cc.bw);root.style.setProperty('--cm-fw',cc.fw);
@@ -2296,9 +2301,9 @@ function openLookMenu(){
   const draw=()=>{
     el.innerHTML='<div class="vh">Тема</div><div class="segs">'+THEMES.map(([k,l])=>'<button class="seg'+(L.theme===k?' on':'')+'" data-th="'+k+'">'+l+'</button>').join('')+'</div>'+
       '<div class="vh">Размер текста</div><div class="sizestep"><button class="btn" data-step="-1" aria-label="Меньше">A−</button><span>'+(SIZES.find(x=>x[0]===L.size)||SIZES[3])[2]+' px</span><button class="btn" data-step="1" aria-label="Больше">A+</button></div><div class="segs">'+SIZES.map(([k,l])=>'<button class="seg'+(L.size===k?' on':'')+'" data-sz="'+k+'">'+l+'</button>').join('')+'</div>'+
-      '<div class="vh">Карточка записи в списке</div><div class="hint" style="margin:0 0 4px">Сколько строк текста показывать</div><div class="segs">'+CLS.map(([k,l])=>'<button class="seg'+(L.cl===k?' on':'')+'" data-cl="'+k+'">'+l+'</button>').join('')+'</div><div class="hint" style="margin:8px 0 4px">Цвет текста на карточке (градация серого)</div><div class="segs">'+CXL.map(([k,l])=>'<button class="seg'+(L.cx===k?' on':'')+'" data-cx="'+k+'">'+l+'</button>').join('')+'</div><div class="hint" style="margin:8px 0 4px">Высота карточки (отступы)</div><div class="segs">'+CDS.map(([k,l])=>'<button class="seg'+(L.cd===k?' on':'')+'" data-cd="'+k+'">'+l+'</button>').join('')+'</div>'+
+      '<div class="vh">Карточка записи в списке</div><div class="lsub">Сколько строк текста показывать</div><div class="segs">'+CLS.map(([k,l])=>'<button class="seg'+(L.cl===k?' on':'')+'" data-cl="'+k+'">'+l+'</button>').join('')+'</div><div class="lsub">Цвет текста на карточке (градация серого)</div><div class="segs">'+CXL.map(([k,l])=>'<button class="seg'+(L.cx===k?' on':'')+'" data-cx="'+k+'">'+l+'</button>').join('')+'</div><div class="lsub">Высота карточки (отступы)</div><div class="segs">'+CDS.map(([k,l])=>'<button class="seg'+(L.cd===k?' on':'')+'" data-cd="'+k+'">'+l+'</button>').join('')+'</div>'+
       '<div class="vh">Горячие клавиши в тексте</div><div class="sizestep"><button class="btn" data-ks="-1" aria-label="Клавиши меньше">A−</button><span>'+KBS_L[Math.max(0,Math.min(KBS.length-1,+L.kbs||0))]+'</span><button class="btn" data-ks="1" aria-label="Клавиши больше">A+</button><span class="kbprev"><kbd>Ctrl</kbd><span class="plus">+</span><kbd>Shift</kbd><span class="plus">+</span><kbd>B</kbd></span></div>'+
-      '<div class="segs">'+KBC.map((c,i)=>'<button class="seg'+((+L.kbc||2)===i+1?' on':'')+'" data-kc="'+(i+1)+'">'+c[0]+'</button>').join('')+'</div><p class="hint">Размер и чёткость рамки клавиш. Подходит под каждое устройство отдельно.</p>'+
+      '<div class="segs">'+KBC.map((c,i)=>'<button class="seg'+((+L.kbc||2)===i+1?' on':'')+'" data-kc="'+(i+1)+'">'+c[0]+'</button>').join('')+'</div><div class="lsub">Шрифт клавиш</div><div class="segs">'+[['1','Обычный'],['2','Моноширинный']].map(([k,l])=>'<button class="seg'+(L.kf===k?' on':'')+'" data-kf="'+k+'">'+l+'</button>').join('')+'</div><p class="hint">Размер, шрифт и чёткость рамки клавиш. «Обычный» выглядит одинаково на телефоне и компьютере, у моноширинного вид зависит от шрифтов устройства.</p>'+
       '<div class="vh">Команды и код</div><div class="sizestep"><button class="btn" data-cs="-1" aria-label="Команды меньше">A−</button><span>'+KBS_L[Math.max(0,Math.min(KBS.length-1,+L.cms||0))]+'</span><button class="btn" data-cs="1" aria-label="Команды больше">A+</button><code class="ic cmprev">git status</code></div>'+
       '<div class="segs">'+CMC.map((c,i)=>'<button class="seg'+((+L.cmc||2)===i+1?' on':'')+'" data-cc="'+(i+1)+'">'+c[0]+'</button>').join('')+'</div><p class="hint">Размер и чёткость команд на карточке, в просмотре и в тексте записи.</p>'+
       '<div class="vh">Цвет акцента</div><div class="swr">'+ACCENTS.map(a=>'<button class="sw'+(L.accent===a[0]?' on':'')+'" data-ac="'+a[0]+'" title="'+a[1]+'" aria-label="'+a[1]+'" style="background:'+a[2]+'"></button>').join('')+
@@ -2314,6 +2319,7 @@ function openLookMenu(){
     const b=e.target.closest('button');if(!b)return;
     if(b.dataset.cl){L.cl=b.dataset.cl}
     else if(b.dataset.cd){L.cd=b.dataset.cd}
+    else if(b.dataset.kf){L.kf=b.dataset.kf}
     else if(b.dataset.cx){L.cx=b.dataset.cx}
     else if(b.dataset.cs){L.cms=String(Math.max(0,Math.min(KBS.length-1,(+L.cms||0)+ +b.dataset.cs)))}
     else if(b.dataset.cc){L.cmc=b.dataset.cc}
@@ -2665,7 +2671,7 @@ async function syncNow(){
 }
 function syncSettingsNode(){
   const cfg=syncCfg(),box=document.createElement('div');box.className='sybox';
-  box.innerHTML='<h4 style="margin:18px 0 4px">Синхронизация через GitHub</h4><p class="hint">Телефон и компьютер обмениваются записями через ваш <b>приватный</b> репозиторий по кнопке ⟳ в шапке или пункту меню «Синхронизировать». Подключение общее для всех ваших приложений на этом сайте. Первую синхронизацию делайте на устройстве, где больше данных, потом на втором.</p>'+
+  box.innerHTML='<div class="vh">Синхронизация через GitHub</div><p class="hint">Телефон и компьютер обмениваются записями через ваш <b>приватный</b> репозиторий по кнопке ⟳ в шапке или пункту меню «Синхронизировать». Подключение общее для всех ваших приложений на этом сайте. Первую синхронизацию делайте на устройстве, где больше данных, потом на втором.</p>'+
     '<label class="hint">Репозиторий (имя/репозиторий)</label><input class="inp repo" placeholder="mrtekhnik/sync" autocomplete="off" autocapitalize="off" spellcheck="false">'+
     '<label class="hint">Токен доступа</label><input class="inp tok" type="password" placeholder="github_pat_…" autocomplete="off" autocapitalize="off" spellcheck="false">'+
     '<div class="row2"><button class="btn sy1">Сохранить и проверить</button><button class="btn sy0">Отключить</button></div><p class="hint sst"></p>'+
