@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.29 -->
+<!-- Моя техническая база, версия 1.30 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -241,9 +241,9 @@ body.nofab:not(.selon) #top{bottom:16px}
 .ver{margin-top:14px;font-size:.8rem;color:var(--mut)}
 .edw .pvbox{margin-top:6px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px;background:var(--surf);white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto;font-size:.95rem}
 .pvbox .pvh{color:var(--mut);font-style:italic}
-.pvt.on{background:var(--acc);color:var(--accink)}
+.pvs.on,.pvt.on{background:var(--acc);color:var(--accink)}
 @media(min-width:900px){.edw.pv{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}.edw.pv .pvbox{margin-top:0;min-height:44px}}
-.tools{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.tools{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;position:sticky;bottom:0;z-index:3;background:var(--surf);padding:6px 0;border-top:1px solid var(--line)}
 .tools .fm{min-width:38px;padding:5px 9px}
 span.sz-p1{font-size:1.3em}span.sz-p2{font-size:1.7em;line-height:1.2}span.sz-m1{font-size:.85em}span.sz-m2{font-size:.7em}
 mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
@@ -303,7 +303,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.29';
+const APP_VERSION='1.30';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -1722,7 +1722,7 @@ function openForm(id,ctx){
   if(e){opts.forEach(([k])=>{if(k==='group'?(e.groupId&&gs.some(g=>g.id===e.groupId)):(Array.isArray(e[k])?e[k].length:e[k]))shown.add(k)})}
   const body=document.createElement('div');
   const wrap=(k,l,inner)=>'<div class="fld opt" data-o="'+k+'" hidden><label>'+(OPT_LBL[k]||l)+'<button type="button" class="btn lnk" data-rm="'+k+'">убрать</button></label>'+inner+'</div>';
-  const tools='<div class="tools"><button type="button" class="btn sm pvt" data-ins="pv" title="Показать или скрыть предпросмотр без значков разметки" aria-pressed="false">👁 Вид</button><button type="button" class="btn sm" data-ins="keys">⌨ Вставить клавиши</button><button type="button" class="btn sm" data-ins="code">‹/› Команда</button><button type="button" class="btn sm fm" data-ins="b" title="Жирный" aria-label="Жирный"><b>Ж</b></button><button type="button" class="btn sm fm" data-ins="i" title="Курсив" aria-label="Курсив"><i>К</i></button><button type="button" class="btn sm fm" data-ins="h" title="Выделение маркером" aria-label="Выделение маркером"><mark class="hlt">М</mark></button><button type="button" class="btn sm fm" data-ins="s" title="Зачёркнутый" aria-label="Зачёркнутый"><s>З</s></button><button type="button" class="btn sm fm" data-ins="big" title="Крупнее (нажмите ещё раз — ещё крупнее)" aria-label="Крупнее">A+</button><button type="button" class="btn sm fm" data-ins="small" title="Мельче (нажмите ещё раз — ещё мельче)" aria-label="Мельче">A−</button><button type="button" class="btn sm fm" data-ins="ul" title="Маркированный список" aria-label="Маркированный список">• список</button></div>';
+  const tools='<div class="tools"><button type="button" class="btn sm pvt" data-ins="pv" title="Показать или скрыть предпросмотр без значков разметки" aria-pressed="false">👁 Вид</button><button type="button" class="btn sm pvs" data-ins="sync" title="Синхронная прокрутка текста и предпросмотра" aria-pressed="true">⇅ Синхр.</button><button type="button" class="btn sm" data-ins="keys">⌨ Вставить клавиши</button><button type="button" class="btn sm" data-ins="code">‹/› Команда</button><button type="button" class="btn sm fm" data-ins="b" title="Жирный" aria-label="Жирный"><b>Ж</b></button><button type="button" class="btn sm fm" data-ins="i" title="Курсив" aria-label="Курсив"><i>К</i></button><button type="button" class="btn sm fm" data-ins="h" title="Выделение маркером" aria-label="Выделение маркером"><mark class="hlt">М</mark></button><button type="button" class="btn sm fm" data-ins="s" title="Зачёркнутый" aria-label="Зачёркнутый"><s>З</s></button><button type="button" class="btn sm fm" data-ins="big" title="Крупнее (нажмите ещё раз — ещё крупнее)" aria-label="Крупнее">A+</button><button type="button" class="btn sm fm" data-ins="small" title="Мельче (нажмите ещё раз — ещё мельче)" aria-label="Мельче">A−</button><button type="button" class="btn sm fm" data-ins="ul" title="Маркированный список" aria-label="Маркированный список">• список</button></div>';
   const inner={
     hotkey:'<div data-hk></div>',
     command:'<input data-f="command" autocomplete="off" autocapitalize="off" spellcheck="false">',
@@ -1748,9 +1748,13 @@ function openForm(id,ctx){
   const pvOn=()=>S.settings.edPv===undefined?window.innerWidth>=700:!!S.settings.edPv;
   const pvDraw=t=>{const bx=t.parentNode.querySelector('.pvbox'),on=pvOn();if(!bx)return;
     bx.hidden=!on;t.parentNode.classList.toggle('pv',on);
+    bx.style.height=on&&t.parentNode.classList.contains('pv')&&innerWidth>=900?t.offsetHeight+'px':'';
     if(on){const v=t.value;bx.innerHTML=v.trim()?rich(v,0,1):'<span class="pvh">Так запись будет выглядеть при просмотре</span>'}};
-  const pvAll=()=>{$$('.edw textarea',body).forEach(t=>{if(!t.closest('.opt').hidden)pvDraw(t)});$$('.pvt',body).forEach(b=>b.setAttribute('aria-pressed',pvOn()));$$('.pvt',body).forEach(b=>b.classList.toggle('on',pvOn()))};
+  const syOn=()=>S.settings.edSync!==false;
+  const pvAll=()=>{$$('.pvs',body).forEach(b=>{b.setAttribute('aria-pressed',syOn());b.classList.toggle('on',syOn())});$$('.edw textarea',body).forEach(t=>{if(!t.closest('.opt').hidden)pvDraw(t)});$$('.pvt',body).forEach(b=>b.setAttribute('aria-pressed',pvOn()));$$('.pvt',body).forEach(b=>b.classList.toggle('on',pvOn()))};
   $$('textarea',body).forEach(t=>t.addEventListener('input',()=>{fit(t);pvDraw(t)}));
+  {let busy=0;const lnk=(a,b)=>a.addEventListener('scroll',()=>{if(!syOn()||busy||b.hidden)return;const m=a.scrollHeight-a.clientHeight;if(m<=0&&b.scrollHeight<=b.clientHeight)return;busy=1;b.scrollTop=m>0?a.scrollTop/m*(b.scrollHeight-b.clientHeight):0;requestAnimationFrame(()=>busy=0)});
+   $$('.edw',body).forEach(w=>{const t=w.querySelector('textarea'),b=w.querySelector('.pvbox');lnk(t,b);lnk(b,t)})}
   $$('textarea[data-f=desc],textarea[data-f=steps],textarea[data-f=note]',body).forEach(t=>t.addEventListener('paste',ev=>{
     const txt=(ev.clipboardData||window.clipboardData).getData('text');
     if(!txt)return;
@@ -1771,6 +1775,7 @@ function openForm(id,ctx){
     if(mo){moreOpen=!moreOpen;refresh()}
     else if(ins){
       const ta=$('textarea',ins.closest('.opt'));
+      if(ins.dataset.ins==='sync'){S.settings.edSync=!syOn();save();pvAll();return}
       if(ins.dataset.ins==='pv'){S.settings.edPv=!pvOn();save();pvAll();return}
       if(ins.dataset.ins==='keys'){const k=await pickKeys('','Вставить клавиши в текст','Вставить');if(k)insertAt(ta,'[['+k+']]')}
       else if(ins.dataset.ins==='code')wrapCode(ta);
