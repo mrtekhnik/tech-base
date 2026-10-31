@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.33 -->
+<!-- Моя техническая база, версия 1.34 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -30,8 +30,10 @@ button{cursor:pointer}
 .search.has .clr{display:block}
 .sbar{background:var(--surf);border-bottom:1px solid var(--line)}
 .sbar .row1{padding:8px 10px;max-width:var(--wmain,1500px);margin:0 auto}
-.row0{display:flex;align-items:center;gap:2px;padding:2px 6px 0 14px}
-.ttl{flex:1;min-width:0;font-weight:700;font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row0{display:flex;align-items:center;gap:4px;padding:8px 8px 4px 14px}
+.top .ibtn{width:46px;height:46px;font-size:24px}
+.top .ibtn svg{width:26px;height:26px}
+.ttl{flex:1;min-width:0;font-weight:700;font-size:1.3rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ibtn[hidden],.sb[hidden]{display:none}
 .ibtn svg,.tdrop svg{display:block;margin:auto}
 main.wide{max-width:var(--wmain,1500px)}
@@ -160,7 +162,7 @@ main{max-width:var(--wmain,860px);margin:0 auto;padding:12px 10px}
 kbd{font:var(--kb-fw,600) var(--kb-fs,.82rem) ui-monospace,Consolas,"Courier New",monospace;color:var(--kb-tx,var(--ink));background:var(--key);border:1px solid var(--kb-bd,var(--line));border-bottom-width:var(--kb-bw,2px);border-radius:5px;padding:.1em .5em}
 .txt .cpyb,.c-desc .cpyb{padding:0 1px;display:inline;vertical-align:baseline}
 .c-cmd{font:var(--cm-fw,400) calc(.85rem*var(--cm-k,1)) ui-monospace,Consolas,monospace;color:var(--cm-ct,var(--mut));margin-top:4px;overflow-wrap:anywhere}
-.c-desc{color:var(--mut);font-size:.92rem;margin-top:3px;display:-webkit-box;-webkit-line-clamp:var(--cl,3);-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;white-space:pre-wrap}
+.c-desc{color:var(--cdc,var(--mut));font-size:.92rem;margin-top:3px;display:-webkit-box;-webkit-line-clamp:var(--cl,3);-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;white-space:pre-wrap}
 .c-loc{font-size:.8rem;color:var(--mut);margin-top:5px}
 .c-act{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
 mark{background:var(--mark);color:inherit;border-radius:2px}
@@ -241,6 +243,7 @@ body.nofab:not(.selon) #top{bottom:16px}
 .ver{margin-top:14px;font-size:.8rem;color:var(--mut)}
 .edw .pvbox{position:relative;margin-top:6px;padding:9px 10px;border:1px dashed var(--line);border-radius:8px;background:var(--surf);white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto;font-size:1rem;line-height:1.4}
 .pvbox .pvh{color:var(--mut);font-style:italic}
+.sheet.fs .sheet-body::after{content:'';display:block;height:90px}
 .pvs.on,.pvt.on{background:var(--acc);color:var(--accink)}
 @media(min-width:900px){.edw.pv{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}.edw.pv .pvbox{margin-top:0;min-height:44px}}
 .tools{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;position:sticky;bottom:0;z-index:3;background:var(--surf);padding:6px 0;border-top:1px solid var(--line)}
@@ -303,7 +306,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.33';
+const APP_VERSION='1.34';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -1538,6 +1541,19 @@ function wrapKeysInText(t){
     return KSTRICT(k)?'[['+k+']]':m;
   });
 }
+function caretFollow(t){
+  requestAnimationFrame(()=>{
+    const sb=t.closest('.sheet-body');if(!sb||t.selectionStart==null)return;
+    const cs=getComputedStyle(t),m=document.createElement('div');
+    m.style.cssText='position:absolute;visibility:hidden;left:-9999px;top:0;box-sizing:border-box;white-space:pre-wrap;overflow-wrap:break-word;width:'+t.clientWidth+'px;padding:'+cs.padding+';font:'+cs.font+';letter-spacing:'+cs.letterSpacing;
+    m.textContent=t.value.slice(0,t.selectionStart);const mk=document.createElement('span');mk.textContent='\u200b';m.appendChild(mk);
+    document.body.appendChild(m);const lh=parseFloat(cs.lineHeight)||22,y=mk.offsetTop;m.remove();
+    const r=t.getBoundingClientRect(),inT=Math.max(0,Math.min(t.clientHeight-lh,y-t.scrollTop));
+    const top=r.top+inT,bot=top+lh+14,b=sb.getBoundingClientRect(),tl=t.closest('.opt'),tools=tl&&tl.querySelector('.tools'),th=tools?tools.offsetHeight:0;
+    const lim=b.bottom-th-6;
+    if(bot>lim)sb.scrollTop+=bot-lim;else if(top<b.top+6)sb.scrollTop-=b.top+6-top;
+  });
+}
 function insertAt(ta,text,caretBack){
   const s0=ta.selectionStart==null?ta.value.length:ta.selectionStart,e0=ta.selectionEnd==null?s0:ta.selectionEnd;
   ta.value=ta.value.slice(0,s0)+text+ta.value.slice(e0);
@@ -1752,7 +1768,7 @@ function openForm(id,ctx){
     if(on){const v=t.value;bx.innerHTML=v.trim()?v.split('\n').map(l=>'<div class="pl">'+(l?rich(l,0,1):'\u200b')+'</div>').join(''):'<span class="pvh">Так запись будет выглядеть при просмотре</span>'}};
   const syOn=()=>S.settings.edSync!==false;
   const pvAll=()=>{$$('.pvs',body).forEach(b=>{b.setAttribute('aria-pressed',syOn());b.classList.toggle('on',syOn())});$$('.edw textarea',body).forEach(t=>{if(!t.closest('.opt').hidden)pvDraw(t)});$$('.pvt',body).forEach(b=>b.setAttribute('aria-pressed',pvOn()));$$('.pvt',body).forEach(b=>b.classList.toggle('on',pvOn()))};
-  $$('textarea',body).forEach(t=>t.addEventListener('input',()=>{fit(t);pvDraw(t)}));
+  $$('textarea',body).forEach(t=>{t.addEventListener('input',()=>{fit(t);pvDraw(t);caretFollow(t)});t.addEventListener('keyup',ev=>{if(/^(Arrow|Page|Home|End)/.test(ev.key))caretFollow(t)});t.addEventListener('click',()=>caretFollow(t))});
   {
    const tTops=t=>{const cs=getComputedStyle(t),m=document.createElement('div');
      m.style.cssText='position:absolute;visibility:hidden;left:-9999px;top:0;box-sizing:border-box;white-space:pre-wrap;overflow-wrap:break-word;width:'+t.clientWidth+'px;padding:'+cs.padding+';font:'+cs.font+';letter-spacing:'+cs.letterSpacing;
@@ -1882,9 +1898,9 @@ function openMenu(){
       '<button data-m="tabsmgr">Настройки вкладок</button><button data-m="look">Оформление</button>'+
       '<button data-m="trash">Корзина<span class="n">'+cnt('trash')+'</span></button>'+
       '<button data-m="export" class="mhl">Экспорт в файл (резервная копия)</button>'+
-      '<button data-m="import">Импорт из файла</button><button data-m="sync">⟳ Синхронизировать</button><button data-m="update">Проверить обновление</button>'+
+      '<button data-m="import">Импорт из файла</button>'+
       '<button data-more>'+(more?'Свернуть ▴':'Ещё ▾')+'</button>'+
-      (more?'<button data-m="settings">Настройки и резервная копия</button><button data-m="text">Экспорт в текстовый файл</button>':'')+
+      (more?'<button data-m="sync">⟳ Синхронизировать</button><button data-m="update">Проверить обновление</button><button data-m="settings">Настройки и резервная копия</button><button data-m="text">Экспорт в текстовый файл</button>':'')+
       '<div class="ver">Версия программы: '+APP_VERSION+'<br>Последний экспорт: '+(S.settings.lastExport?fmt(S.settings.lastExport):'—')+'<br>Последний импорт: '+(S.settings.lastImport?fmt(S.settings.lastImport):'—')+'<br>Синхронизация: '+(!syncCfg()?'не настроена':syncSt().lastSync?fmt(syncSt().lastSync):'ещё не было')+'</div>';
   };
   draw();
@@ -2222,7 +2238,7 @@ async function massMerge(){
 })();
 
 /* ===== Оформление ===== */
-const LOOK_DEF={theme:'auto',size:'m',accent:'blue',custom:'#245B8F',tint:'none',kbs:'2',kbc:'2',cms:'2',cmc:'2',cl:'3',cd:'m'};
+const LOOK_DEF={theme:'auto',size:'m',accent:'blue',custom:'#245B8F',tint:'none',kbs:'2',kbc:'2',cms:'2',cmc:'2',cl:'3',cd:'m',cx:'2'};
 const CLS=[['1','1 строка'],['2','2 строки'],['3','3 строки'],['5','5 строк'],['8','8 строк'],['99','Весь текст']];
 const CDS=[['s','Компактная',4],['m','Обычная',10],['l','Свободная',16]];
 const CMC=[['Минимум',{ct:'color-mix(in srgb,var(--mut) 75%,var(--surf))',tx:'color-mix(in srgb,var(--ink) 75%,var(--surf))',bd:'var(--line)',bw:'1px',fw:'400'}],['Мягкий',{ct:'var(--mut)',tx:'inherit',bd:'var(--line)',bw:'1px',fw:'400'}],['Средний',{ct:'color-mix(in srgb,var(--ink) 60%,var(--mut))',tx:'var(--ink)',bd:'color-mix(in srgb,var(--mut) 55%,var(--line))',bw:'1px',fw:'500'}],['Сильный',{ct:'var(--ink)',tx:'var(--ink)',bd:'var(--mut)',bw:'2px',fw:'600'}]];
@@ -2243,6 +2259,7 @@ const ACCENTS=[['blue','Синий','#245B8F','#6EA6DA'],['teal','Бирюзов
 const TINTS=[['none','По теме',0],['warm','Тёплый',38],['cool','Холодный',210],['green','Зелёный',140],['violet','Сиреневый',270],['rose','Розовый',340]];
 function lset(){const st=S.settings;if(!st.look||typeof st.look!=='object')st.look={};const L=st.look;for(const k in LOOK_DEF)if(typeof L[k]!=='string')L[k]=LOOK_DEF[k];if(!/^#[0-9a-f]{6}$/i.test(L.custom))L.custom=LOOK_DEF.custom;return L}
 function lum(hex){const c=[1,3,5].map(i=>parseInt(hex.substr(i,2),16)/255).map(v=>v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4));return 0.2126*c[0]+0.7152*c[1]+0.0722*c[2]}
+const CXL=[['1','Бледнее','color-mix(in srgb,var(--mut) 65%,var(--surf))'],['2','Стандарт','var(--mut)'],['3','Темнее','color-mix(in srgb,var(--mut) 45%,var(--ink))'],['4','Чёрный','var(--ink)']];
 function applyLook(){
   const L=lset(),root=document.documentElement;
   let sysDark=false;try{sysDark=!!(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches)}catch(e){}
@@ -2264,6 +2281,7 @@ function applyLook(){
   const ks=Math.max(0,Math.min(KBS.length-1,+L.kbs||0)),kc=KBC[Math.max(0,Math.min(KBC.length-1,(+L.kbc||1)-1))][1];
   root.style.setProperty('--kb-fs',(0.82*KBS[ks]/ KBS[2]*1).toFixed(3)+'rem');
   const cs=Math.max(0,Math.min(KBS.length-1,+L.cms||0)),cc=CMC[Math.max(0,Math.min(CMC.length-1,(+L.cmc||1)-1))][1];
+  root.style.setProperty('--cdc',(CXL.find(x=>x[0]===L.cx)||CXL[1])[2]);
   root.style.setProperty('--cm-k',(KBS[cs]/KBS[2]).toFixed(3));
   root.style.setProperty('--cm-ct',cc.ct);root.style.setProperty('--cm-tx',cc.tx);root.style.setProperty('--cm-bd',cc.bd);root.style.setProperty('--cm-bw',cc.bw);root.style.setProperty('--cm-fw',cc.fw);
   root.style.setProperty('--cl',CLS.some(x=>x[0]===L.cl)?L.cl:'3');
@@ -2278,7 +2296,7 @@ function openLookMenu(){
   const draw=()=>{
     el.innerHTML='<div class="vh">Тема</div><div class="segs">'+THEMES.map(([k,l])=>'<button class="seg'+(L.theme===k?' on':'')+'" data-th="'+k+'">'+l+'</button>').join('')+'</div>'+
       '<div class="vh">Размер текста</div><div class="sizestep"><button class="btn" data-step="-1" aria-label="Меньше">A−</button><span>'+(SIZES.find(x=>x[0]===L.size)||SIZES[3])[2]+' px</span><button class="btn" data-step="1" aria-label="Больше">A+</button></div><div class="segs">'+SIZES.map(([k,l])=>'<button class="seg'+(L.size===k?' on':'')+'" data-sz="'+k+'">'+l+'</button>').join('')+'</div>'+
-      '<div class="vh">Карточка записи в списке</div><div class="hint" style="margin:0 0 4px">Сколько строк текста показывать</div><div class="segs">'+CLS.map(([k,l])=>'<button class="seg'+(L.cl===k?' on':'')+'" data-cl="'+k+'">'+l+'</button>').join('')+'</div><div class="hint" style="margin:8px 0 4px">Высота карточки (отступы)</div><div class="segs">'+CDS.map(([k,l])=>'<button class="seg'+(L.cd===k?' on':'')+'" data-cd="'+k+'">'+l+'</button>').join('')+'</div>'+
+      '<div class="vh">Карточка записи в списке</div><div class="hint" style="margin:0 0 4px">Сколько строк текста показывать</div><div class="segs">'+CLS.map(([k,l])=>'<button class="seg'+(L.cl===k?' on':'')+'" data-cl="'+k+'">'+l+'</button>').join('')+'</div><div class="hint" style="margin:8px 0 4px">Цвет текста на карточке (градация серого)</div><div class="segs">'+CXL.map(([k,l])=>'<button class="seg'+(L.cx===k?' on':'')+'" data-cx="'+k+'">'+l+'</button>').join('')+'</div><div class="hint" style="margin:8px 0 4px">Высота карточки (отступы)</div><div class="segs">'+CDS.map(([k,l])=>'<button class="seg'+(L.cd===k?' on':'')+'" data-cd="'+k+'">'+l+'</button>').join('')+'</div>'+
       '<div class="vh">Горячие клавиши в тексте</div><div class="sizestep"><button class="btn" data-ks="-1" aria-label="Клавиши меньше">A−</button><span>'+KBS_L[Math.max(0,Math.min(KBS.length-1,+L.kbs||0))]+'</span><button class="btn" data-ks="1" aria-label="Клавиши больше">A+</button><span class="kbprev"><kbd>Ctrl</kbd><span class="plus">+</span><kbd>Shift</kbd><span class="plus">+</span><kbd>B</kbd></span></div>'+
       '<div class="segs">'+KBC.map((c,i)=>'<button class="seg'+((+L.kbc||2)===i+1?' on':'')+'" data-kc="'+(i+1)+'">'+c[0]+'</button>').join('')+'</div><p class="hint">Размер и чёткость рамки клавиш. Подходит под каждое устройство отдельно.</p>'+
       '<div class="vh">Команды и код</div><div class="sizestep"><button class="btn" data-cs="-1" aria-label="Команды меньше">A−</button><span>'+KBS_L[Math.max(0,Math.min(KBS.length-1,+L.cms||0))]+'</span><button class="btn" data-cs="1" aria-label="Команды больше">A+</button><code class="ic cmprev">git status</code></div>'+
@@ -2296,6 +2314,7 @@ function openLookMenu(){
     const b=e.target.closest('button');if(!b)return;
     if(b.dataset.cl){L.cl=b.dataset.cl}
     else if(b.dataset.cd){L.cd=b.dataset.cd}
+    else if(b.dataset.cx){L.cx=b.dataset.cx}
     else if(b.dataset.cs){L.cms=String(Math.max(0,Math.min(KBS.length-1,(+L.cms||0)+ +b.dataset.cs)))}
     else if(b.dataset.cc){L.cmc=b.dataset.cc}
     else if(b.dataset.ks){L.kbs=String(Math.max(0,Math.min(KBS.length-1,(+L.kbs||0)+ +b.dataset.ks)))}
