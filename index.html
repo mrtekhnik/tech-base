@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.32 -->
+<!-- Моя техническая база, версия 1.33 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -303,7 +303,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.32';
+const APP_VERSION='1.33';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -1753,18 +1753,18 @@ function openForm(id,ctx){
   const syOn=()=>S.settings.edSync!==false;
   const pvAll=()=>{$$('.pvs',body).forEach(b=>{b.setAttribute('aria-pressed',syOn());b.classList.toggle('on',syOn())});$$('.edw textarea',body).forEach(t=>{if(!t.closest('.opt').hidden)pvDraw(t)});$$('.pvt',body).forEach(b=>b.setAttribute('aria-pressed',pvOn()));$$('.pvt',body).forEach(b=>b.classList.toggle('on',pvOn()))};
   $$('textarea',body).forEach(t=>t.addEventListener('input',()=>{fit(t);pvDraw(t)}));
-  {let busy=0;
+  {
    const tTops=t=>{const cs=getComputedStyle(t),m=document.createElement('div');
      m.style.cssText='position:absolute;visibility:hidden;left:-9999px;top:0;box-sizing:border-box;white-space:pre-wrap;overflow-wrap:break-word;width:'+t.clientWidth+'px;padding:'+cs.padding+';font:'+cs.font+';letter-spacing:'+cs.letterSpacing;
      m.innerHTML=t.value.split('\n').map(l=>'<div>'+(l?esc(l):'\u200b')+'</div>').join('');
      t.parentNode.appendChild(m);const a=[...m.children].map(c=>c.offsetTop);a.push(m.scrollHeight);m.remove();return a};
    const pTops=b=>{const a=[...b.children].map(c=>c.offsetTop);a.push(b.scrollHeight);return a};
    const tops=el=>el.tagName==='TEXTAREA'?tTops(el):pTops(el);
-   const lnk=(a,b)=>a.addEventListener('scroll',()=>{if(!syOn()||busy||b.hidden)return;
+   const lnk=(a,b)=>a.addEventListener('scroll',()=>{if(a._exp!=null&&Math.abs(a.scrollTop-a._exp)<2){a._exp=null;return}a._exp=null;if(!syOn()||b.hidden)return;
      const ma=a.scrollHeight-a.clientHeight,mb=b.scrollHeight-b.clientHeight;if(ma<=0&&mb<=0)return;
      let y=a.scrollTop,r;
      if(ma>0&&y>=ma-1)r=mb;else{const A=tops(a),B=tops(b);if(A.length!==B.length){r=ma>0?y/ma*mb:0}else{let i=0;while(i<A.length-2&&A[i+1]<=y)i++;const d=A[i+1]-A[i];r=B[i]+(d>0?(y-A[i])/d:0)*(B[i+1]-B[i])}}
-     busy=1;b.scrollTop=Math.max(0,Math.min(mb,r));requestAnimationFrame(()=>busy=0)});
+     b.scrollTop=Math.max(0,Math.min(mb,r));b._exp=b.scrollTop;clearTimeout(b._et);b._et=setTimeout(()=>{b._exp=null},150)});
    $$('.edw',body).forEach(w=>{const t=w.querySelector('textarea'),b=w.querySelector('.pvbox');lnk(t,b);lnk(b,t)})}
   $$('textarea[data-f=desc],textarea[data-f=steps],textarea[data-f=note]',body).forEach(t=>t.addEventListener('paste',ev=>{
     const txt=(ev.clipboardData||window.clipboardData).getData('text');
