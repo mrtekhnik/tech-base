@@ -3,7 +3,7 @@
    Воркер кэширует файлы программы, чтобы она открывалась без сети.
    Номер версии в CACHE подставляется сборкой автоматически. Новая версия ждёт,
    пока пользователь нажмёт «Обновить» в программе. */
-const CACHE = 'techbase-pwa-v1.35';
+const CACHE = 'techbase-pwa-v1.36';
 const FILES = [
   './', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png',
