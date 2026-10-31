@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.30 -->
+<!-- Моя техническая база, версия 1.31 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -239,7 +239,7 @@ body.nofab:not(.selon) #top{bottom:16px}
 .kc{min-width:42px;height:38px;padding:0 10px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;background:var(--key);font:600 .9rem ui-monospace,Consolas,monospace}
 .kc.on{background:var(--acc);color:var(--accink);border-color:var(--acc)}
 .ver{margin-top:14px;font-size:.8rem;color:var(--mut)}
-.edw .pvbox{margin-top:6px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px;background:var(--surf);white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto;font-size:.95rem}
+.edw .pvbox{margin-top:6px;padding:9px 10px;border:1px dashed var(--line);border-radius:8px;background:var(--surf);white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto;font-size:1rem;line-height:1.4}
 .pvbox .pvh{color:var(--mut);font-style:italic}
 .pvs.on,.pvt.on{background:var(--acc);color:var(--accink)}
 @media(min-width:900px){.edw.pv{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}.edw.pv .pvbox{margin-top:0;min-height:44px}}
@@ -303,7 +303,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.30';
+const APP_VERSION='1.31';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
