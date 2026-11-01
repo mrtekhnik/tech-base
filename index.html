@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.38 -->
+<!-- Моя техническая база, версия 1.39 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -316,7 +316,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.38';
+const APP_VERSION='1.39';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -834,7 +834,7 @@ function tabView(m){
   if(!total&&!hasG)h+='<div class="empty"><b>Здесь пока пусто</b>Нажмите «+», чтобы добавить первую запись, или создайте группу.</div>';
   if(mode==='cols'){
     const n=Math.min(4,Math.max(2,vset().cols|0||3)),seen=new Set(),blocks=[],loose=[];
-    const same=vset().loose==='rule',isG=[];
+    const same=vset().loose==='rule'||!hasG,isG=[];
     (map.get('')||[]).forEach(it=>{
       if(it.k==='e'){if(same){blocks.push(cardHTML(it.x,{reorder:false}));isG.push(0)}else loose.push(it)}
       else{blocks.push(groupBlockHTML(map,it.x,seen));isG.push(1)}
@@ -847,7 +847,7 @@ function tabView(m){
     }else blocks.forEach((b,i)=>cols[i%n].push(b));
     h+='<div class="colsgrid" style="--n:'+n+'">'+cols.map(c=>'<div class="colx">'+c.join('')+'</div>').join('')+'</div>';
   }else{
-    if(mode==='grid'&&vset().loose==='top'){const r0=map.get('')||[],lo=r0.filter(i=>i.k==='e');if(lo.length){h+='<div class="items loose colsloose" data-gid="">'+lo.map(it=>cardHTML(it.x,{reorder:false})).join('')+'</div>';map.set('',r0.filter(i=>i.k!=='e'))}}
+    if(mode==='grid'&&vset().loose==='top'&&hasG){const r0=map.get('')||[],lo=r0.filter(i=>i.k==='e');if(lo.length){h+='<div class="items loose colsloose" data-gid="">'+lo.map(it=>cardHTML(it.x,{reorder:false})).join('')+'</div>';map.set('',r0.filter(i=>i.k!=='e'))}}
     h+='<div class="items root" data-gid="">'+itemsHTML(map,'',new Set())+'</div>';
   }
   if(reorder)h+='<div class="rootend">Сюда — чтобы вынести из группы в корень вкладки</div>';
