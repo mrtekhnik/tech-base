@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.40 -->
+<!-- Моя техническая база, версия 1.41 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -42,6 +42,8 @@ main.m-grid.fc .card{break-inside:avoid;margin-bottom:8px}
 main.m-grid.fc .gblock,main.m-grid.fc .gempty{column-span:all}
 .lnk{color:var(--acc);text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}
 a.lnk:hover{text-decoration-thickness:2px}
+.cpt{background:var(--key);border-bottom:1px dashed var(--acc);border-radius:4px;padding:0 .25em}
+button.cpt{padding:0 .25em;display:inline;line-height:inherit}
 .cpyb{border:0;background:none;padding:3px 4px;border-radius:6px;cursor:pointer;text-align:left;font:inherit;color:inherit;max-width:100%}
 .cpyb:hover,.cpyb:focus-visible{background:var(--bg);outline:1px solid var(--line)}
 .vw .cmd .cpyb{flex:1;min-width:0}
@@ -316,7 +318,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.40';
+const APP_VERSION='1.41';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -589,7 +591,7 @@ function lk(t,nc){
 }
 function rich(text,nested,nc){
   if(!nested)text=text.replace(/^([ \t]*)[-•] (?=\S)/gm,'$1• ');
-  const re=/\[\[([^\[\]\n]{1,60})\]\]|`([^`\n]{1,200})`|\*\*([^*\n]+?)\*\*|~~([^~\n]+?)~~|==([^=\n]+?)==|(?<![*\w])\*([^*\s][^*\n]*?)\*(?![*\w])|\{(\+{1,2}|-{1,2})([^\n]+?)\7\}/g;let out='',last=0,m;
+  const re=/\[\[([^\[\]\n]{1,60})\]\]|`([^`\n]{1,200})`|\*\*([^*\n]+?)\*\*|~~([^~\n]+?)~~|==([^=\n]+?)==|(?<![*\w])\*([^*\s][^*\n]*?)\*(?![*\w])|\{(\+{1,2}|-{1,2})([^\n]+?)\7\}|\(\(([^()\n]+?)\)\)/g;let out='',last=0,m;
   while((m=re.exec(text))){
     out+=lk(text.slice(last,m.index),nc);
     if(m[1]!==undefined)out+=nc?keysHTML(m[1]):'<button type="button" class="cpyb" data-copy="'+esc(keysCopy(m[1]))+'" title="Нажмите, чтобы скопировать">'+keysHTML(m[1])+'</button>';
@@ -598,12 +600,13 @@ function rich(text,nested,nc){
     else if(m[4]!==undefined)out+='<s>'+rich(m[4],1,nc)+'</s>';
     else if(m[5]!==undefined)out+='<mark class="hlt">'+rich(m[5],1,nc)+'</mark>';
     else if(m[6]!==undefined)out+='<i>'+rich(m[6],1,nc)+'</i>';
+    else if(m[9]!==undefined)out+=nc?'<span class="cpt">'+rich(m[9],1,1)+'</span>':'<button type="button" class="cpyb cpt" data-copy="'+esc(plainFmt(m[9]))+'" title="Нажмите, чтобы скопировать">'+rich(m[9],1,1)+'</button>';
     else out+='<span class="sz sz-'+(m[7][0]==='+'?'p':'m')+m[7].length+'">'+rich(m[8],1,nc)+'</span>';
     last=re.lastIndex;
   }
   return out+lk(text.slice(last),nc);
 }
-function plainFmt(t){return t.replace(/\{(\+{1,2}|-{1,2})([^\n]+?)\1\}/g,'$2').replace(/\*\*([^*\n]+?)\*\*/g,'$1').replace(/~~([^~\n]+?)~~/g,'$1').replace(/==([^=\n]+?)==/g,'$1')}
+function plainFmt(t){return t.replace(/\(\(([^()\n]+?)\)\)/g,'$1').replace(/\{(\+{1,2}|-{1,2})([^\n]+?)\1\}/g,'$2').replace(/\*\*([^*\n]+?)\*\*/g,'$1').replace(/~~([^~\n]+?)~~/g,'$1').replace(/==([^=\n]+?)==/g,'$1')}
 function listSummary(e){
   const p=[];
   if((e.keylist||[]).length)p.push('Клавиш в списке: '+e.keylist.length);
@@ -1594,6 +1597,11 @@ function fmtText(ta,k){
     ta.value=ta.value.slice(0,s0)+t+ta.value.slice(e0);ta.focus();ta.setSelectionRange(s0,s0+t.length);ta.dispatchEvent(new Event('input',{bubbles:true}));
   }else insertAt(ta,m+m,m.length);
 }
+function wrapCp(ta){
+  const s0=ta.selectionStart||0,e0=ta.selectionEnd||0,sel=ta.value.slice(s0,e0).replace(/[()]/g,'');
+  if(sel.trim()){const t='(('+sel+'))';ta.value=ta.value.slice(0,s0)+t+ta.value.slice(e0);ta.focus();ta.setSelectionRange(s0+t.length,s0+t.length);ta.dispatchEvent(new Event('input',{bubbles:true}))}
+  else insertAt(ta,'(())',2);
+}
 function wrapCode(ta){
   const s0=ta.selectionStart||0,e0=ta.selectionEnd||0,sel=ta.value.slice(s0,e0);
   if(sel){ta.value=ta.value.slice(0,s0)+'`'+sel+'`'+ta.value.slice(e0);ta.focus();ta.setSelectionRange(e0+2,e0+2);ta.dispatchEvent(new Event('input',{bubbles:true}))}
@@ -1744,7 +1752,7 @@ function openForm(id,ctx){
   if(e){opts.forEach(([k])=>{if(k==='group'?(e.groupId&&gs.some(g=>g.id===e.groupId)):(Array.isArray(e[k])?e[k].length:e[k]))shown.add(k)})}
   const body=document.createElement('div');
   const wrap=(k,l,inner)=>'<div class="fld opt" data-o="'+k+'" hidden><label>'+(OPT_LBL[k]||l)+'<button type="button" class="btn lnk" data-rm="'+k+'">убрать</button></label>'+inner+'</div>';
-  const tools='<div class="tools"><button type="button" class="btn sm pvt" data-ins="pv" title="Показать или скрыть предпросмотр без значков разметки" aria-pressed="false">👁 Вид</button><button type="button" class="btn sm pvs" data-ins="sync" title="Синхронная прокрутка текста и предпросмотра" aria-pressed="true">⇅ Синхр.</button><button type="button" class="btn sm" data-ins="keys">⌨ Вставить клавиши</button><button type="button" class="btn sm" data-ins="code">‹/› Команда</button><button type="button" class="btn sm fm" data-ins="b" title="Жирный" aria-label="Жирный"><b>Ж</b></button><button type="button" class="btn sm fm" data-ins="i" title="Курсив" aria-label="Курсив"><i>К</i></button><button type="button" class="btn sm fm" data-ins="h" title="Выделение маркером" aria-label="Выделение маркером"><mark class="hlt">М</mark></button><button type="button" class="btn sm fm" data-ins="s" title="Зачёркнутый" aria-label="Зачёркнутый"><s>З</s></button><button type="button" class="btn sm fm" data-ins="big" title="Крупнее (нажмите ещё раз — ещё крупнее)" aria-label="Крупнее">A+</button><button type="button" class="btn sm fm" data-ins="small" title="Мельче (нажмите ещё раз — ещё мельче)" aria-label="Мельче">A−</button><button type="button" class="btn sm fm" data-ins="ul" title="Маркированный список" aria-label="Маркированный список">• список</button></div>';
+  const tools='<div class="tools"><button type="button" class="btn sm pvt" data-ins="pv" title="Показать или скрыть предпросмотр без значков разметки" aria-pressed="false">👁 Вид</button><button type="button" class="btn sm pvs" data-ins="sync" title="Синхронная прокрутка текста и предпросмотра" aria-pressed="true">⇅ Синхр.</button><button type="button" class="btn sm" data-ins="keys">⌨ Вставить клавиши</button><button type="button" class="btn sm" data-ins="code">‹/› Команда</button><button type="button" class="btn sm" data-ins="cp" title="Выделенный фрагмент можно будет скопировать нажатием при просмотре">⧉ Копируемое</button><button type="button" class="btn sm fm" data-ins="b" title="Жирный" aria-label="Жирный"><b>Ж</b></button><button type="button" class="btn sm fm" data-ins="i" title="Курсив" aria-label="Курсив"><i>К</i></button><button type="button" class="btn sm fm" data-ins="h" title="Выделение маркером" aria-label="Выделение маркером"><mark class="hlt">М</mark></button><button type="button" class="btn sm fm" data-ins="s" title="Зачёркнутый" aria-label="Зачёркнутый"><s>З</s></button><button type="button" class="btn sm fm" data-ins="big" title="Крупнее (нажмите ещё раз — ещё крупнее)" aria-label="Крупнее">A+</button><button type="button" class="btn sm fm" data-ins="small" title="Мельче (нажмите ещё раз — ещё мельче)" aria-label="Мельче">A−</button><button type="button" class="btn sm fm" data-ins="ul" title="Маркированный список" aria-label="Маркированный список">• список</button></div>';
   const inner={
     hotkey:'<div data-hk></div>',
     command:'<input data-f="command" autocomplete="off" autocapitalize="off" spellcheck="false">',
@@ -1812,6 +1820,7 @@ function openForm(id,ctx){
       if(ins.dataset.ins==='pv'){S.settings.edPv=!pvOn();save();pvAll();return}
       if(ins.dataset.ins==='keys'){const k=await pickKeys('','Вставить клавиши в текст','Вставить');if(k)insertAt(ta,'[['+k+']]')}
       else if(ins.dataset.ins==='code')wrapCode(ta);
+      else if(ins.dataset.ins==='cp')wrapCp(ta);
       else fmtText(ta,ins.dataset.ins);
     }else if(a&&a.closest('.adds')){
       const k=a.dataset.add;shown.add(k);moreOpen=false;refresh();
