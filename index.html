@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.39 -->
+<!-- Моя техническая база, версия 1.40 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -316,7 +316,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.39';
+const APP_VERSION='1.40';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -365,7 +365,7 @@ function validate(d,strictApp){
   }
   return null;
 }
-function vset(){const st=S.settings;if(!st.view)st.view={mode:'one',cols:3,profile:'auto',fill:'rows'};if(!st.view.fill)st.view.fill='rows';if(!st.view.wm)st.view.wm='auto';if(!st.view.ws)st.view.ws='auto';if(!st.view.loose)st.view.loose='top';return st.view}
+function vset(){const st=S.settings;if(!st.view)st.view={mode:'one',cols:3,profile:'auto',fill:'rows'};if(!st.view.fill)st.view.fill='rows';if(!st.view.wm)st.view.wm='auto';if(!st.view.ws)st.view.ws='auto';if(!st.view.loose||!st.view.lm2){st.view.loose='rule';st.view.lm2=1}return st.view}
 const WM=[['auto','По режиму'],['700','700'],['860','860'],['1000','1000'],['1200','1200'],['1500','1500'],['full','Во всю ширину окна']];
 const WS=[['auto','Стандартная'],['560','560'],['680','680'],['800','800'],['960','960'],['1200','1200'],['full','Во всю ширину окна']];
 function applyWidths(){
