@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.37 -->
+<!-- Моя техническая база, версия 1.38 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -94,6 +94,12 @@ main.m-grid .gblock,main.m-grid .gempty{grid-column:1/-1}
 .vh{margin:20px 0 10px;padding-top:16px;border-top:1px solid var(--line);font-size:1rem;line-height:1.3;font-weight:650;color:var(--ink)}
 .vh:first-child{margin-top:0;padding-top:0;border-top:0}
 .sybox>.vh:first-child{margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
+.lg{border-bottom:1px solid var(--line)}
+.lgh{display:flex;width:100%;justify-content:space-between;align-items:center;gap:8px;border:0;background:none;padding:14px 2px;min-height:48px;font-size:1rem;font-weight:650;color:var(--ink);text-align:left}
+.lgh i{font-style:normal;color:var(--mut)}
+.lgb{padding:0 2px 14px}
+.lgb .vh{font-size:.9rem;color:var(--mut);border-top:0;padding-top:0;margin:16px 0 8px}
+.lgb .vh:first-child{margin-top:0}
 .lsub{margin:12px 0 5px;font-size:.85rem;line-height:1.3;font-weight:600;color:var(--mut)}
 .vh+.lsub{margin-top:0}
 .btn.rst{margin-top:6px}
@@ -310,7 +316,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.37';
+const APP_VERSION='1.38';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -659,7 +665,7 @@ function renderHeader(){
      :S0+'<rect x="4" y="4" width="16" height="4" rx="1"/><rect x="4" y="10" width="16" height="4" rx="1"/><rect x="4" y="16" width="16" height="4" rx="1"/></svg>';
    const nm={one:'Одна колонка',cols:'Папки колонками',grid:'Сетка карточек'}[md]||'';
    if(bv.dataset.md!==md){bv.innerHTML=ic;bv.dataset.md=md}
-   bv.title=bv.ariaLabel='Режим отображения: '+nm;bv.setAttribute('aria-label',bv.title)}
+   bv.title=bv.ariaLabel='Режим: '+nm+' (нажмите, чтобы переключить)';bv.setAttribute('aria-label',bv.title)}
   bs.textContent=scope==='all'?'Везде':'Вкладка';bs.classList.toggle('on',scope==='all');
   ba.classList.toggle('on',inclArch);
   bs.setAttribute('aria-pressed',scope==='all');ba.setAttribute('aria-pressed',inclArch);
@@ -1182,19 +1188,18 @@ $('#btnReorder').onclick=()=>{reorder=!reorder;render()};
 $('#btnSync').onclick=()=>syncNow();
 $('#tabDrop').onclick=openTabList;
 $('#tabSet').onclick=()=>openTabs();
-$('#btnView').onclick=()=>openViewMenu();
+$('#btnView').onclick=()=>{const v=vset(),O=['one','cols','grid'],n=O[(O.indexOf(v.mode)+1)%3];v.mode=n;applyWidths();save();render();toast('Режим: '+({one:'одна колонка',cols:'папки колонками',grid:'сетка карточек'})[n])};
 $('#btnFold').onclick=()=>{
   const gs=S.groups.filter(g=>g.tabId===curTab&&g.status==='active'),open=gs.some(g=>!g.collapsed);
   gs.forEach(g=>{g.collapsed=open});save();render();
 };
 let lastProf=null;
 window.addEventListener('resize',()=>{const p=profile();if(lastProf&&p!==lastProf){lastProf=p;render()}lastProf=p});
-function openViewMenu(){
-  const v=vset(),el=document.createElement('div');
-  const draw=()=>{
+function viewHTML(){
+  const v=vset();
     const pc=profile()==='pc';
     const opt=(k,t,d)=>'<button class="orow'+(v.mode===k?' on':'')+'" data-m="'+k+'"><b>'+t+'</b><small>'+d+'</small></button>';
-    el.innerHTML='<div class="vh">Профиль отображения</div><div class="segs">'+[['auto','Авто'],['pc','Компьютер'],['phone','Телефон']].map(([k,l])=>'<button class="seg'+(v.profile===k?' on':'')+'" data-p="'+k+'">'+l+'</button>').join('')+'</div>'+
+    return '<div class="vh">Профиль отображения</div><div class="segs">'+[['auto','Авто'],['pc','Компьютер'],['phone','Телефон']].map(([k,l])=>'<button class="seg'+(v.profile===k?' on':'')+'" data-p="'+k+'">'+l+'</button>').join('')+'</div>'+
       '<p class="hint">«Авто» выбирает профиль по ширине экрана: от 700 px — компьютерный. Настройка действует только на этом устройстве.</p>'+
       '<div class="vh">Режим для монитора</div>'+(pc
         ?opt('one','Одна колонка','Список сверху вниз')+
@@ -1206,21 +1211,18 @@ function openViewMenu(){
          '<div class="vh">Ширина окна просмотра и редактирования (px)</div><div class="segs">'+WS.map(([k,l])=>'<button class="seg'+(v.ws===k?' on':'')+'" data-ws="'+k+'">'+l+'</button>').join('')+'</div>'+
          (v.mode!=='one'?'<div class="vh">Порядок заполнения</div>'+[['rows','По строкам','→ затем вниз'],['cols','По столбцам','↓ затем вправо']].map(([k,t,d])=>'<button class="orow'+(v.fill===k?' on':'')+'" data-f="'+k+'"><b>'+t+'</b><small>'+d+'</small></button>').join(''):'')
         :'<p class="hint">Режимы колонок доступны в компьютерном профиле. В телефонном профиле всегда одна колонка.</p>');
-  };
-  draw();
-  const sh=sheet({title:'Режим отображения',body:el});
-  el.addEventListener('click',e=>{
-    const b=e.target.closest('button');if(!b)return;
-    if(b.dataset.p){v.profile=b.dataset.p}
-    else if(b.dataset.m){v.mode=b.dataset.m}
-    else if(b.dataset.c){v.cols=+b.dataset.c}
-    else if(b.dataset.f){v.fill=b.dataset.f}
-    else if(b.dataset.l){v.loose=b.dataset.l}
-    else if(b.dataset.wm){v.wm=b.dataset.wm}
-    else if(b.dataset.ws){v.ws=b.dataset.ws}
-    else return;
-    applyWidths();save();render();draw();
-  });
+}
+function openViewMenu(){openLookMenu('view')}
+function viewClick(b,v){
+  if(b.dataset.p){v.profile=b.dataset.p}
+  else if(b.dataset.m){v.mode=b.dataset.m}
+  else if(b.dataset.c){v.cols=+b.dataset.c}
+  else if(b.dataset.f){v.fill=b.dataset.f}
+  else if(b.dataset.l){v.loose=b.dataset.l}
+  else if(b.dataset.wm){v.wm=b.dataset.wm}
+  else if(b.dataset.ws){v.ws=b.dataset.ws}
+  else return false;
+  applyWidths();save();render();return true;
 }
 function openTabList(){
   const el=document.createElement('div');el.className='menu';
@@ -2296,27 +2298,39 @@ function applyLook(){
   const m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content',acc);
 }
 try{if(window.matchMedia)matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{try{if(S&&lset().theme==='auto')applyLook()}catch(e){}})}catch(e){}
-function openLookMenu(){
+let lookOpen=new Set();
+function groupize(h){
+  const ps=h.split('\u0001');let out=ps[0];
+  for(const p of ps.slice(1)){const k=p.indexOf('\u0002'),hd=p.slice(0,k).split('|'),html=p.slice(k+1),id=hd[0];
+    if(id==='end'){out+=html;continue}
+    const op=lookOpen.has(id);
+    out+='<section class="lg"><button type="button" class="lgh" data-g="'+id+'" aria-expanded="'+op+'"><span>'+hd[1]+'</span><i>'+(op?'▴':'▾')+'</i></button><div class="lgb"'+(op?'':' hidden')+'>'+html+'</div></section>';}
+  return out;
+}
+function openLookMenu(focus){
+  if(focus)lookOpen.add(focus);
   const L=lset(),el=document.createElement('div');
   const draw=()=>{
-    el.innerHTML='<div class="vh">Тема</div><div class="segs">'+THEMES.map(([k,l])=>'<button class="seg'+(L.theme===k?' on':'')+'" data-th="'+k+'">'+l+'</button>').join('')+'</div>'+
-      '<div class="vh">Размер текста</div><div class="sizestep"><button class="btn" data-step="-1" aria-label="Меньше">A−</button><span>'+(SIZES.find(x=>x[0]===L.size)||SIZES[3])[2]+' px</span><button class="btn" data-step="1" aria-label="Больше">A+</button></div><div class="segs">'+SIZES.map(([k,l])=>'<button class="seg'+(L.size===k?' on':'')+'" data-sz="'+k+'">'+l+'</button>').join('')+'</div>'+
-      '<div class="vh">Карточка записи в списке</div><div class="lsub">Сколько строк текста показывать</div><div class="segs">'+CLS.map(([k,l])=>'<button class="seg'+(L.cl===k?' on':'')+'" data-cl="'+k+'">'+l+'</button>').join('')+'</div><div class="lsub">Цвет текста на карточке (градация серого)</div><div class="segs">'+CXL.map(([k,l])=>'<button class="seg'+(L.cx===k?' on':'')+'" data-cx="'+k+'">'+l+'</button>').join('')+'</div><div class="lsub">Высота карточки (отступы)</div><div class="segs">'+CDS.map(([k,l])=>'<button class="seg'+(L.cd===k?' on':'')+'" data-cd="'+k+'">'+l+'</button>').join('')+'</div>'+
-      '<div class="vh">Горячие клавиши в тексте</div><div class="sizestep"><button class="btn" data-ks="-1" aria-label="Клавиши меньше">A−</button><span>'+KBS_L[Math.max(0,Math.min(KBS.length-1,+L.kbs||0))]+'</span><button class="btn" data-ks="1" aria-label="Клавиши больше">A+</button><span class="kbprev"><kbd>Ctrl</kbd><span class="plus">+</span><kbd>Shift</kbd><span class="plus">+</span><kbd>B</kbd></span></div>'+
+    el.innerHTML=groupize('\u0001theme|Тема\u0002<div class="segs">'+THEMES.map(([k,l])=>'<button class="seg'+(L.theme===k?' on':'')+'" data-th="'+k+'">'+l+'</button>').join('')+'</div>'+
+      '\u0001view|Режим отображения\u0002'+viewHTML()+'\u0001size|Размер текста\u0002<div class="sizestep"><button class="btn" data-step="-1" aria-label="Меньше">A−</button><span>'+(SIZES.find(x=>x[0]===L.size)||SIZES[3])[2]+' px</span><button class="btn" data-step="1" aria-label="Больше">A+</button></div><div class="segs">'+SIZES.map(([k,l])=>'<button class="seg'+(L.size===k?' on':'')+'" data-sz="'+k+'">'+l+'</button>').join('')+'</div>'+
+      '\u0001card|Карточка записи в списке\u0002<div class="lsub">Сколько строк текста показывать</div><div class="segs">'+CLS.map(([k,l])=>'<button class="seg'+(L.cl===k?' on':'')+'" data-cl="'+k+'">'+l+'</button>').join('')+'</div><div class="lsub">Цвет текста на карточке (градация серого)</div><div class="segs">'+CXL.map(([k,l])=>'<button class="seg'+(L.cx===k?' on':'')+'" data-cx="'+k+'">'+l+'</button>').join('')+'</div><div class="lsub">Высота карточки (отступы)</div><div class="segs">'+CDS.map(([k,l])=>'<button class="seg'+(L.cd===k?' on':'')+'" data-cd="'+k+'">'+l+'</button>').join('')+'</div>'+
+      '\u0001keys|Горячие клавиши в тексте\u0002<div class="sizestep"><button class="btn" data-ks="-1" aria-label="Клавиши меньше">A−</button><span>'+KBS_L[Math.max(0,Math.min(KBS.length-1,+L.kbs||0))]+'</span><button class="btn" data-ks="1" aria-label="Клавиши больше">A+</button><span class="kbprev"><kbd>Ctrl</kbd><span class="plus">+</span><kbd>Shift</kbd><span class="plus">+</span><kbd>B</kbd></span></div>'+
       '<div class="segs">'+KBC.map((c,i)=>'<button class="seg'+((+L.kbc||2)===i+1?' on':'')+'" data-kc="'+(i+1)+'">'+c[0]+'</button>').join('')+'</div><div class="lsub">Шрифт клавиш</div><div class="segs">'+[['1','Обычный'],['2','Моноширинный']].map(([k,l])=>'<button class="seg'+(L.kf===k?' on':'')+'" data-kf="'+k+'">'+l+'</button>').join('')+'</div><p class="hint">Размер, шрифт и чёткость рамки клавиш. «Обычный» выглядит одинаково на телефоне и компьютере, у моноширинного вид зависит от шрифтов устройства.</p>'+
-      '<div class="vh">Команды и код</div><div class="sizestep"><button class="btn" data-cs="-1" aria-label="Команды меньше">A−</button><span>'+KBS_L[Math.max(0,Math.min(KBS.length-1,+L.cms||0))]+'</span><button class="btn" data-cs="1" aria-label="Команды больше">A+</button><code class="ic cmprev">git status</code></div>'+
+      '\u0001cmd|Команды и код\u0002<div class="sizestep"><button class="btn" data-cs="-1" aria-label="Команды меньше">A−</button><span>'+KBS_L[Math.max(0,Math.min(KBS.length-1,+L.cms||0))]+'</span><button class="btn" data-cs="1" aria-label="Команды больше">A+</button><code class="ic cmprev">git status</code></div>'+
       '<div class="segs">'+CMC.map((c,i)=>'<button class="seg'+((+L.cmc||2)===i+1?' on':'')+'" data-cc="'+(i+1)+'">'+c[0]+'</button>').join('')+'</div><p class="hint">Размер и чёткость команд на карточке, в просмотре и в тексте записи.</p>'+
-      '<div class="vh">Цвет акцента</div><div class="swr">'+ACCENTS.map(a=>'<button class="sw'+(L.accent===a[0]?' on':'')+'" data-ac="'+a[0]+'" title="'+a[1]+'" aria-label="'+a[1]+'" style="background:'+a[2]+'"></button>').join('')+
+      '\u0001acc|Цвет акцента\u0002<div class="swr">'+ACCENTS.map(a=>'<button class="sw'+(L.accent===a[0]?' on':'')+'" data-ac="'+a[0]+'" title="'+a[1]+'" aria-label="'+a[1]+'" style="background:'+a[2]+'"></button>').join('')+
       '<span class="sw cu'+(L.accent==='custom'?' on':'')+'" title="Свой цвет"><input type="color" data-cu value="'+L.custom+'" aria-label="Свой цвет"></span></div>'+
-      '<div class="vh">Оттенок фона</div><div class="segs">'+TINTS.map(([k,l])=>'<button class="seg'+(L.tint===k?' on':'')+'" data-ti="'+k+'">'+l+'</button>').join('')+'</div>'+
+      '\u0001tint|Оттенок фона\u0002<div class="segs">'+TINTS.map(([k,l])=>'<button class="seg'+(L.tint===k?' on':'')+'" data-ti="'+k+'">'+l+'</button>').join('')+'</div>'+
       (['sepia','contrast','black'].includes(L.theme)?'<p class="hint">Оттенок фона применяется к светлой и тёмной темам.</p>':'')+
-      '<p class="hint">Настройки действуют на этом устройстве: на телефоне и компьютере оформление можно выбрать разное.</p><button class="btn" data-reset>Сбросить оформление</button>';
+      '\u0001end|\u0002<p class="hint">Настройки действуют на этом устройстве: на телефоне и компьютере оформление можно выбрать разное.</p><button class="btn" data-reset>Сбросить оформление</button>');
   };
   draw();
   const sh=sheet({title:'Оформление',body:el});
   const upd=()=>{applyLook();save();draw()};
   el.addEventListener('click',e=>{
     const b=e.target.closest('button');if(!b)return;
+    if(b.dataset.g){const id=b.dataset.g,bd=b.nextElementSibling,o=bd.hidden;bd.hidden=!o;b.setAttribute('aria-expanded',o);b.lastChild.textContent=o?'▴':'▾';o?lookOpen.add(id):lookOpen.delete(id);return}
+    if(viewClick(b,vset())){draw();return}
     if(b.dataset.cl){L.cl=b.dataset.cl}
     else if(b.dataset.cd){L.cd=b.dataset.cd}
     else if(b.dataset.kf){L.kf=b.dataset.kf}
