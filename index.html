@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.41 -->
+<!-- Моя техническая база, версия 1.42 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -207,6 +207,9 @@ body.nofab:not(.selon) #top{bottom:16px}
 .sheet-body{overflow:auto;padding:14px 16px;flex:1}
 .sh-foot{padding:10px 16px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .sh-foot:empty{display:none}
+.snav{position:absolute;right:12px;bottom:70px;display:flex;flex-direction:column;gap:8px;z-index:6}
+.snav[hidden],.snav button[hidden]{display:none}
+.snav button{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--surf);color:var(--ink);font-size:20px;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.25);opacity:.92}
 .dlg{background:var(--surf);border-radius:12px;padding:18px;width:calc(100% - 28px);max-width:440px;max-height:90vh;overflow:auto}
 .dlg h3{margin:0 0 8px;font-size:1.1rem}
 .dlg p{margin:0 0 10px;color:var(--mut)}
@@ -318,7 +321,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.41';
+const APP_VERSION='1.42';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -450,6 +453,17 @@ function sheet({title,body,foot,guard,noHead,cls}){
       setTimeout(()=>{try{ev.target.scrollIntoView({block:'center'})}catch(_){}},300);
   });
   const ft=$('.sh-foot',ov);if(foot)ft.append(...foot);
+  {const sh=$('.sheet',ov),nav=document.createElement('div');nav.className='snav';nav.hidden=true;
+   nav.innerHTML='<button type="button" class="sn-up" aria-label="В начало" title="В начало">↑</button><button type="button" class="sn-dn" aria-label="В конец" title="В конец">↓</button>';
+   sh.append(nav);const up=nav.firstChild,dn=nav.lastChild;let raf=0;
+   const upd=()=>{raf=0;const m=bd.scrollHeight-bd.clientHeight,long=m>90;nav.hidden=!long;if(!long)return;
+     up.hidden=bd.scrollTop<60;dn.hidden=bd.scrollTop>m-60;
+     if(sh.classList.contains('fs')){nav.style.bottom='auto';nav.style.top=(bd.offsetTop+10)+'px'}else nav.style.bottom=(sh.clientHeight-bd.offsetTop-bd.offsetHeight+12)+'px'};
+   const q=()=>{if(!raf)raf=requestAnimationFrame(upd)};
+   bd.addEventListener('scroll',q,{passive:true});window.addEventListener('resize',q);
+   try{new MutationObserver(q).observe(bd,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','style']})}catch(_){}
+   setTimeout(q,50);setTimeout(q,400);
+   up.onclick=()=>bd.scrollTo({top:0,behavior:'smooth'});dn.onclick=()=>bd.scrollTo({top:bd.scrollHeight,behavior:'smooth'});}
   const api={el:ov,body:bd,foot:ft,
     close(){ov.remove();stack=stack.filter(x=>x!==api);lockSync()},
     async tryClose(){if(guard&&!(await guard()))return;api.close()},
