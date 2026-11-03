@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.46 -->
+<!-- Моя техническая база, версия 1.47 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -331,7 +331,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.46';
+const APP_VERSION='1.47';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -1901,7 +1901,7 @@ function openForm(id,ctx){
   const TF=['title','command','desc','steps','note'],MAXH=100;
   const snap=()=>{const o={};TF.forEach(k=>{const x=$('[data-f='+k+']',body);if(x)o[k]=x.value});return JSON.stringify(o)};
   let hist=[snap()],hp=0,htm=0,lastF=null;
-  const updUR=()=>$$('.ur',body).forEach(b=>{const u=b.dataset.ins==='undo',n=u?hp:hist.length-1-hp;b.disabled=n<=0;b.title=(u?'Отменить (Ctrl+Z)':'Повторить (Ctrl+Y)')+(n>0?' · доступно шагов: '+n:'')});
+  const updUR=()=>{const pend=snap()!==hist[hp];$$('.ur',body).forEach(b=>{const u=b.dataset.ins==='undo',n=u?hp+(pend?1:0):hist.length-1-hp;b.disabled=n<=0;b.title=u?'Отменить (Ctrl+Z)':'Повторить (Ctrl+Y)'})};
   const hpush=()=>{clearTimeout(htm);htm=0;const c=snap();if(c===hist[hp])return;hist.splice(hp+1);hist.push(c);if(hist.length>MAXH+1)hist.shift();hp=hist.length-1;updUR()};
   const hgo=d=>{
     hpush();const n=hp+d;if(n<0||n>=hist.length)return;
@@ -1916,7 +1916,15 @@ function openForm(id,ctx){
     if(sbd)sbd.scrollTop=sbt;updUR();
   };
   const updFmtSafe=t=>{if(t.tagName==='TEXTAREA')updateFmt(t)};
-  body.addEventListener('input',ev=>{if(ev.target.matches&&ev.target.matches('[data-f]')){lastF=ev.target.dataset.f;clearTimeout(htm);htm=setTimeout(hpush,600)}});
+  body.addEventListener('input',ev=>{
+    if(!(ev.target.matches&&ev.target.matches('[data-f]')))return;
+    lastF=ev.target.dataset.f;updUR();
+    const md=S.settings.undoMode||'pause',it=ev.inputType||'',ch=ev.data?ev.data.slice(-1):'';
+    if(md==='pause'||it.startsWith('delete')){clearTimeout(htm);htm=setTimeout(hpush,600);return}
+    const tg=ev.target,prev=tg.value?tg.value[(tg.selectionStart||0)-2]:'';
+    if(md==='word'&&ch&&/\s/.test(ch)&&prev&&/[.,;:!?)\]»]/.test(prev))return;
+    if(it==='insertFromPaste'||it==='insertLineBreak'||(ch&&(md==='word'?/[\s.,;:!?)\]»]/:/[.!?]/).test(ch)))hpush();
+  });
   body.addEventListener('keydown',ev=>{
     if(!(ev.ctrlKey||ev.metaKey)||ev.altKey)return;
     if(ev.code==='KeyZ'&&!ev.shiftKey){ev.preventDefault();hgo(-1)}
@@ -2067,13 +2075,14 @@ function readBackup(){
 function openSettings(){
   const el=document.createElement('div'),st=S.settings,b=readBackup();
   const size=(JSON.stringify(S).length/1024).toFixed(0);
-  el.innerHTML='<div class="vh">Разделы настроек</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-a="tabsmgr">Настройки вкладок</button><button class="btn" data-a="viewmenu">Вид и профиль отображения</button><button class="btn" data-a="look">Оформление</button><button class="btn" data-a="auto">Автоматические копии</button></div>'+'<div class="vh">Напоминания и данные</div><div class="chk"><input type="checkbox" id="stRem"'+(st.remind?' checked':'')+'><label for="stRem">Напоминать об экспорте, если прошло больше 14 дней</label></div>'+
+  el.innerHTML='<div class="vh">Разделы настроек</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-a="tabsmgr">Настройки вкладок</button><button class="btn" data-a="viewmenu">Вид и профиль отображения</button><button class="btn" data-a="look">Оформление</button><button class="btn" data-a="auto">Автоматические копии</button></div>'+'<div class="vh">Редактор записи</div><div class="lsub" style="margin-top:0">Отмена набора текста: один шаг отмены — это</div><div class="segs ud">'+[['pause','Серия набора (до паузы)'],['word','Слово'],['sentence','Предложение']].map(([k,l])=>'<button class="seg'+((st.undoMode||'pause')===k?' on':'')+'" data-u="'+k+'">'+l+'</button>').join('')+'</div><div class="vh">Напоминания и данные</div><div class="chk"><input type="checkbox" id="stRem"'+(st.remind?' checked':'')+'><label for="stRem">Напоминать об экспорте, если прошло больше 14 дней</label></div>'+
    '<p class="hint">Последний экспорт: '+(st.lastExport?fmt(st.lastExport):'ещё не выполнялся')+'.<br>Последний импорт: '+(st.lastImport?fmt(st.lastImport):'ещё не выполнялся')+'.<br>Размер базы: около '+size+' КБ. Записей: '+S.entries.length+'.</p>'+
    '<div class="vh">Резервная копия перед заменой данных</div><p class="hint">'+(b?'Сохранена '+fmt(b.at)+' ('+b.data.entries.length+' '+pl(b.data.entries.length,['запись','записи','записей'])+').':'Копии пока нет. Она создаётся автоматически перед операцией «Заменить все данные».')+'</p>'+
    (b?'<button class="btn" data-a="restore">Восстановить из резервной копии</button>':'')+
    '<p class="ver">Моя техническая база, версия '+APP_VERSION+'</p><p class="hint" style="margin-top:16px">Данные хранятся в браузере этого устройства. Их может стереть очистка данных сайтов или переустановка браузера, а внутренняя копия исчезнет вместе с ними. Периодически делайте экспорт в файл и держите файл вне браузера.</p>';
   el.append(syncSettingsNode());
   const sh=sheet({title:'Настройки',body:el});
+  el.querySelectorAll('.ud button').forEach(b=>b.onclick=()=>{S.settings.undoMode=b.dataset.u;save();el.querySelectorAll('.ud button').forEach(x=>x.classList.toggle('on',x===b))});
   $('#stRem',el).onchange=e=>{S.settings.remind=e.target.checked;if(e.target.checked)S.settings.snoozeUntil=0;save();renderBanner()};
   el.addEventListener('click',e=>{if(e.target.closest('[data-a=restore]')){sh.close();restoreBackup()}else if(e.target.closest('[data-a=tabsmgr]')){sh.close();openTabs()}else if(e.target.closest('[data-a=viewmenu]')){sh.close();openViewMenu()}else if(e.target.closest('[data-a=look]')){sh.close();openLookMenu()}else if(e.target.closest('[data-a=auto]')){sh.close();openAutoMenu()}});
 }
