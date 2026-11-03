@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.45 -->
+<!-- Моя техническая база, версия 1.46 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -265,6 +265,8 @@ body.nofab:not(.selon) #top{bottom:16px}
 .edw .pvbox{position:relative;margin-top:6px;padding:9px 10px;border:1px dashed var(--line);border-radius:8px;background:var(--surf);white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto;font-size:1rem;line-height:1.4}
 .pvbox .pvh{color:var(--mut);font-style:italic}
 .sheet.fs .sheet-body::after{content:'';display:block;height:90px}
+.tools .ur{min-width:38px;font-size:1.05rem}
+.tools .ur:disabled{opacity:.35}
 .tools .fa{background:var(--acc);color:var(--accink);border-color:var(--acc)}
 .tools .fa mark,.tools .fa b,.tools .fa i,.tools .fa s{color:inherit}
 .pvs.on,.pvt.on{background:var(--acc);color:var(--accink)}
@@ -329,7 +331,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.45';
+const APP_VERSION='1.46';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -1671,7 +1673,7 @@ const SYMS=[
  ['Пунктуация и валюты','— – … « » „ “ ” ‘ ’ · ¶ † ‡ ™ ® © ¤ ₴ € $ £ ¥ ₽ ¢ ‹ ›'],
  ['Рамки и линии','─ │ ┌ ┐ └ ┘ ├ ┤ ┬ ┴ ┼ ═ ║ ╔ ╗ ╚ ╝ ╠ ╣ ╦ ╩ ╬ ░ ▒ ▓ █ ▀ ▄']
 ];
-function pickSymbols(ta){
+function pickSymbols(ta,onIns){
   const el=document.createElement('div');
   el.innerHTML=SYMS.map(([t,l])=>'<div class="lsub">'+t+'</div><div class="symg">'+l.split(' ').map(c=>'<button type="button" class="sym" data-c="'+c+'">'+c+'</button>').join('')+'</div>').join('');
   const done=Object.assign(document.createElement('button'),{className:'btn pri',textContent:'Готово'});
@@ -1682,7 +1684,7 @@ function pickSymbols(ta){
     const c=b.dataset.c,s0=ta.selectionStart==null?ta.value.length:ta.selectionStart,e0=ta.selectionEnd==null?s0:ta.selectionEnd;
     ta.value=ta.value.slice(0,s0)+c+ta.value.slice(e0);const p=s0+c.length;ta.setSelectionRange(p,p);
     ta.dispatchEvent(new Event('input',{bubbles:true}));
-    b.classList.add('hit');setTimeout(()=>b.classList.remove('hit'),250);
+    if(onIns)onIns();b.classList.add('hit');setTimeout(()=>b.classList.remove('hit'),250);
   });
 }
 function wrapCp(ta){
@@ -1842,7 +1844,7 @@ function openForm(id,ctx){
   if(e){opts.forEach(([k])=>{if(k==='group'?(e.groupId&&gs.some(g=>g.id===e.groupId)):(Array.isArray(e[k])?e[k].length:e[k]))shown.add(k)})}
   const body=document.createElement('div');
   const wrap=(k,l,inner)=>'<div class="fld opt" data-o="'+k+'" hidden><label>'+(OPT_LBL[k]||l)+'<button type="button" class="btn lnk" data-rm="'+k+'">убрать</button></label>'+inner+'</div>';
-  const tools='<div class="tools"><button type="button" class="btn sm pvt" data-ins="pv" title="Показать или скрыть предпросмотр без значков разметки" aria-pressed="false">👁 Вид</button><button type="button" class="btn sm pvs" data-ins="sync" title="Синхронная прокрутка текста и предпросмотра" aria-pressed="true">⇅ Синхр.</button><button type="button" class="btn sm" data-ins="keys">⌨ Вставить клавиши</button><button type="button" class="btn sm" data-ins="code">‹/› Команда</button><button type="button" class="btn sm" data-ins="sym" title="Вставить символ: стрелки, галочки, значки интерфейса, клавиши">Ω Символы</button><button type="button" class="btn sm" data-ins="cp" title="Выделенный фрагмент можно будет скопировать нажатием при просмотре">⧉ Копируемое</button><button type="button" class="btn sm fm" data-ins="b" title="Жирный" aria-label="Жирный"><b>Ж</b></button><button type="button" class="btn sm fm" data-ins="i" title="Курсив" aria-label="Курсив"><i>К</i></button><button type="button" class="btn sm fm" data-ins="h" title="Выделение маркером" aria-label="Выделение маркером"><mark class="hlt">М</mark></button><button type="button" class="btn sm fm" data-ins="s" title="Зачёркнутый" aria-label="Зачёркнутый"><s>З</s></button><button type="button" class="btn sm fm" data-ins="big" title="Крупнее (нажмите ещё раз — ещё крупнее)" aria-label="Крупнее">A+</button><button type="button" class="btn sm fm" data-ins="small" title="Мельче (нажмите ещё раз — ещё мельче)" aria-label="Мельче">A−</button><button type="button" class="btn sm fm" data-ins="ul" title="Маркированный список" aria-label="Маркированный список">• список</button></div>';
+  const tools='<div class="tools"><button type="button" class="btn sm ur" data-ins="undo" title="Отменить (Ctrl+Z)" aria-label="Отменить" disabled>↶</button><button type="button" class="btn sm ur" data-ins="redo" title="Повторить (Ctrl+Y)" aria-label="Повторить" disabled>↷</button><button type="button" class="btn sm pvt" data-ins="pv" title="Показать или скрыть предпросмотр без значков разметки" aria-pressed="false">👁 Вид</button><button type="button" class="btn sm pvs" data-ins="sync" title="Синхронная прокрутка текста и предпросмотра" aria-pressed="true">⇅ Синхр.</button><button type="button" class="btn sm" data-ins="keys">⌨ Вставить клавиши</button><button type="button" class="btn sm" data-ins="code">‹/› Команда</button><button type="button" class="btn sm" data-ins="sym" title="Вставить символ: стрелки, галочки, значки интерфейса, клавиши">Ω Символы</button><button type="button" class="btn sm" data-ins="cp" title="Выделенный фрагмент можно будет скопировать нажатием при просмотре">⧉ Копируемое</button><button type="button" class="btn sm fm" data-ins="b" title="Жирный" aria-label="Жирный"><b>Ж</b></button><button type="button" class="btn sm fm" data-ins="i" title="Курсив" aria-label="Курсив"><i>К</i></button><button type="button" class="btn sm fm" data-ins="h" title="Выделение маркером" aria-label="Выделение маркером"><mark class="hlt">М</mark></button><button type="button" class="btn sm fm" data-ins="s" title="Зачёркнутый" aria-label="Зачёркнутый"><s>З</s></button><button type="button" class="btn sm fm" data-ins="big" title="Крупнее (нажмите ещё раз — ещё крупнее)" aria-label="Крупнее">A+</button><button type="button" class="btn sm fm" data-ins="small" title="Мельче (нажмите ещё раз — ещё мельче)" aria-label="Мельче">A−</button><button type="button" class="btn sm fm" data-ins="ul" title="Маркированный список" aria-label="Маркированный список">• список</button></div>';
   const inner={
     hotkey:'<div data-hk></div>',
     command:'<input data-f="command" autocomplete="off" autocapitalize="off" spellcheck="false">',
@@ -1895,6 +1897,31 @@ function openForm(id,ctx){
     const w=wrapKeysInText(txt);
     if(w!==txt){ev.preventDefault();insertAt(t,w)}
   }));
+  /* история изменений текстовых полей: отмена и повтор (до 100 шагов) */
+  const TF=['title','command','desc','steps','note'],MAXH=100;
+  const snap=()=>{const o={};TF.forEach(k=>{const x=$('[data-f='+k+']',body);if(x)o[k]=x.value});return JSON.stringify(o)};
+  let hist=[snap()],hp=0,htm=0,lastF=null;
+  const updUR=()=>$$('.ur',body).forEach(b=>{const u=b.dataset.ins==='undo',n=u?hp:hist.length-1-hp;b.disabled=n<=0;b.title=(u?'Отменить (Ctrl+Z)':'Повторить (Ctrl+Y)')+(n>0?' · доступно шагов: '+n:'')});
+  const hpush=()=>{clearTimeout(htm);htm=0;const c=snap();if(c===hist[hp])return;hist.splice(hp+1);hist.push(c);if(hist.length>MAXH+1)hist.shift();hp=hist.length-1;updUR()};
+  const hgo=d=>{
+    hpush();const n=hp+d;if(n<0||n>=hist.length)return;
+    const cur=JSON.parse(hist[hp]),tg=JSON.parse(hist[n]);let chg=null,caret=0;
+    const sbd=body.closest('.sheet-body'),sbt=sbd?sbd.scrollTop:0;
+    TF.forEach(k=>{const x=$('[data-f='+k+']',body);if(!x||tg[k]===undefined||tg[k]===cur[k])return;
+      const a=cur[k]||'',b=tg[k];let p=0;while(p<a.length&&p<b.length&&a[p]===b[p])p++;let q=0;while(q<a.length-p&&q<b.length-p&&a[a.length-1-q]===b[b.length-1-q])q++;
+      x.value=b;if(x.closest('.opt')&&b.trim())shown.add(k);if(!chg||k===lastF){chg=x;caret=b.length-q}});
+    hp=n;refresh();
+    $$('textarea',body).forEach(t=>{if(!t.closest('.opt').hidden){fit(t);pvDraw(t)}});
+    if(chg){const ts=chg.scrollTop;chg.focus();try{chg.setSelectionRange(caret,caret)}catch(_){}chg.scrollTop=ts;updFmtSafe(chg)}
+    if(sbd)sbd.scrollTop=sbt;updUR();
+  };
+  const updFmtSafe=t=>{if(t.tagName==='TEXTAREA')updateFmt(t)};
+  body.addEventListener('input',ev=>{if(ev.target.matches&&ev.target.matches('[data-f]')){lastF=ev.target.dataset.f;clearTimeout(htm);htm=setTimeout(hpush,600)}});
+  body.addEventListener('keydown',ev=>{
+    if(!(ev.ctrlKey||ev.metaKey)||ev.altKey)return;
+    if(ev.code==='KeyZ'&&!ev.shiftKey){ev.preventDefault();hgo(-1)}
+    else if(ev.code==='KeyY'||(ev.code==='KeyZ'&&ev.shiftKey)){ev.preventDefault();hgo(1)}
+  });
   let moreOpen=false;
   const ESS=['hotkey','command','desc','steps'];
   const refresh=()=>{
@@ -1908,17 +1935,20 @@ function openForm(id,ctx){
     const a=ev.target.closest('[data-add]'),r=ev.target.closest('[data-rm]'),ins=ev.target.closest('[data-ins]'),mo=ev.target.closest('[data-more]');
     if(mo){moreOpen=!moreOpen;refresh()}
     else if(ins){
+      if(ins.dataset.ins==='undo'){hgo(-1);return}
+      if(ins.dataset.ins==='redo'){hgo(1);return}
+      hpush();
       const ta=$('textarea',ins.closest('.opt'));
       if(ins.dataset.ins==='sync'){S.settings.edSync=!syOn();save();pvAll();return}
       if(ins.dataset.ins==='pv'){S.settings.edPv=!pvOn();save();pvAll();return}
       const sbd=ta.closest('.sheet-body'),keep=()=>{const a=ta.scrollTop,b=sbd?sbd.scrollTop:0;return ()=>{ta.scrollTop=a;if(sbd)sbd.scrollTop=b}};
       if(ins.dataset.ins==='keys'){const k=await pickKeys('','Вставить клавиши в текст','Вставить');if(k)insertAt(ta,'[['+k+']]')}
-      else if(ins.dataset.ins==='sym')pickSymbols(ta);
+      else if(ins.dataset.ins==='sym'){pickSymbols(ta,hpush)}
       else{const rs=keep();
         if(ins.dataset.ins==='code')wrapCode(ta);
         else if(ins.dataset.ins==='cp')wrapCp(ta);
         else fmtText(ta,ins.dataset.ins);
-        rs();requestAnimationFrame(rs);updateFmt(ta)}
+        rs();requestAnimationFrame(rs);updateFmt(ta);hpush()}
     }else if(a&&a.closest('.adds')){
       const k=a.dataset.add;shown.add(k);moreOpen=false;refresh();
       const f=$('[data-o='+k+'] [data-f]',body)||$('[data-o='+k+'] .a',body);if(f&&k!=='group')f.focus();
