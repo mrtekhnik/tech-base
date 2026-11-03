@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.42 -->
+<!-- Моя техническая база, версия 1.43 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -43,7 +43,9 @@ main.m-grid.fc .gblock,main.m-grid.fc .gempty{column-span:all}
 .lnk{color:var(--acc);text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}
 a.lnk:hover{text-decoration-thickness:2px}
 .cpt{background:var(--key);border-bottom:1px dashed var(--acc);border-radius:4px;padding:0 .25em}
-button.cpt{padding:0 .25em;display:inline;line-height:inherit}
+button.cpt{padding:0 .25em;display:inline;line-height:inherit;background:var(--key);border:1px solid var(--line);border-bottom:2px dashed var(--acc);border-radius:5px}
+button.cpt::after{content:'⧉';font-size:.95em;margin-left:.3em;color:var(--acc);font-weight:700}
+button.cpt:hover,button.cpt:focus-visible{border-color:var(--acc);background:var(--bg)}
 .cpyb{border:0;background:none;padding:3px 4px;border-radius:6px;cursor:pointer;text-align:left;font:inherit;color:inherit;max-width:100%}
 .cpyb:hover,.cpyb:focus-visible{background:var(--bg);outline:1px solid var(--line)}
 .vw .cmd .cpyb{flex:1;min-width:0}
@@ -102,6 +104,10 @@ main.m-grid .gblock,main.m-grid .gempty{grid-column:1/-1}
 .lgb{padding:0 2px 14px}
 .lgb .vh{font-size:.9rem;color:var(--mut);border-top:0;padding-top:0;margin:16px 0 8px}
 .lgb .vh:first-child{margin-top:0}
+.symg{display:flex;flex-wrap:wrap;gap:4px}
+.sym{min-width:40px;height:40px;padding:0 6px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-size:1.15rem;line-height:1}
+.sym:hover{border-color:var(--acc)}
+.sym.hit{background:var(--acc);color:var(--accink)}
 .lsub{margin:12px 0 5px;font-size:.85rem;line-height:1.3;font-weight:600;color:var(--mut)}
 .vh+.lsub{margin-top:0}
 .btn.rst{margin-top:6px}
@@ -321,7 +327,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.42';
+const APP_VERSION='1.43';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -1611,6 +1617,30 @@ function fmtText(ta,k){
     ta.value=ta.value.slice(0,s0)+t+ta.value.slice(e0);ta.focus();ta.setSelectionRange(s0,s0+t.length);ta.dispatchEvent(new Event('input',{bubbles:true}));
   }else insertAt(ta,m+m,m.length);
 }
+const SYMS=[
+ ['Стрелки','→ ← ↑ ↓ ↔ ↕ ⇒ ⇐ ⇑ ⇓ ⇔ ➜ ↳ ↵ ↩ ↪ ⤴ ⤵ ⟳ ⟲ ▶ ◀ ▲ ▼ ► ◄ ▸ ◂ ▴ ▾'],
+ ['Отметки и выделение','✓ ✔ ✗ ✘ ✕ ✖ ☐ ☑ ☒ ★ ☆ ● ○ ◉ ◦ • ‣ ■ □ ◆ ◇ ✱ ✦ ⚠ ⛔ ❗ ❓ ℹ'],
+ ['Интерфейс и кнопки','☰ ⋯ ⋮ ≡ ⚙ 🔍 ✎ 🗑 📁 📂 📄 📋 ⧉ 💾 ⬆ ⬇ ⏏ ⏵ ⏸ ⏹ ＋ － ⊕ ⊖ ⌂ ⛶ 🔒 🔓 👁 📌 🔗 ⎘ ⌫ ⌦ ☁ ⟲ ⇅ ⇄ ☼ ☾'],
+ ['Клавиши','⌘ ⌥ ⇧ ⌃ ⎋ ⇥ ⇤ ⏎ ⌫ ⌦ ␣ ⇪ ↹ ⌤ ⊞ ⎀ ⇞ ⇟ ⤒ ⤓'],
+ ['Числа и порядок','① ② ③ ④ ⑤ ⑥ ⑦ ⑧ ⑨ ⑩ ❶ ❷ ❸ ❹ ❺ ❻ ❼ ❽ ❾ ❿ ⓿ ⁰ ¹ ² ³ ⁴ ½ ¼ ¾'],
+ ['Математика и размеры','± × ÷ ≈ ≠ ≤ ≥ ∞ ° ′ ″ Ø ⌀ ∅ √ ∑ π µ Ω ∠ ⊥ ∥ ‰ № § ∆ ∂ ∫ ∈ ∩ ∪ ∴ ⌐ ⊿ ⏊'],
+ ['Пунктуация и валюты','— – … « » „ “ ” ‘ ’ · ¶ † ‡ ™ ® © ¤ ₴ € $ £ ¥ ₽ ¢ ‹ ›'],
+ ['Рамки и линии','─ │ ┌ ┐ └ ┘ ├ ┤ ┬ ┴ ┼ ═ ║ ╔ ╗ ╚ ╝ ╠ ╣ ╦ ╩ ╬ ░ ▒ ▓ █ ▀ ▄']
+];
+function pickSymbols(ta){
+  const el=document.createElement('div');
+  el.innerHTML=SYMS.map(([t,l])=>'<div class="lsub">'+t+'</div><div class="symg">'+l.split(' ').map(c=>'<button type="button" class="sym" data-c="'+c+'">'+c+'</button>').join('')+'</div>').join('');
+  const done=Object.assign(document.createElement('button'),{className:'btn pri',textContent:'Готово'});
+  const sh=sheet({title:'Вставить символ',body:el,foot:[done]});
+  done.onclick=()=>{sh.close();ta.focus()};
+  el.addEventListener('click',ev=>{
+    const b=ev.target.closest('[data-c]');if(!b)return;
+    const c=b.dataset.c,s0=ta.selectionStart==null?ta.value.length:ta.selectionStart,e0=ta.selectionEnd==null?s0:ta.selectionEnd;
+    ta.value=ta.value.slice(0,s0)+c+ta.value.slice(e0);const p=s0+c.length;ta.setSelectionRange(p,p);
+    ta.dispatchEvent(new Event('input',{bubbles:true}));
+    b.classList.add('hit');setTimeout(()=>b.classList.remove('hit'),250);
+  });
+}
 function wrapCp(ta){
   const s0=ta.selectionStart||0,e0=ta.selectionEnd||0,sel=ta.value.slice(s0,e0).replace(/[()]/g,'');
   if(sel.trim()){const t='(('+sel+'))';ta.value=ta.value.slice(0,s0)+t+ta.value.slice(e0);ta.focus();ta.setSelectionRange(s0+t.length,s0+t.length);ta.dispatchEvent(new Event('input',{bubbles:true}))}
@@ -1766,7 +1796,7 @@ function openForm(id,ctx){
   if(e){opts.forEach(([k])=>{if(k==='group'?(e.groupId&&gs.some(g=>g.id===e.groupId)):(Array.isArray(e[k])?e[k].length:e[k]))shown.add(k)})}
   const body=document.createElement('div');
   const wrap=(k,l,inner)=>'<div class="fld opt" data-o="'+k+'" hidden><label>'+(OPT_LBL[k]||l)+'<button type="button" class="btn lnk" data-rm="'+k+'">убрать</button></label>'+inner+'</div>';
-  const tools='<div class="tools"><button type="button" class="btn sm pvt" data-ins="pv" title="Показать или скрыть предпросмотр без значков разметки" aria-pressed="false">👁 Вид</button><button type="button" class="btn sm pvs" data-ins="sync" title="Синхронная прокрутка текста и предпросмотра" aria-pressed="true">⇅ Синхр.</button><button type="button" class="btn sm" data-ins="keys">⌨ Вставить клавиши</button><button type="button" class="btn sm" data-ins="code">‹/› Команда</button><button type="button" class="btn sm" data-ins="cp" title="Выделенный фрагмент можно будет скопировать нажатием при просмотре">⧉ Копируемое</button><button type="button" class="btn sm fm" data-ins="b" title="Жирный" aria-label="Жирный"><b>Ж</b></button><button type="button" class="btn sm fm" data-ins="i" title="Курсив" aria-label="Курсив"><i>К</i></button><button type="button" class="btn sm fm" data-ins="h" title="Выделение маркером" aria-label="Выделение маркером"><mark class="hlt">М</mark></button><button type="button" class="btn sm fm" data-ins="s" title="Зачёркнутый" aria-label="Зачёркнутый"><s>З</s></button><button type="button" class="btn sm fm" data-ins="big" title="Крупнее (нажмите ещё раз — ещё крупнее)" aria-label="Крупнее">A+</button><button type="button" class="btn sm fm" data-ins="small" title="Мельче (нажмите ещё раз — ещё мельче)" aria-label="Мельче">A−</button><button type="button" class="btn sm fm" data-ins="ul" title="Маркированный список" aria-label="Маркированный список">• список</button></div>';
+  const tools='<div class="tools"><button type="button" class="btn sm pvt" data-ins="pv" title="Показать или скрыть предпросмотр без значков разметки" aria-pressed="false">👁 Вид</button><button type="button" class="btn sm pvs" data-ins="sync" title="Синхронная прокрутка текста и предпросмотра" aria-pressed="true">⇅ Синхр.</button><button type="button" class="btn sm" data-ins="keys">⌨ Вставить клавиши</button><button type="button" class="btn sm" data-ins="code">‹/› Команда</button><button type="button" class="btn sm" data-ins="sym" title="Вставить символ: стрелки, галочки, значки интерфейса, клавиши">Ω Символы</button><button type="button" class="btn sm" data-ins="cp" title="Выделенный фрагмент можно будет скопировать нажатием при просмотре">⧉ Копируемое</button><button type="button" class="btn sm fm" data-ins="b" title="Жирный" aria-label="Жирный"><b>Ж</b></button><button type="button" class="btn sm fm" data-ins="i" title="Курсив" aria-label="Курсив"><i>К</i></button><button type="button" class="btn sm fm" data-ins="h" title="Выделение маркером" aria-label="Выделение маркером"><mark class="hlt">М</mark></button><button type="button" class="btn sm fm" data-ins="s" title="Зачёркнутый" aria-label="Зачёркнутый"><s>З</s></button><button type="button" class="btn sm fm" data-ins="big" title="Крупнее (нажмите ещё раз — ещё крупнее)" aria-label="Крупнее">A+</button><button type="button" class="btn sm fm" data-ins="small" title="Мельче (нажмите ещё раз — ещё мельче)" aria-label="Мельче">A−</button><button type="button" class="btn sm fm" data-ins="ul" title="Маркированный список" aria-label="Маркированный список">• список</button></div>';
   const inner={
     hotkey:'<div data-hk></div>',
     command:'<input data-f="command" autocomplete="off" autocapitalize="off" spellcheck="false">',
@@ -1835,6 +1865,7 @@ function openForm(id,ctx){
       if(ins.dataset.ins==='keys'){const k=await pickKeys('','Вставить клавиши в текст','Вставить');if(k)insertAt(ta,'[['+k+']]')}
       else if(ins.dataset.ins==='code')wrapCode(ta);
       else if(ins.dataset.ins==='cp')wrapCp(ta);
+      else if(ins.dataset.ins==='sym')pickSymbols(ta);
       else fmtText(ta,ins.dataset.ins);
     }else if(a&&a.closest('.adds')){
       const k=a.dataset.add;shown.add(k);moreOpen=false;refresh();
