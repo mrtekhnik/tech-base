@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.47 -->
+<!-- Моя техническая база, версия 1.48 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -331,7 +331,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.47';
+const APP_VERSION='1.48';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -2045,12 +2045,12 @@ function openMenu(){
   let more=false;
   const draw=()=>{
     el.innerHTML=(S.tabs.length?'<button data-m="sel">☑ Выбрать несколько записей</button>':'')+(S.tabs.length&&curTab?'<button data-m="gnew">＋ Новая группа в этой вкладке</button>':'')+
-      '<button data-m="tabsmgr">Настройки вкладок</button><button data-m="look">Оформление</button>'+
+      '<button data-m="tabsmgr">Настройки вкладок</button><button data-m="look">Оформление и размеры</button>'+
       '<button data-m="trash">Корзина<span class="n">'+cnt('trash')+'</span></button>'+
       '<button data-m="export" class="mhl">Экспорт в файл (резервная копия)</button>'+
       '<button data-m="import">Импорт из файла</button>'+
       '<button data-more>'+(more?'Свернуть ▴':'Ещё ▾')+'</button>'+
-      (more?'<button data-m="sync">⟳ Синхронизировать</button><button data-m="update">Проверить обновление</button><button data-m="settings">Настройки и резервная копия</button><button data-m="text">Экспорт в текстовый файл</button>':'')+
+      (more?'<button data-m="sync">⟳ Синхронизировать</button><button data-m="update">Проверить обновление</button><button data-m="settings">Синхронизация, копии и данные</button><button data-m="text">Экспорт в текстовый файл</button>':'')+
       '<div class="ver">Версия программы: '+APP_VERSION+'<br>Последний экспорт: '+(S.settings.lastExport?fmt(S.settings.lastExport):'—')+'<br>Последний импорт: '+(S.settings.lastImport?fmt(S.settings.lastImport):'—')+'<br>Синхронизация: '+(!syncCfg()?'не настроена':syncSt().lastSync?fmt(syncSt().lastSync):'ещё не было')+'</div>';
   };
   draw();
@@ -2075,16 +2075,15 @@ function readBackup(){
 function openSettings(){
   const el=document.createElement('div'),st=S.settings,b=readBackup();
   const size=(JSON.stringify(S).length/1024).toFixed(0);
-  el.innerHTML='<div class="vh">Разделы настроек</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-a="tabsmgr">Настройки вкладок</button><button class="btn" data-a="viewmenu">Вид и профиль отображения</button><button class="btn" data-a="look">Оформление</button><button class="btn" data-a="auto">Автоматические копии</button></div>'+'<div class="vh">Редактор записи</div><div class="lsub" style="margin-top:0">Отмена набора текста: один шаг отмены — это</div><div class="segs ud">'+[['pause','Серия набора (до паузы)'],['word','Слово'],['sentence','Предложение']].map(([k,l])=>'<button class="seg'+((st.undoMode||'pause')===k?' on':'')+'" data-u="'+k+'">'+l+'</button>').join('')+'</div><div class="vh">Напоминания и данные</div><div class="chk"><input type="checkbox" id="stRem"'+(st.remind?' checked':'')+'><label for="stRem">Напоминать об экспорте, если прошло больше 14 дней</label></div>'+
+  el.innerHTML='<div class="vh">Копии</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-a="auto">Автоматические копии</button></div>'+'<div class="vh">Напоминания и данные</div><div class="chk"><input type="checkbox" id="stRem"'+(st.remind?' checked':'')+'><label for="stRem">Напоминать об экспорте, если прошло больше 14 дней</label></div>'+
    '<p class="hint">Последний экспорт: '+(st.lastExport?fmt(st.lastExport):'ещё не выполнялся')+'.<br>Последний импорт: '+(st.lastImport?fmt(st.lastImport):'ещё не выполнялся')+'.<br>Размер базы: около '+size+' КБ. Записей: '+S.entries.length+'.</p>'+
    '<div class="vh">Резервная копия перед заменой данных</div><p class="hint">'+(b?'Сохранена '+fmt(b.at)+' ('+b.data.entries.length+' '+pl(b.data.entries.length,['запись','записи','записей'])+').':'Копии пока нет. Она создаётся автоматически перед операцией «Заменить все данные».')+'</p>'+
    (b?'<button class="btn" data-a="restore">Восстановить из резервной копии</button>':'')+
    '<p class="ver">Моя техническая база, версия '+APP_VERSION+'</p><p class="hint" style="margin-top:16px">Данные хранятся в браузере этого устройства. Их может стереть очистка данных сайтов или переустановка браузера, а внутренняя копия исчезнет вместе с ними. Периодически делайте экспорт в файл и держите файл вне браузера.</p>';
   el.append(syncSettingsNode());
-  const sh=sheet({title:'Настройки',body:el});
-  el.querySelectorAll('.ud button').forEach(b=>b.onclick=()=>{S.settings.undoMode=b.dataset.u;save();el.querySelectorAll('.ud button').forEach(x=>x.classList.toggle('on',x===b))});
+  const sh=sheet({title:'Синхронизация, копии и данные',body:el});
   $('#stRem',el).onchange=e=>{S.settings.remind=e.target.checked;if(e.target.checked)S.settings.snoozeUntil=0;save();renderBanner()};
-  el.addEventListener('click',e=>{if(e.target.closest('[data-a=restore]')){sh.close();restoreBackup()}else if(e.target.closest('[data-a=tabsmgr]')){sh.close();openTabs()}else if(e.target.closest('[data-a=viewmenu]')){sh.close();openViewMenu()}else if(e.target.closest('[data-a=look]')){sh.close();openLookMenu()}else if(e.target.closest('[data-a=auto]')){sh.close();openAutoMenu()}});
+  el.addEventListener('click',e=>{if(e.target.closest('[data-a=restore]')){sh.close();restoreBackup()}else if(e.target.closest('[data-a=auto]')){sh.close();openAutoMenu()}});
 }
 
 /* ===== Экспорт / импорт / резервная копия ===== */
@@ -2467,15 +2466,16 @@ function openLookMenu(focus){
       '<span class="sw cu'+(L.accent==='custom'?' on':'')+'" title="Свой цвет"><input type="color" data-cu value="'+L.custom+'" aria-label="Свой цвет"></span></div>'+
       '\u0001tint|Оттенок фона\u0002<div class="segs">'+TINTS.map(([k,l])=>'<button class="seg'+(L.tint===k?' on':'')+'" data-ti="'+k+'">'+l+'</button>').join('')+'</div>'+
       (['sepia','contrast','black'].includes(L.theme)?'<p class="hint">Оттенок фона применяется к светлой и тёмной темам.</p>':'')+
-      '\u0001end|\u0002<p class="hint">Настройки действуют на этом устройстве: на телефоне и компьютере оформление можно выбрать разное.</p><button class="btn" data-reset>Сбросить оформление</button>');
+      '\u0001edit|Редактор записи\u0002<div class="lsub" style="margin-top:0">Отмена набора текста: один шаг отмены — это</div><div class="segs">'+[['pause','Серия набора (до паузы)'],['word','Слово'],['sentence','Предложение']].map(([k,l])=>'<button class="seg'+((S.settings.undoMode||'pause')===k?' on':'')+'" data-u="'+k+'">'+l+'</button>').join('')+'</div>'+'\u0001end|\u0002<p class="hint">Настройки действуют на этом устройстве: на телефоне и компьютере оформление можно выбрать разное.</p><button class="btn" data-reset>Сбросить оформление</button>');
   };
   draw();
-  const sh=sheet({title:'Оформление',body:el});
+  const sh=sheet({title:'Оформление и размеры',body:el});
   const upd=()=>{applyLook();save();draw()};
   el.addEventListener('click',e=>{
     const b=e.target.closest('button');if(!b)return;
     if(b.dataset.g){const id=b.dataset.g,bd=b.nextElementSibling,o=bd.hidden;bd.hidden=!o;b.setAttribute('aria-expanded',o);b.lastChild.textContent=o?'▴':'▾';o?lookOpen.add(id):lookOpen.delete(id);return}
     if(viewClick(b,vset())){draw();return}
+    if(b.dataset.u){S.settings.undoMode=b.dataset.u;save();draw();return}
     if(b.dataset.cl){L.cl=b.dataset.cl}
     else if(b.dataset.cd){L.cd=b.dataset.cd}
     else if(b.dataset.kf){L.kf=b.dataset.kf}
@@ -2814,7 +2814,7 @@ async function syncOnce(cfg){
 }
 async function syncNow(){
   const cfg=syncCfg();
-  if(!cfg){await info('Синхронизация не настроена','Подключите репозиторий в настройках: Меню → Ещё → Настройки и резервная копия → «Синхронизация через GitHub».');openSettings();return}
+  if(!cfg){await info('Синхронизация не настроена','Подключите репозиторий в настройках: Меню → Ещё → Синхронизация, копии и данные → «Синхронизация через GitHub».');openSettings();return}
   if(syncing)return;
   syncing=true;$('#btnSync').classList.add('spin');syncBusy(true,'Синхронизация…');
   try{
