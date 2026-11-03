@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.43 -->
+<!-- Моя техническая база, версия 1.44 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -327,7 +327,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.43';
+const APP_VERSION='1.44';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -1612,6 +1612,15 @@ function fmtText(ta,k){
     ta.value=v.slice(0,a)+out+v.slice(b);ta.focus();ta.setSelectionRange(a,a+out.length);ta.dispatchEvent(new Event('input',{bubbles:true}));return;
   }
   const m=M[k],sel=ta.value.slice(s0,e0);
+  {const v=ta.value,L=m.length,ok=(a,b)=>v.slice(a-L,a)===m&&v.slice(b,b+L)===m&&(m!=='*'||(v[a-L-1]!=='*'&&v[b+L]!=='*'));
+   let a=s0,b=e0,f=false;
+   if(sel&&ok(a,b))f=true;
+   else if(!sel){ // курсор внутри выделенного фрагмента: ищем ближайшую пару маркеров на строке
+     const ls=v.lastIndexOf('\n',s0-1)+1;let le=v.indexOf('\n',s0);if(le<0)le=v.length;
+     const line=v.slice(ls,le),rx=new RegExp(m.replace(/[*~=]/g,'\\$&')+'([^\\n]+?)'+m.replace(/[*~=]/g,'\\$&'),'g');let mm;
+     while((mm=rx.exec(line))){const A=ls+mm.index+L,B=A+mm[1].length;if(s0>=A&&s0<=B&&ok(A,B)){a=A;b=B;f=true;break}}
+   }
+   if(f){ta.value=v.slice(0,a-L)+v.slice(a,b)+v.slice(b+L);ta.focus();ta.setSelectionRange(a-L,b-L);ta.dispatchEvent(new Event('input',{bubbles:true}));return}}
   if(sel){
     const t=sel.startsWith(m)&&sel.endsWith(m)&&sel.length>2*m.length?sel.slice(m.length,-m.length):m+sel+m;
     ta.value=ta.value.slice(0,s0)+t+ta.value.slice(e0);ta.focus();ta.setSelectionRange(s0,s0+t.length);ta.dispatchEvent(new Event('input',{bubbles:true}));
