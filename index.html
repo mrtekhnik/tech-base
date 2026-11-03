@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.49 -->
+<!-- Моя техническая база, версия 1.50 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -274,7 +274,7 @@ body.nofab:not(.selon) #top{bottom:16px}
   .sheet.typing .fld:not(.cur),.sheet.typing .adds,.sheet.typing .err{display:none}
   .sheet.typing .fld.cur>label{margin-bottom:3px}
   .sheet.typing .sheet-body{padding-top:8px}
-  .sheet.typing .sheet-body::after{height:6px}
+  .sheet.fs.typing .sheet-body::after{height:0}
 }
 @media(min-width:700px){
   .wbtn{display:inline-block}
@@ -347,7 +347,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.49';
+const APP_VERSION='1.50';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -476,7 +476,7 @@ function sheet({title,body,foot,guard,noHead,cls}){
   const bd=$('.sheet-body',ov);if(body)bd.append(body);
   bd.addEventListener('focusin',ev=>{
     if(window.matchMedia&&matchMedia('(max-width:699px)').matches&&ev.target.matches&&ev.target.matches('input,textarea,select'))
-      setTimeout(()=>{try{ev.target.scrollIntoView({block:'center'})}catch(_){}},300);
+      setTimeout(()=>{if(ev.target.closest&&ev.target.closest('.typing'))return;try{ev.target.scrollIntoView({block:'center'})}catch(_){}},300);
   });
   const ft=$('.sh-foot',ov);if(foot)ft.append(...foot);
   {const sh=$('.sheet',ov),nav=document.createElement('div');nav.className='snav';nav.hidden=true;
@@ -1593,6 +1593,7 @@ function wrapKeysInText(t){
 function caretFollow(t){
   requestAnimationFrame(()=>{
     const sb=t.closest('.sheet-body');if(!sb||t.selectionStart==null)return;
+    if(t.closest('.sheet.typing'))return;
     const cs=getComputedStyle(t),m=document.createElement('div');
     m.style.cssText='position:absolute;visibility:hidden;left:-9999px;top:0;box-sizing:border-box;white-space:pre-wrap;overflow-wrap:break-word;width:'+t.clientWidth+'px;padding:'+cs.padding+';font:'+cs.font+';letter-spacing:'+cs.letterSpacing;
     m.textContent=t.value.slice(0,t.selectionStart);const mk=document.createElement('span');mk.textContent='\u200b';m.appendChild(mk);
@@ -1885,7 +1886,7 @@ function openForm(id,ctx){
   const fitMax=()=>{const sh=body.closest('.sheet'),sb=body.closest('.sheet-body');if(!sh||!sb)return 320;
     if(sh.classList.contains('typing'))return Math.max(150,sb.clientHeight-120);
     if(sh.classList.contains('wide'))return Math.max(320,sb.clientHeight-190);return 320};
-  const fit=t=>{t.style.height='auto';t.style.height=Math.min(t.scrollHeight+2,fitMax())+'px'};
+  const fit=t=>{const shx=body.closest('.sheet');if(shx&&shx.classList.contains('typing'))return;t.style.height='auto';t.style.height=Math.min(t.scrollHeight+2,fitMax())+'px'};
   const isPhone=()=>window.matchMedia&&matchMedia('(max-width:699px)').matches;
   const refit=()=>$$('textarea',body).forEach(t=>{if(!t.closest('.opt').hidden){fit(t);pvDraw(t)}});
   const pvOn=()=>S.settings.edPv===undefined?window.innerWidth>=700:!!S.settings.edPv;
@@ -1896,7 +1897,7 @@ function openForm(id,ctx){
   const syOn=()=>S.settings.edSync!==false;
   const pvAll=()=>{$$('.pvs',body).forEach(b=>{b.setAttribute('aria-pressed',syOn());b.classList.toggle('on',syOn())});$$('.edw textarea',body).forEach(t=>{if(!t.closest('.opt').hidden)pvDraw(t)});$$('.pvt',body).forEach(b=>b.setAttribute('aria-pressed',pvOn()));$$('.pvt',body).forEach(b=>b.classList.toggle('on',pvOn()))};
   body.addEventListener('mousedown',ev=>{if(ev.target.closest('.tools'))ev.preventDefault()});
-  {const upd=()=>{if(!body.isConnected){document.removeEventListener('selectionchange',upd);return}const a=document.activeElement;if(a&&a.tagName==='TEXTAREA'&&body.contains(a))updateFmt(a)};
+  {let ut=0;const upd=()=>{if(!body.isConnected){document.removeEventListener('selectionchange',upd);return}clearTimeout(ut);ut=setTimeout(()=>{const a=document.activeElement;if(a&&a.tagName==='TEXTAREA'&&body.contains(a))updateFmt(a)},120)};
    document.addEventListener('selectionchange',upd)}
   $$('textarea',body).forEach(t=>{t.addEventListener('input',()=>{fit(t);pvDraw(t);caretFollow(t);updateFmt(t)});t.addEventListener('focus',()=>updateFmt(t));t.addEventListener('keyup',ev=>{if(/^(Arrow|Page|Home|End)/.test(ev.key))caretFollow(t)});t.addEventListener('click',()=>caretFollow(t))});
   {
@@ -1998,11 +1999,16 @@ function openForm(id,ctx){
   const sh=sheet({cls:'fs',title:(e?'Редактирование':'Новая запись · '+tabName(tabId)),body,foot:e?[cancel,ok]:[cancel,more,ok],
     guard:async()=>JSON.stringify(raw())===init||await ask('Закрыть без сохранения?','Внесённые изменения будут потеряны.','Закрыть без сохранения',true)});
   {const shel=sh.el.querySelector('.sheet');let ft=0;
+   const sizeTyping=t=>{const sb=body.closest('.sheet-body'),tl=t.closest('.opt')&&t.closest('.opt').querySelector('.tools');if(!sb||!tl)return;
+     const top=t.getBoundingClientRect().top-sb.getBoundingClientRect().top+sb.scrollTop;
+     t.style.height=Math.max(120,sb.clientHeight-top-tl.offsetHeight-14)+'px'};
    body.addEventListener('focusin',ev=>{const t=ev.target;if(!(t.tagName==='TEXTAREA')||!isPhone())return;clearTimeout(ft);
+     if(shel.classList.contains('typing')&&t.closest('.fld.cur')){return}
      $$('.fld.cur',body).forEach(x=>x.classList.remove('cur'));const f=t.closest('.fld');if(f)f.classList.add('cur');
-     shel.classList.add('typing');refit();setTimeout(()=>{try{t.scrollIntoView({block:'nearest'})}catch(_){}},60)});
+     shel.classList.add('typing');
+     requestAnimationFrame(()=>{const sb=body.closest('.sheet-body');if(sb)sb.scrollTop=0;sizeTyping(t)})});
    body.addEventListener('focusout',()=>{clearTimeout(ft);ft=setTimeout(()=>{const a=document.activeElement;if(a&&a.tagName==='TEXTAREA'&&body.contains(a))return;shel.classList.remove('typing');$$('.fld.cur',body).forEach(x=>x.classList.remove('cur'));refit()},180)});
-   if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>{if(shel.classList.contains('typing'))refit()});
+   if(window.visualViewport){let vt=0;window.visualViewport.addEventListener('resize',()=>{if(!shel.classList.contains('typing'))return;clearTimeout(vt);vt=setTimeout(()=>{const a=document.activeElement;if(a&&a.tagName==='TEXTAREA'&&body.contains(a))sizeTyping(a)},120)})}
    const hd=shel.querySelector('.sh-head'),xb=hd&&hd.querySelector('[data-x]');
    if(hd&&xb){const wb=document.createElement('button');wb.className='ibtn wbtn';wb.type='button';wb.setAttribute('aria-label','Развернуть окно');wb.title='Развернуть или вернуть окно редактирования';wb.textContent='⤢';
      wb.onclick=()=>{S.settings.edWide=!S.settings.edWide;save();shel.classList.toggle('wide',!!S.settings.edWide);refit()};hd.insertBefore(wb,xb);
