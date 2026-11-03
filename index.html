@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.44 -->
+<!-- Моя техническая база, версия 1.45 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -265,6 +265,8 @@ body.nofab:not(.selon) #top{bottom:16px}
 .edw .pvbox{position:relative;margin-top:6px;padding:9px 10px;border:1px dashed var(--line);border-radius:8px;background:var(--surf);white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto;font-size:1rem;line-height:1.4}
 .pvbox .pvh{color:var(--mut);font-style:italic}
 .sheet.fs .sheet-body::after{content:'';display:block;height:90px}
+.tools .fa{background:var(--acc);color:var(--accink);border-color:var(--acc)}
+.tools .fa mark,.tools .fa b,.tools .fa i,.tools .fa s{color:inherit}
 .pvs.on,.pvt.on{background:var(--acc);color:var(--accink)}
 @media(min-width:900px){.edw.pv{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}.edw.pv .pvbox{margin-top:0;min-height:44px}}
 .tools{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;position:sticky;bottom:0;z-index:3;background:var(--surf);padding:6px 0;border-top:1px solid var(--line)}
@@ -327,7 +329,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.44';
+const APP_VERSION='1.45';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -1589,6 +1591,47 @@ function insertAt(ta,text,caretBack){
   const p=s0+text.length-(caretBack||0);
   ta.focus();ta.setSelectionRange(p,p);ta.dispatchEvent(new Event('input',{bubbles:true}));
 }
+const ESC_RX=x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+/* ищет обёртку open…close вокруг выделения или курсора; возвращает {a,b,ol,cl} (a..b — внутренняя часть) */
+function spanAround(ta,open,close){
+  const v=ta.value,s0=ta.selectionStart==null?0:ta.selectionStart,e0=ta.selectionEnd==null?s0:ta.selectionEnd,ol=open.length,cl=close.length;
+  if(v.slice(s0,e0).includes('\n'))return null;
+  const star=open==='*',paren=open==='((',tilde=open==='`';
+  const ls=v.lastIndexOf('\n',s0-1)+1;let le=v.indexOf('\n',s0);if(le<0)le=v.length;
+  const line=v.slice(ls,le);
+  let body='[^\\n]+?';if(paren)body='[^()\\n]+?';if(tilde)body='[^`\\n]+?';
+  let pre='',post='';if(star){pre='(?<!\\*)';post='(?!\\*)';body='[^*\\n]+?'}
+  if(star){const r3=/\*\*\*([^*\n]+?)\*\*\*/g;let t;while((t=r3.exec(line))){const A=ls+t.index+1,B=A+t[1].length+4;if(s0>=A-1&&e0<=B+1)return {a:A,b:B,ol:1,cl:1}}}
+  const rx=new RegExp(pre+ESC_RX(open)+post+'('+body+')'+(star?'(?<!\\*)':'')+ESC_RX(close)+(star?'(?!\\*)':''),'g');let m;
+  while((m=rx.exec(line))){
+    const A=ls+m.index+ol,B=A+m[1].length;
+    if(s0>=A-ol&&e0<=B+cl)return {a:A,b:B,ol,cl};
+  }
+  return null;
+}
+function unwrapSpan(ta,sp){
+  const v=ta.value,s0=ta.selectionStart,e0=ta.selectionEnd,had=s0!==e0;
+  ta.value=v.slice(0,sp.a-sp.ol)+v.slice(sp.a,sp.b)+v.slice(sp.b+sp.cl);
+  const base=sp.a-sp.ol,len=sp.b-sp.a;
+  if(had)ta.setSelectionRange(base,base+len);else{const p=Math.max(base,Math.min(base+len,s0-sp.ol));ta.setSelectionRange(p,p)}
+  ta.dispatchEvent(new Event('input',{bubbles:true}));
+}
+/* какие виды форматирования действуют в месте выделения или курсора */
+function fmtState(ta){
+  const st=new Set(),F={b:['**','**'],i:['*','*'],h:['==','=='],s:['~~','~~'],code:['`','`'],cp:['((','))']};
+  for(const k in F)if(spanAround(ta,F[k][0],F[k][1]))st.add(k);
+  const v=ta.value,s0=ta.selectionStart==null?0:ta.selectionStart,ls=v.lastIndexOf('\n',s0-1)+1;let le=v.indexOf('\n',s0);if(le<0)le=v.length;
+  const line=v.slice(ls,le);
+  if(/^[-•] /.test(line))st.add('ul');
+  const rx=/\{(\+{1,2}|-{1,2})([^\n]+?)\1\}/g;let m;
+  while((m=rx.exec(line))){const A=ls+m.index,B=A+m[0].length;if(s0>=A&&s0<=B){st.add(m[1][0]==='+'?'big':'small');break}}
+  return st;
+}
+function updateFmt(ta){
+  const o=ta.closest('.opt'),tl=o&&o.querySelector('.tools');if(!tl)return;
+  const st=fmtState(ta);
+  tl.querySelectorAll('[data-ins]').forEach(b=>{const k=b.dataset.ins;if(['b','i','h','s','code','cp','big','small','ul'].includes(k)){const on=st.has(k);b.classList.toggle('fa',on);b.setAttribute('aria-pressed',on)}});
+}
 function fmtText(ta,k){
   const M={b:'**',i:'*',h:'==',s:'~~'};
   const s0=ta.selectionStart==null?ta.value.length:ta.selectionStart,e0=ta.selectionEnd==null?s0:ta.selectionEnd;
@@ -1612,15 +1655,7 @@ function fmtText(ta,k){
     ta.value=v.slice(0,a)+out+v.slice(b);ta.focus();ta.setSelectionRange(a,a+out.length);ta.dispatchEvent(new Event('input',{bubbles:true}));return;
   }
   const m=M[k],sel=ta.value.slice(s0,e0);
-  {const v=ta.value,L=m.length,ok=(a,b)=>v.slice(a-L,a)===m&&v.slice(b,b+L)===m&&(m!=='*'||(v[a-L-1]!=='*'&&v[b+L]!=='*'));
-   let a=s0,b=e0,f=false;
-   if(sel&&ok(a,b))f=true;
-   else if(!sel){ // курсор внутри выделенного фрагмента: ищем ближайшую пару маркеров на строке
-     const ls=v.lastIndexOf('\n',s0-1)+1;let le=v.indexOf('\n',s0);if(le<0)le=v.length;
-     const line=v.slice(ls,le),rx=new RegExp(m.replace(/[*~=]/g,'\\$&')+'([^\\n]+?)'+m.replace(/[*~=]/g,'\\$&'),'g');let mm;
-     while((mm=rx.exec(line))){const A=ls+mm.index+L,B=A+mm[1].length;if(s0>=A&&s0<=B&&ok(A,B)){a=A;b=B;f=true;break}}
-   }
-   if(f){ta.value=v.slice(0,a-L)+v.slice(a,b)+v.slice(b+L);ta.focus();ta.setSelectionRange(a-L,b-L);ta.dispatchEvent(new Event('input',{bubbles:true}));return}}
+  {const sp=spanAround(ta,m,m);if(sp){unwrapSpan(ta,sp);return}}
   if(sel){
     const t=sel.startsWith(m)&&sel.endsWith(m)&&sel.length>2*m.length?sel.slice(m.length,-m.length):m+sel+m;
     ta.value=ta.value.slice(0,s0)+t+ta.value.slice(e0);ta.focus();ta.setSelectionRange(s0,s0+t.length);ta.dispatchEvent(new Event('input',{bubbles:true}));
@@ -1651,11 +1686,13 @@ function pickSymbols(ta){
   });
 }
 function wrapCp(ta){
+  {const sp=spanAround(ta,'((','))');if(sp){unwrapSpan(ta,sp);return}}
   const s0=ta.selectionStart||0,e0=ta.selectionEnd||0,sel=ta.value.slice(s0,e0).replace(/[()]/g,'');
   if(sel.trim()){const t='(('+sel+'))';ta.value=ta.value.slice(0,s0)+t+ta.value.slice(e0);ta.focus();ta.setSelectionRange(s0+t.length,s0+t.length);ta.dispatchEvent(new Event('input',{bubbles:true}))}
   else insertAt(ta,'(())',2);
 }
 function wrapCode(ta){
+  {const sp=spanAround(ta,'`','`');if(sp){unwrapSpan(ta,sp);return}}
   const s0=ta.selectionStart||0,e0=ta.selectionEnd||0,sel=ta.value.slice(s0,e0);
   if(sel){ta.value=ta.value.slice(0,s0)+'`'+sel+'`'+ta.value.slice(e0);ta.focus();ta.setSelectionRange(e0+2,e0+2);ta.dispatchEvent(new Event('input',{bubbles:true}))}
   else insertAt(ta,'``',1);
@@ -1835,7 +1872,10 @@ function openForm(id,ctx){
     if(on){const v=t.value;bx.innerHTML=v.trim()?v.split('\n').map(l=>'<div class="pl">'+(l?rich(l,0,1):'\u200b')+'</div>').join(''):'<span class="pvh">Так запись будет выглядеть при просмотре</span>'}};
   const syOn=()=>S.settings.edSync!==false;
   const pvAll=()=>{$$('.pvs',body).forEach(b=>{b.setAttribute('aria-pressed',syOn());b.classList.toggle('on',syOn())});$$('.edw textarea',body).forEach(t=>{if(!t.closest('.opt').hidden)pvDraw(t)});$$('.pvt',body).forEach(b=>b.setAttribute('aria-pressed',pvOn()));$$('.pvt',body).forEach(b=>b.classList.toggle('on',pvOn()))};
-  $$('textarea',body).forEach(t=>{t.addEventListener('input',()=>{fit(t);pvDraw(t);caretFollow(t)});t.addEventListener('keyup',ev=>{if(/^(Arrow|Page|Home|End)/.test(ev.key))caretFollow(t)});t.addEventListener('click',()=>caretFollow(t))});
+  body.addEventListener('mousedown',ev=>{if(ev.target.closest('.tools'))ev.preventDefault()});
+  {const upd=()=>{if(!body.isConnected){document.removeEventListener('selectionchange',upd);return}const a=document.activeElement;if(a&&a.tagName==='TEXTAREA'&&body.contains(a))updateFmt(a)};
+   document.addEventListener('selectionchange',upd)}
+  $$('textarea',body).forEach(t=>{t.addEventListener('input',()=>{fit(t);pvDraw(t);caretFollow(t);updateFmt(t)});t.addEventListener('focus',()=>updateFmt(t));t.addEventListener('keyup',ev=>{if(/^(Arrow|Page|Home|End)/.test(ev.key))caretFollow(t)});t.addEventListener('click',()=>caretFollow(t))});
   {
    const tTops=t=>{const cs=getComputedStyle(t),m=document.createElement('div');
      m.style.cssText='position:absolute;visibility:hidden;left:-9999px;top:0;box-sizing:border-box;white-space:pre-wrap;overflow-wrap:break-word;width:'+t.clientWidth+'px;padding:'+cs.padding+';font:'+cs.font+';letter-spacing:'+cs.letterSpacing;
@@ -1871,11 +1911,14 @@ function openForm(id,ctx){
       const ta=$('textarea',ins.closest('.opt'));
       if(ins.dataset.ins==='sync'){S.settings.edSync=!syOn();save();pvAll();return}
       if(ins.dataset.ins==='pv'){S.settings.edPv=!pvOn();save();pvAll();return}
+      const sbd=ta.closest('.sheet-body'),keep=()=>{const a=ta.scrollTop,b=sbd?sbd.scrollTop:0;return ()=>{ta.scrollTop=a;if(sbd)sbd.scrollTop=b}};
       if(ins.dataset.ins==='keys'){const k=await pickKeys('','Вставить клавиши в текст','Вставить');if(k)insertAt(ta,'[['+k+']]')}
-      else if(ins.dataset.ins==='code')wrapCode(ta);
-      else if(ins.dataset.ins==='cp')wrapCp(ta);
       else if(ins.dataset.ins==='sym')pickSymbols(ta);
-      else fmtText(ta,ins.dataset.ins);
+      else{const rs=keep();
+        if(ins.dataset.ins==='code')wrapCode(ta);
+        else if(ins.dataset.ins==='cp')wrapCp(ta);
+        else fmtText(ta,ins.dataset.ins);
+        rs();requestAnimationFrame(rs);updateFmt(ta)}
     }else if(a&&a.closest('.adds')){
       const k=a.dataset.add;shown.add(k);moreOpen=false;refresh();
       const f=$('[data-o='+k+'] [data-f]',body)||$('[data-o='+k+'] .a',body);if(f&&k!=='group')f.focus();
