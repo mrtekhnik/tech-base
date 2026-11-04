@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.53 -->
+<!-- Моя техническая база, версия 1.54 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -222,6 +222,7 @@ body.nofab:not(.selon) #top{bottom:16px}
 .dbtns{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}
 .fld{margin-bottom:12px}
 .fld label{display:block;font-size:.85rem;color:var(--mut);margin-bottom:3px}
+.fld input[type=search]{-webkit-appearance:none;appearance:none}.fld input[type=search]::-webkit-search-cancel-button,.fld input[type=search]::-webkit-search-decoration{display:none;-webkit-appearance:none}
 .fld input,.fld textarea,.fld select,.addrow input{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-size:1rem}
 .fld textarea{resize:vertical;min-height:44px}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -358,7 +359,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.53';
+const APP_VERSION='1.54';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -1875,7 +1876,7 @@ function openForm(id,ctx){
   const tools='<div class="tools"><button type="button" class="btn sm ur" data-ins="undo" title="Отменить (Ctrl+Z)" aria-label="Отменить" disabled>↶</button><button type="button" class="btn sm ur" data-ins="redo" title="Повторить (Ctrl+Y)" aria-label="Повторить" disabled>↷</button><button type="button" class="btn sm pvt" data-ins="pv" title="Показать или скрыть предпросмотр без значков разметки" aria-pressed="false">👁 Вид</button><button type="button" class="btn sm pvs" data-ins="sync" title="Синхронная прокрутка текста и предпросмотра" aria-pressed="true">⇅ Синхр.</button><button type="button" class="btn sm" data-ins="keys">⌨ Вставить клавиши</button><button type="button" class="btn sm" data-ins="code">‹/› Команда</button><button type="button" class="btn sm" data-ins="sym" title="Вставить символ: стрелки, галочки, значки интерфейса, клавиши">Ω Символы</button><button type="button" class="btn sm" data-ins="cp" title="Выделенный фрагмент можно будет скопировать нажатием при просмотре">⧉ Копируемое</button><button type="button" class="btn sm fm" data-ins="b" title="Жирный" aria-label="Жирный"><b>Ж</b></button><button type="button" class="btn sm fm" data-ins="i" title="Курсив" aria-label="Курсив"><i>К</i></button><button type="button" class="btn sm fm" data-ins="h" title="Выделение маркером" aria-label="Выделение маркером"><mark class="hlt">М</mark></button><button type="button" class="btn sm fm" data-ins="s" title="Зачёркнутый" aria-label="Зачёркнутый"><s>З</s></button><button type="button" class="btn sm fm" data-ins="big" title="Крупнее (нажмите ещё раз — ещё крупнее)" aria-label="Крупнее">A+</button><button type="button" class="btn sm fm" data-ins="small" title="Мельче (нажмите ещё раз — ещё мельче)" aria-label="Мельче">A−</button><button type="button" class="btn sm fm" data-ins="ul" title="Маркированный список" aria-label="Маркированный список">• список</button></div>';
   const inner={
     hotkey:'<div data-hk></div>',
-    command:'<input data-f="command" autocomplete="off" autocapitalize="off" spellcheck="false">',
+    command:'<input data-f="command" type="search" autocomplete="off" autocapitalize="off" spellcheck="false">',
     keylist:'<div data-le="keylist"></div>',
     cmdlist:'<div data-le="cmdlist"></div>',
     desc:'<div class="edw"><textarea data-f="desc" rows="2"></textarea><div class="pvbox" hidden></div></div>'+tools,
@@ -1883,7 +1884,7 @@ function openForm(id,ctx){
     note:'<div class="edw"><textarea data-f="note" rows="2"></textarea><div class="pvbox" hidden></div></div>'+tools,
     group:'<select data-f="group"><option value="">Без группы</option>'+gs.map(g=>'<option value="'+g.id+'">'+esc(g.label)+'</option>').join('')+'</select>'
   };
-  body.innerHTML='<div class="fld"><label>Название</label><input data-f="title" autocomplete="off"></div><div class="adds"></div>'+
+  body.innerHTML='<div class="fld"><label>Название</label><input data-f="title" type="search" enterkeyhint="done" autocomplete="off"></div><div class="adds"></div>'+
     opts.map(([k,l])=>wrap(k,l,inner[k])).join('')+'<div class="err" hidden></div>';
   const val=(k,v)=>{const x=$('[data-f='+k+']',body);if(x)x.value=v};
   val('title',e?e.title:'');['command','desc','steps','note'].forEach(k=>val(k,e?e[k]:''));
