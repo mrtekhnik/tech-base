@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.55 -->
+<!-- Моя техническая база, версия 1.56 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -386,7 +386,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.55';
+const APP_VERSION='1.56';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -2838,8 +2838,8 @@ const SYNC_KEY='mrtekhnik.sync',SYNC_DIR='tech-base';
 function syncCfg(){try{const v=JSON.parse(localStorage.getItem(SYNC_KEY)||'null');return v&&v.repo&&v.token?v:null}catch(e){return null}}
 function setSyncCfg(v){try{if(v)localStorage.setItem(SYNC_KEY,JSON.stringify(v));else localStorage.removeItem(SYNC_KEY)}catch(e){}}
 function apiBase(){try{return localStorage.getItem('mrtekhnik.sync.api')||'https://api.github.com'}catch(e){return 'https://api.github.com'}}
-function syncSt(){const st=S.settings;if(!st.sync||typeof st.sync!=='object')st.sync={};if(!st.sync.known||typeof st.sync.known!=='object')st.sync.known={};if(typeof st.sync.lastSync!=='number')st.sync.lastSync=0;if(typeof st.sync.delay!=='number')st.sync.delay=3600000;if(typeof st.sync.dirtySince!=='number')st.sync.dirtySince=0;if(st.sync.preview!=='off')st.sync.preview='ask';return st.sync}
-function resetKnown(){const sy=syncSt();sy.known={};sy.dirtySince=0}
+function syncSt(){const st=S.settings;if(!st.sync||typeof st.sync!=='object')st.sync={};if(!st.sync.known||typeof st.sync.known!=='object')st.sync.known={};if(!st.sync.knownC||typeof st.sync.knownC!=='object')st.sync.knownC={};if(typeof st.sync.lastSync!=='number')st.sync.lastSync=0;if(typeof st.sync.delay!=='number')st.sync.delay=3600000;if(typeof st.sync.dirtySince!=='number')st.sync.dirtySince=0;if(st.sync.preview!=='off')st.sync.preview='ask';return st.sync}
+function resetKnown(){const sy=syncSt();sy.known={};sy.knownC={};sy.dirtySince=0}
 async function gh(cfg,path,opt={}){
   const h={Authorization:'Bearer '+cfg.token,Accept:opt.raw?'application/vnd.github.raw':'application/vnd.github+json'};if(opt.body)h['Content-Type']='application/json';
   const r=await fetch(apiBase()+'/repos/'+cfg.repo+path,{method:opt.method||'GET',cache:'no-store',headers:h,body:opt.body?JSON.stringify(opt.body):undefined});
@@ -2862,6 +2862,8 @@ const SYF={e:['id','tabId','groupId','title','hotkey','command','desc','steps','
 const SYO={e:['o','favO'],g:['o'],t:['o']};
 function stab(v){if(Array.isArray(v))return '['+v.map(stab).join(',')+']';if(v&&typeof v==='object')return '{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+stab(v[k])).join(',')+'}';return JSON.stringify(v===undefined?null:v)}
 function h53(str){let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<str.length;i++){const c=str.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return (4294967296*(2097151&h2)+(h1>>>0)).toString(36)}
+const SYC=['updated','created'];
+function sigC(k,x){return h53(stab(SYF[k].filter(f=>!SYC.includes(f)&&!(f==='tags'&&(!x.tags||!x.tags.length))).map(f=>x[f])))}
 function sigOf(k,x,noOrd){return h53(stab(SYF[k].concat(noOrd?[]:SYO[k]).filter(f=>!(f==='tags'&&(!x.tags||!x.tags.length))).map(f=>x[f])))}
 function syncChanges(){
   /* что изменилось после последней синхронизации: [есть ли изменения, самое раннее время изменения] */
@@ -2904,7 +2906,7 @@ const KS3=[['tabs','t'],['groups','g'],['entries','e']];
 const LOCALONLY={t:['archOpen'],g:['collapsed'],e:['opens','opened']};
 const SYLBL={title:'название',hotkey:'горячая клавиша',command:'команда',desc:'описание',steps:'инструкция',note:'примечание',keylist:'список клавиш',cmdlist:'список команд',tags:'теги',tabId:'вкладка',groupId:'группа',fav:'закреп в группе',favG:'избранное',status:'статус',name:'название',parentId:'вложенность',arch:'архив вкладки',bundle:'набор',attachments:'вложения'};
 function syDiff(a,b,k){const r=[];SYF[k].forEach(f=>{const l=SYLBL[f];if(l&&stab(a[f])!==stab(b[f]))r.push(l)});return r}
-function syncMerge(L,R,B,PR,now){
+function syncMerge(L,R,B,PR,now,BC){
   const st={up:0,down:0,del:0,conf:0,grp:0,items:[]},purged=Object.assign({},PR),F={tabs:[],groups:[],entries:[]};
   for(const [key,k] of KS3){
     const l=new Map(L[key].map(x=>[x.id,x])),r=new Map(R[key].map(x=>[x.id,x]));
@@ -2916,11 +2918,13 @@ function syncMerge(L,R,B,PR,now){
         if(li.sh===ri.sh){li.m=Math.max(li.m||0,ri.m||0);F[key].push(li)}
         else if(li.sh===b){F[key].push(ri);bump('down');rec('down',ri,{fields:syDiff(li,ri,k)})}
         else if(ri.sh===b){F[key].push(li);bump('up');rec('up',li,{fields:syDiff(ri,li,k)})}
+        else if(BC&&BC[id]!==undefined&&sigC(k,ri)===BC[id]){F[key].push(li);bump('up');rec('up',li,{fields:syDiff(ri,li,k)})}
+        else if(BC&&BC[id]!==undefined&&sigC(k,li)===BC[id]){F[key].push(ri);bump('down');rec('down',ri,{fields:syDiff(li,ri,k)})}
         else{
           const w=(li.m||0)>=(ri.m||0)?li:ri,lo=w===li?ri:li;
           F[key].push(w);bump(w===li?'up':'down');
-          rec(w===li?'up':'down',w,{fields:syDiff(lo,w,k),conf:true});
-          if(sigOf(k,li,true)!==sigOf(k,ri,true)){
+          rec(w===li?'up':'down',w,{fields:syDiff(lo,w,k),conf:sigC(k,li)!==sigC(k,ri)});
+          if(sigC(k,li)!==sigC(k,ri)){
             if(k==='e'){
               const cp=JSON.parse(JSON.stringify(lo));cp.id=uid();cp.title=(lo.title||titleOf(lo))+' (другая версия)';cp.fav=false;cp.favG=false;cp.favO=null;cp.m=now;cp.sh=sigOf('e',cp);
               F.entries.push(cp);st.conf++;st.up++;
@@ -3008,7 +3012,7 @@ async function syncOnce(cfg){
   const L=JSON.parse(JSON.stringify({tabs:S.tabs,groups:S.groups,entries:S.entries}));
   /* устройство только что установлено: свои вкладки по умолчанию не дублируем, берём из репозитория */
   if(!Object.keys(sy.known).length&&!L.entries.length&&!L.groups.length&&Rd.tabs.length&&L.tabs.length===DEF_TABS.length&&L.tabs.every(t=>DEF_TABS.includes(t.name)))L.tabs=[];
-  const M=syncMerge(L,Rd,sy.known,PR,now);
+  const M=syncMerge(L,Rd,sy.known,PR,now,sy.knownC);
   syncFix(M.F,now);
   const bad=validate({tabs:M.F.tabs,groups:M.F.groups,entries:M.F.entries},false);
   if(bad)throw new Error('после объединения данные не прошли проверку: '+bad);
@@ -3030,7 +3034,8 @@ async function syncOnce(cfg){
   {const le=new Map(S.entries.map(e=>[e.id,e]));M.F.entries.forEach(e=>{const o=le.get(e.id);e.opens=o?(o.opens||0):0;e.opened=o?(o.opened||0):0})}
   S.tabs=M.F.tabs;S.groups=M.F.groups;S.entries=M.F.entries;
   const known={};KS3.forEach(([key,k])=>M.F[key].forEach(x=>{known[x.id]=x.sh}));
-  Object.assign(syncSt(),{known,lastSync:now,dirtySince:0});
+  const knownC={};KS3.forEach(([key,k])=>M.F[key].forEach(x=>{knownC[x.id]=sigC(k,x)}));
+  Object.assign(syncSt(),{known,knownC,lastSync:now,dirtySince:0});
   if(!S.tabs.some(t=>t.id===curTab))curTab=S.tabs[0]?S.tabs[0].id:null;
   selMode=false;sel.clear();
   save();
@@ -3052,6 +3057,24 @@ async function syncNow(){
   }catch(e){syncBusy(false);if(e&&e.code==='cancel'){toast('Синхронизация отменена, данные не изменены');return}info('Синхронизация не удалась',syncErrText(e)+' Данные на устройстве не изменены.')}
   finally{syncing=false;$('#btnSync').classList.remove('spin')}
 }
+function cleanDupVersions(){
+  const sfx=/ \(другая версия\)$/,cmp=['hotkey','command','desc','steps','note'];
+  const same=(a,b)=>cmp.every(f=>(a[f]||'')===(b[f]||''))&&stab(a.keylist||[])===stab(b.keylist||[])&&stab(a.cmdlist||[])===stab(b.cmdlist||[])&&stab(a.tags||[])===stab(b.tags||[]);
+  const out=[];
+  S.entries.forEach(c=>{
+    if(c.status==='trash'||!sfx.test(c.title||''))return;
+    const base=c.title.replace(sfx,'');
+    if(S.entries.some(o=>o!==c&&o.status!=='trash'&&o.tabId===c.tabId&&(o.groupId||null)===(c.groupId||null)&&(o.title||'')===base&&same(o,c)))out.push(c);
+  });
+  return out;
+}
+async function runCleanDups(){
+  const list=cleanDupVersions(),all=S.entries.filter(e=>e.status!=='trash'&&/ \(другая версия\)$/.test(e.title||'')).length;
+  if(!list.length){info('Точных копий нет',all?'Записей с пометкой «(другая версия)»: '+all+'. Все они отличаются от оригинала текстом или расположением, поэтому я их не трогаю. Просмотрите их вручную.':'Записей с пометкой «(другая версия)» нет.');return}
+  const rest=all-list.length;
+  if(!await ask('Убрать точные копии?','Найдено '+list.length+' '+pl(list.length,['копия','копии','копий'])+' с пометкой «(другая версия)», полностью совпадающих с оригиналом (то же название, текст и группа). Они уйдут в корзину, оттуда их можно восстановить.'+(rest?' Ещё '+rest+' с отличающимся текстом останутся для ручного просмотра.':''),'Убрать в корзину'))return;
+  act(()=>{list.forEach(trashEntry)},'В корзину перенесено: '+list.length);
+}
 function syncSettingsNode(){
   const cfg=syncCfg(),box=document.createElement('div');box.className='sybox';
   box.innerHTML='<div class="vh">Синхронизация через GitHub</div><p class="hint">Телефон и компьютер обмениваются записями через ваш <b>приватный</b> репозиторий по кнопке ⟳ в шапке или пункту меню «Синхронизировать». Подключение общее для всех ваших приложений на этом сайте. Первую синхронизацию делайте на устройстве, где больше данных, потом на втором.</p>'+
@@ -3059,10 +3082,11 @@ function syncSettingsNode(){
     '<label class="hint">Токен доступа</label><input class="inp tok" type="password" placeholder="github_pat_…" autocomplete="off" autocapitalize="off" spellcheck="false">'+
     '<div class="row2"><button class="btn sy1">Сохранить и проверить</button><button class="btn sy0">Отключить</button></div><p class="hint sst"></p>'+
     '<div class="vh">Напоминать о синхронизации (жёлтая точка на ⟳)</div><div class="segs sd">'+[[0,'Сразу'],[3600000,'Через 1 ч'],[10800000,'Через 3 ч'],[86400000,'Через сутки']].map(([v,l])=>'<button class="seg" data-d="'+v+'">'+l+'</button>').join('')+'</div><p class="hint">Отсчёт идёт от первого несинхронизированного изменения. Изменения, сделанные на другом устройстве, точка не показывает.</p>'+
-    '<div class="vh">Различия перед синхронизацией</div><div class="segs sgp"><button class="seg" data-p="ask">Показывать</button><button class="seg" data-p="off">Не показывать</button></div><p class="hint">Если на другом устройстве есть изменения, перед применением покажу, что именно изменится, и спрошу подтверждение. Отправка ваших изменений идёт без вопросов.</p>';
+    '<div class="vh">Копии «(другая версия)»</div><div class="row2"><button class="btn sydup">Найти и убрать точные копии</button></div><p class="hint">Остаются только копии, которые отличаются от оригинала. Точные дубли уходят в корзину.</p><div class="vh">Различия перед синхронизацией</div><div class="segs sgp"><button class="seg" data-p="ask">Показывать</button><button class="seg" data-p="off">Не показывать</button></div><p class="hint">Если на другом устройстве есть изменения, перед применением покажу, что именно изменится, и спрошу подтверждение. Отправка ваших изменений идёт без вопросов.</p>';
   const q=x=>box.querySelector(x);q('.repo').value=cfg?cfg.repo:'';if(cfg)q('.tok').placeholder='токен сохранён (скрыт)';
   q('.sst').textContent=cfg?'Подключено: '+cfg.repo+'. Последняя синхронизация: '+(syncSt().lastSync?fmt(syncSt().lastSync):'ещё не было')+'.':'Не подключено.';
   const mkD=()=>box.querySelectorAll('.sd button').forEach(b=>b.classList.toggle('on',+b.dataset.d===syncSt().delay));mkD();
+  box.querySelector('.sydup').onclick=()=>runCleanDups();
   const mkP=()=>box.querySelectorAll('.sgp button').forEach(b=>b.classList.toggle('on',b.dataset.p===syncSt().preview));mkP();
   box.querySelectorAll('.sgp button').forEach(b=>b.onclick=()=>{syncSt().preview=b.dataset.p;save();mkP()});
   box.querySelectorAll('.sd button').forEach(b=>b.onclick=()=>{syncSt().delay=+b.dataset.d;save();mkD();updateSyncDot()});
