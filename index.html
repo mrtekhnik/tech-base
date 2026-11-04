@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.60 -->
+<!-- Моя техническая база, версия 1.61 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -278,6 +278,7 @@ button.tg{cursor:pointer}
 .tagbar .tagc .n{opacity:.65;margin-left:4px;font-size:.8em}
 .tagsug{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .tagsug:empty{display:none}
+.tagtg{margin-top:4px;padding:2px 4px;font-size:.85rem;color:var(--mut)}
 .tagchip{border:1px dashed var(--line);background:transparent;border-radius:12px;padding:3px 9px;font-size:.85rem;color:var(--mut)}
 #fab2{position:fixed;right:25px;bottom:86px;width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--surf);font-size:20px;line-height:1;padding:0;box-shadow:0 2px 10px rgba(0,0,0,.25);z-index:15;display:none}
 body.nofab #fab2{bottom:16px}
@@ -386,7 +387,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.60';
+const APP_VERSION='1.61';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -1935,13 +1936,14 @@ function openForm(id,ctx){
     note:'<div class="edw"><textarea data-f="note" rows="2"></textarea><div class="pvbox" hidden></div></div>'+tools,
     group:'<select data-f="group"><option value="">Без группы</option>'+gs.map(g=>'<option value="'+g.id+'">'+esc(g.label)+'</option>').join('')+'</select>'
   };
-  body.innerHTML='<div class="fld"><label>Название</label><input data-f="title" type="search" enterkeyhint="done" autocomplete="off"></div><div class="fld tagsf"><label>Теги</label><input data-f="tags" type="search" enterkeyhint="done" autocomplete="off" placeholder="через запятую, например: SolidWorks, чертежи"><div class="tagsug"></div></div><div class="adds"></div>'+
+  body.innerHTML='<div class="fld"><label>Название</label><input data-f="title" type="search" enterkeyhint="done" autocomplete="off"></div><div class="fld tagsf"><label>Теги</label><input data-f="tags" type="search" enterkeyhint="done" autocomplete="off" placeholder="через запятую, например: SolidWorks, чертежи"><button type="button" class="btn lnk tagtg"></button><div class="tagsug"></div></div><div class="adds"></div>'+
     opts.map(([k,l])=>wrap(k,l,inner[k])).join('')+'<div class="err" hidden></div>';
   const val=(k,v)=>{const x=$('[data-f='+k+']',body);if(x)x.value=v};
   val('tags',e?(e.tags||[]).join(', '):'');
   {const ti=$('[data-f=tags]',body),sg=$('.tagsug',body);if(!tagsOn())$('.tagsf',body).hidden=true;
-   const dr=()=>{const cur=new Set(tagsArr(ti.value).map(x=>x.toLowerCase()));const used=allTags().map(t=>t.name),seen=new Set(used.map(x=>x.toLowerCase())),base=[tabName(tabId)].concat(S.tabs.filter(t=>t.id!==tabId&&t.id!=='inbox').map(t=>t.name),['основы','настройка','горячие клавиши','команды','чертежи','сборки','детали','макрос']).filter(x=>x&&!seen.has(x.toLowerCase())&&seen.add(x.toLowerCase()));sg.innerHTML=used.concat(base).filter(t=>!cur.has(t.toLowerCase())).slice(0,14).map(t=>({name:t})).map(t=>'<button type="button" class="tagchip" data-tg="'+esc(t.name)+'">#'+esc(t.name)+'</button>').join('')};
-   ti.addEventListener('input',dr);ti.addEventListener('focus',dr);sg.addEventListener('click',ev=>{const b=ev.target.closest('[data-tg]');if(!b)return;const v=ti.value.trim().replace(/[,;\s]+$/,'');ti.value=(v?v+', ':'')+b.dataset.tg;dr()});setTimeout(dr,0)}
+   const tg=$('.tagtg',body),isO=()=>!!S.settings.tagSug;
+   const dr=()=>{tg.textContent=isO()?'▴ Скрыть подсказки':'▾ Подсказки тегов';if(!isO()){sg.innerHTML='';return}const cur=new Set(tagsArr(ti.value).map(x=>x.toLowerCase()));const used=allTags().map(t=>t.name),seen=new Set(used.map(x=>x.toLowerCase())),base=[tabName(tabId)].concat(S.tabs.filter(t=>t.id!==tabId&&t.id!=='inbox').map(t=>t.name),['основы','настройка','горячие клавиши','команды','чертежи','сборки','детали','макрос']).filter(x=>x&&!seen.has(x.toLowerCase())&&seen.add(x.toLowerCase()));sg.innerHTML=used.concat(base).filter(t=>!cur.has(t.toLowerCase())).slice(0,14).map(t=>({name:t})).map(t=>'<button type="button" class="tagchip" data-tg="'+esc(t.name)+'">#'+esc(t.name)+'</button>').join('')};
+   ti.addEventListener('input',dr);ti.addEventListener('focus',dr);tg.addEventListener('click',()=>{S.settings.tagSug=!isO();save();dr()});sg.addEventListener('click',ev=>{const b=ev.target.closest('[data-tg]');if(!b)return;const v=ti.value.trim().replace(/[,;\s]+$/,'');ti.value=(v?v+', ':'')+b.dataset.tg;dr()});setTimeout(dr,0)}
   val('title',e?e.title:'');['command','desc','steps','note'].forEach(k=>val(k,e?e[k]:''));
   val('group',e?(e.groupId&&gs.some(g=>g.id===e.groupId)?e.groupId:''):((ctx&&ctx.groupId&&gs.some(g=>g.id===ctx.groupId))?ctx.groupId:''));
   const hk=hotkeyWidget(e?e.hotkey:'',()=>{},true);
