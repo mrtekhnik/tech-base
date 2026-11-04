@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.59 -->
+<!-- Моя техническая база, версия 1.60 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -386,7 +386,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.59';
+const APP_VERSION='1.60';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -1940,7 +1940,7 @@ function openForm(id,ctx){
   const val=(k,v)=>{const x=$('[data-f='+k+']',body);if(x)x.value=v};
   val('tags',e?(e.tags||[]).join(', '):'');
   {const ti=$('[data-f=tags]',body),sg=$('.tagsug',body);if(!tagsOn())$('.tagsf',body).hidden=true;
-   const dr=()=>{const cur=new Set(tagsArr(ti.value).map(x=>x.toLowerCase()));sg.innerHTML=allTags().filter(t=>!cur.has(t.name.toLowerCase())).slice(0,12).map(t=>'<button type="button" class="tagchip" data-tg="'+esc(t.name)+'">#'+esc(t.name)+'</button>').join('')};
+   const dr=()=>{const cur=new Set(tagsArr(ti.value).map(x=>x.toLowerCase()));const used=allTags().map(t=>t.name),seen=new Set(used.map(x=>x.toLowerCase())),base=[tabName(tabId)].concat(S.tabs.filter(t=>t.id!==tabId&&t.id!=='inbox').map(t=>t.name),['основы','настройка','горячие клавиши','команды','чертежи','сборки','детали','макрос']).filter(x=>x&&!seen.has(x.toLowerCase())&&seen.add(x.toLowerCase()));sg.innerHTML=used.concat(base).filter(t=>!cur.has(t.toLowerCase())).slice(0,14).map(t=>({name:t})).map(t=>'<button type="button" class="tagchip" data-tg="'+esc(t.name)+'">#'+esc(t.name)+'</button>').join('')};
    ti.addEventListener('input',dr);ti.addEventListener('focus',dr);sg.addEventListener('click',ev=>{const b=ev.target.closest('[data-tg]');if(!b)return;const v=ti.value.trim().replace(/[,;\s]+$/,'');ti.value=(v?v+', ':'')+b.dataset.tg;dr()});setTimeout(dr,0)}
   val('title',e?e.title:'');['command','desc','steps','note'].forEach(k=>val(k,e?e[k]:''));
   val('group',e?(e.groupId&&gs.some(g=>g.id===e.groupId)?e.groupId:''):((ctx&&ctx.groupId&&gs.some(g=>g.id===ctx.groupId))?ctx.groupId:''));
