@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.57 -->
+<!-- Моя техническая база, версия 1.58 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -304,7 +304,7 @@ body.qa.nofab:not(.selon) #top{bottom:70px}
   .edf .edw textarea{flex:1;height:auto!important;min-height:90px;resize:none}
   .edf .edw .pvbox{flex:none;max-height:35%}
 }
-@media(max-width:699px){.sheet.kbm .edf>.adds,.sheet.kbm .edf>.fld:not(.opt)>label,.sheet.kbm .tagsug{display:none}}
+@media(max-width:699px){.sheet.kbm .edf>.adds,.sheet.kbm .edf>.fld:not(.opt)>label,.sheet.kbm:not(:has(.tagsf:focus-within)) .tagsug{display:none}}
 @media(min-width:700px){
   .wbtn{display:inline-block}
   .sheet.fs.wide{max-width:none;width:calc(100% - 24px);height:calc(100dvh - 24px);max-height:none}
@@ -386,7 +386,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.57';
+const APP_VERSION='1.58';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
