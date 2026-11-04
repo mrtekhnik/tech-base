@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.54 -->
+<!-- Моя техническая база, версия 1.55 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -267,6 +267,31 @@ body.nofab:not(.selon) #top{bottom:16px}
 .pvbox .pvh{color:var(--mut);font-style:italic}
 .sheet.fs .sheet-body::after{content:'';display:block;height:90px}
 .wbtn{display:none}
+.c-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.tg{font-size:.75rem;padding:1px 8px;border-radius:10px;background:var(--bg);border:1px solid var(--line);color:var(--mut)}
+button.tg{cursor:pointer}
+.vtags{margin:6px 0 2px}
+.tagbar{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none;align-items:center}
+.tagbar::-webkit-scrollbar{display:none}
+.tagbar .tagc{flex:none;border:1px solid var(--line);background:var(--bg);border-radius:14px;padding:4px 10px;font-size:.85rem;color:var(--mut);white-space:nowrap}
+.tagbar .tagc.on{background:var(--acc);border-color:var(--acc);color:var(--accink)}
+.tagbar .tagc .n{opacity:.65;margin-left:4px;font-size:.8em}
+.tagsug{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tagsug:empty{display:none}
+.tagchip{border:1px dashed var(--line);background:transparent;border-radius:12px;padding:3px 9px;font-size:.85rem;color:var(--mut)}
+#fab2{position:fixed;right:25px;bottom:86px;width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--surf);font-size:20px;line-height:1;padding:0;box-shadow:0 2px 10px rgba(0,0,0,.25);z-index:15;display:none}
+body.nofab #fab2{bottom:16px}
+body.qa #top{bottom:140px}
+body.qa.nofab:not(.selon) #top{bottom:70px}
+.chip .cnt{font-size:.75em;opacity:.7;margin-left:2px}
+.sydiff{max-height:55vh;overflow:auto}
+.sydiff ul{margin:4px 0 10px;padding-left:18px}.sydiff li{margin:4px 0}
+.cfsec{margin:0 0 14px}.cfsec h4{margin:10px 0 4px}
+.cfi{display:block;width:100%;text-align:left;padding:8px 10px;margin:4px 0;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+#btnKeys{padding:0 8px}
+.kscap{margin:8px 0}
+.kscap.on{background:var(--acc);border-color:var(--acc);color:var(--accink)}
+@media(max-width:699px) and (max-height:620px){.edf>.fld.tagsf{display:none}}
 @media(max-width:699px){
   .sheet .tools{flex-wrap:nowrap;overflow-x:auto;gap:4px;padding:4px 0;margin-top:2px;scrollbar-width:none}
   .sheet .tools::-webkit-scrollbar{display:none}
@@ -342,12 +367,14 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
       <input id="q" type="search" autocomplete="off" enterkeyhint="search">
       <button class="clr" id="qClear" aria-label="Очистить поиск">×</button>
     </div>
+    <button class="sb" id="btnKeys" title="Поиск по сочетанию клавиш" aria-label="Поиск по сочетанию клавиш" hidden>⌨</button>
     <button class="sb" id="btnScope" title="Где искать: во вкладке или везде" hidden>Вкладка</button>
     <button class="sb" id="btnArch" title="Искать также в архиве" hidden>Архив</button>
   </div>
 </div>
 <div id="banner"></div>
 <main id="main"></main>
+<button id="fab2" aria-label="Быстрая запись во «Входящие»" title="Быстрая запись во «Входящие»">⚡</button>
 <button id="fab" aria-label="Добавить запись">+</button>
 <button id="top" aria-label="Наверх" title="Наверх">↑</button>
 <div id="toast" role="status"></div>
@@ -359,12 +386,12 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.54';
+const APP_VERSION='1.55';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
 const DAY=86400000;
-let S, view='tab', curTab=null, scope='tab', inclArch=false, q='', reorder=false, storageFailed=false, corruptFound=false, stack=[], curDirty=null;
+let tagF=new Set(), keyQ='', S, view='tab', curTab=null, scope='tab', inclArch=false, q='', reorder=false, storageFailed=false, corruptFound=false, stack=[], curDirty=null;
 
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
@@ -400,6 +427,7 @@ function validate(d,strictApp){
     if(!e||typeof e.id!=='string'||!e.id||ids.has('e'+e.id))return 'ошибка в записях';ids.add('e'+e.id);
     for(const [k] of FIELDS)if(e[k]!=null&&typeof e[k]!=='string')return 'поле «'+k+'» должно быть текстом';
     if(e.status&&!['active','archive','trash'].includes(e.status))return 'неизвестный статус записи';
+    if(e.tags!=null&&!Array.isArray(e.tags)&&typeof e.tags!=='string')return 'ошибка в тегах';
     for(const k of ['keylist','cmdlist']){if(e[k]!=null){if(!Array.isArray(e[k]))return 'список «'+k+'» должен быть массивом';for(const i of e[k])if(!i||typeof i!=='object'||(i.a!=null&&typeof i.a!=='string')||(i.b!=null&&typeof i.b!=='string'))return 'ошибка в списке «'+k+'»'}}
     if(e.status!=='trash'){
       if(!tabIds.has(e.tabId))return 'запись ссылается на несуществующую вкладку';
@@ -423,11 +451,14 @@ function applyWidths(){
   else set('--wsheet',null);
 }
 window.addEventListener('resize',()=>{try{applyWidths()}catch(e){}});
-function fset(){const st=S.settings;if(!st.favUI)st.favUI={n:10,cre:false,mod:false};return st.favUI}
+function fset(){const st=S.settings;if(!st.favUI)st.favUI={n:10,cre:false,mod:false};if(st.favUI.opn===undefined){st.favUI.opn=true;st.favUI.frq=true}return st.favUI}
 let favOrd=false;
 let selMode=false,selCtx=null,lpFired=false;const sel=new Set();
 function profile(){const p=vset().profile;return p==='pc'||p==='phone'?p:(window.innerWidth>=700?'pc':'phone')}
 function effMode(){return profile()==='pc'&&!reorder?vset().mode:'one'}
+const tagsArr=a=>Array.isArray(a)?[...new Map(a.map(x=>String(x).trim().replace(/^#+/,'').trim()).filter(Boolean).map(x=>[x.toLowerCase(),x])).values()].slice(0,30):typeof a==='string'?tagsArr(a.split(/[,;\n]+/)):[];
+function allTags(fl){const m=new Map();S.entries.forEach(e=>{if(e.status==='trash')return;if(fl&&!fl(e))return;(e.tags||[]).forEach(t=>{const k=t.toLowerCase(),o=m.get(k)||{name:t,n:0};o.n++;m.set(k,o)})});return [...m.values()].sort((a,b)=>b.n-a.n||a.name.localeCompare(b.name,'ru'))}
+const tagOk=e=>!tagF.size||[...tagF].every(t=>(e.tags||[]).some(x=>x.toLowerCase()===t));
 const lst=x=>Array.isArray(x)?x.filter(i=>i&&typeof i==='object').map(i=>({a:String(i.a||''),b:String(i.b||'')})):[];
 function normalize(d,keep){
   const s={app:'tech-base',format:1,tabs:[],groups:[],entries:[],
@@ -438,7 +469,7 @@ function normalize(d,keep){
     const o={id:String(e.id),tabId:String(e.tabId),groupId:e.groupId?String(e.groupId):null,fav:!!e.fav,favG:typeof e.favG==='boolean'?e.favG:!!e.fav,
       status:['active','archive','trash'].includes(e.status)?e.status:'active',
       o:typeof e.o==='number'?e.o:idx*10+10,favO:typeof e.favO==='number'?e.favO:null,bundle:e.bundle?String(e.bundle):null,created:+e.created||Date.now(),updated:+e.updated||Date.now(),
-      keylist:lst(e.keylist),cmdlist:lst(e.cmdlist),attachments:Array.isArray(e.attachments)?e.attachments:[],meta:e.meta&&typeof e.meta==='object'?e.meta:null,m:+e.m||0,sh:typeof e.sh==='string'?e.sh:''};
+      keylist:lst(e.keylist),cmdlist:lst(e.cmdlist),tags:tagsArr(e.tags),opens:+e.opens||0,opened:+e.opened||0,attachments:Array.isArray(e.attachments)?e.attachments:[],meta:e.meta&&typeof e.meta==='object'?e.meta:null,m:+e.m||0,sh:typeof e.sh==='string'?e.sh:''};
     FIELDS.forEach(([k])=>o[k]=typeof e[k]==='string'?e[k]:'');
     return o;
   });
@@ -591,10 +622,10 @@ function reorderSubset(arr,ids){
 }
 
 /* ===== Поиск ===== */
-const termsOf=s=>norm(s).replace(/\+/g,' ').split(/\s+/).filter(Boolean);
+const termsOf=s=>norm(s).replace(/[+#]/g,' ').split(/\s+/).filter(Boolean);
 const listText=(e,k)=>(e[k]||[]).map(i=>i.a+' '+i.b).join('\n');
 function matches(e,terms){
-  const hay=norm(FIELDS.map(f=>e[f[0]]).concat([listText(e,'keylist'),listText(e,'cmdlist')]).join('\n')).replace(/\+/g,' ');
+  const hay=norm(FIELDS.map(f=>e[f[0]]).concat([listText(e,'keylist'),listText(e,'cmdlist'),(e.tags||[]).join(' ')]).join('\n')).replace(/\+/g,' ');
   return terms.every(t=>hay.includes(t));
 }
 function hl(text,terms){
@@ -604,9 +635,9 @@ function hl(text,terms){
 }
 function snippet(e,terms){
   if(!terms.length)return '';
-  const ks=[['hotkey','Горячая клавиша'],['command','Команда'],['keylist','Список клавиш'],['cmdlist','Список команд'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
+  const ks=[['tags','Теги'],['hotkey','Горячая клавиша'],['command','Команда'],['keylist','Список клавиш'],['cmdlist','Список команд'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
   for(const [k,lab] of ks){
-    let t=Array.isArray(e[k])?listText(e,k):e[k];if(!t)continue;
+    let t=k==='tags'?(e.tags||[]).join(', '):Array.isArray(e[k])?listText(e,k):e[k];if(!t)continue;
     t=plainFmt(t.replace(/\[\[([^\[\]\n]*)\]\]/g,'$1').replace(/`/g,''));
     const n=norm(t).replace(/\+/g,' ');
     const i=terms.map(x=>n.indexOf(x)).filter(x=>x>=0).sort((x,y)=>x-y)[0];
@@ -686,7 +717,8 @@ function cardHTML(e,o={}){
   if(e.command&&e.title)h+='<div class="c-cmd">'+hl(e.command.split('\n')[0],T)+'</div>';
   if(T.length)h+=snippet(e,T);else{const pv=cardPreview(e);if(pv)h+='<div class="c-desc">'+rich(pv,0,1)+'</div>'}
   if(listSummary(e))h+='<div class="c-loc">'+listSummary(e)+'</div>';
-  if(o.loc)h+='<div class="c-loc">'+esc(locOf(e))+(e.status==='archive'&&view!=='archive'?' · в архиве':'')+'</div>';
+  if((e.tags||[]).length)h+='<div class="c-tags">'+e.tags.map(t=>'<span class="tg">#'+esc(t)+'</span>').join('')+'</div>';
+  if(o.loc)h+='<div class="c-loc">'+esc(locOf(e))+(e.status==='archive'&&view!=='archive'?' · в архиве':'')+(o.uses&&e.opens?' · открывали '+e.opens+' раз':'')+'</div>';
   if(!selMode&&o.actions==='archive')h+='<div class="c-act"><button class="btn sm" data-a="restore">Восстановить</button><button class="btn sm" data-a="trash">Удалить</button></div>';
   if(!selMode&&o.actions==='trash')h+='<div class="c-act"><button class="btn sm" data-a="restore">Восстановить</button><button class="btn sm dng" data-a="forever">Удалить навсегда</button></div>';
   h+='</div>';
@@ -703,11 +735,11 @@ function render(){
 function renderHeader(){
   const t=$('#tabs');
   t.innerHTML='<button class="chip'+(view==='fav'?' on':'')+'" data-v="fav" aria-label="Избранное и недавние" title="Избранное и недавние">★</button>'+
-    S.tabs.map(x=>'<button class="chip'+(view==='tab'&&x.id===curTab?' on':'')+'" data-t="'+x.id+'">'+esc(x.name)+'</button>').join('');
+    S.tabs.map(x=>'<button class="chip'+(view==='tab'&&x.id===curTab?' on':'')+'" data-t="'+x.id+'">'+esc(x.name)+(x.id==='inbox'?' <span class="cnt">'+S.entries.filter(e=>e.tabId==='inbox'&&e.status==='active').length+'</span>':'')+'</button>').join('');
   const on=$('.chip.on',t);if(on)t.scrollLeft=on.offsetLeft-t.clientWidth/2+on.clientWidth/2;
   const isTab=view==='tab'&&S.tabs.length>0;
   const bs=$('#btnScope'),ba=$('#btnArch'),br=$('#btnReorder');
-  bs.hidden=ba.hidden=br.hidden=!isTab;
+  bs.hidden=ba.hidden=br.hidden=!isTab;{const bk=$('#btnKeys');bk.hidden=!isTab;bk.classList.toggle('on',!!keyQ)}
   const gs0=S.groups.filter(g=>g.tabId===curTab&&g.status==='active'),anyOpen=gs0.some(g=>!g.collapsed),bf=$('#btnFold');
   bf.hidden=!(isTab&&gs0.length);
   bf.innerHTML=anyOpen?'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4l5 5 5-5M7 20l5-5 5 5"/></svg>':'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 9l5-5 5 5M7 15l5 5 5-5"/></svg>';
@@ -743,15 +775,21 @@ function listHTML(list,o){return '<div class="list">'+list.map(e=>cardHTML(e,o))
 function renderMain(){
   const m=$('#main'),terms=termsOf(q);
   if(view!=='fav')favOrd=false;
-  const md=(view==='tab'&&S.tabs.length&&!terms.length)?effMode():'one';
+  const md=(view==='tab'&&S.tabs.length&&!terms.length&&!tagF.size&&!keyQ)?effMode():'one';
   m.className=md==='one'?'':'wide m-'+md+(md==='grid'&&vset().fill==='cols'?' fc':'');
   if(view==='tab'){
     if(!S.tabs.length){m.innerHTML='<div class="empty"><b>Вкладок пока нет</b>Создайте первую вкладку, чтобы начать записывать.<br><br><button class="btn pri" data-a="tabs">Создать вкладку</button></div>';return}
-    if(terms.length){
-      const list=S.entries.filter(e=>(e.status==='active'||(inclArch&&e.status==='archive'))&&(scope==='all'||e.tabId===curTab)&&matches(e,terms));
+    if(terms.length||tagF.size||keyQ){
+      let list=S.entries.filter(e=>(e.status==='active'||(inclArch&&e.status==='archive'))&&(scope==='all'||e.tabId===curTab)&&(!terms.length||matches(e,terms))&&tagOk(e));
       const where=(scope==='all'?'везде':'в «'+esc(tabName(curTab))+'»')+(inclArch?', включая архив':'');
-      m.innerHTML='<div class="resline">Найдено: '+list.length+' · '+where+'</div>'+
-        (list.length?listHTML(list,{loc:true,terms}):'<div class="empty"><b>Ничего не найдено</b>Попробуйте другое слово или часть слова'+(scope==='tab'?'. Кнопка «Вкладка» переключает поиск на «Везде»':'')+(inclArch?'':', а «Архив» добавляет архив к поиску')+'.</div>');
+      let body='';
+      if(keyQ){
+        const r=keyMatch(list,keyQ);list=r.exact.concat(r.part);
+        body=(r.exact.length?'<div class="sech"><h3 class="sec">Точное совпадение <span class="cnt">'+r.exact.length+'</span></h3></div>'+listHTML(r.exact,{loc:true,terms}):'')+
+          (r.part.length?'<div class="sech"><h3 class="sec">Клавиши входят в другие сочетания <span class="cnt">'+r.part.length+'</span></h3></div>'+listHTML(r.part,{loc:true,terms}):'');
+      }else body=list.length?listHTML(list,{loc:true,terms}):'';
+      m.innerHTML=tagBarHTML()+'<div class="resline">Найдено: '+list.length+' · '+where+'</div>'+
+        (list.length?body:'<div class="empty"><b>Ничего не найдено</b>'+(keyQ?'Записей с такой клавишей нет. Кнопка ⌨ меняет сочетание, а «Везде» расширяет поиск на все вкладки.':'Попробуйте другое слово или часть слова'+(scope==='tab'?'. Кнопка «Вкладка» переключает поиск на «Везде»':'')+(inclArch?'':', а «Архив» добавляет архив к поиску')+'.')+'</div>');
       return;
     }
     tabView(m);
@@ -865,18 +903,20 @@ function favView(m,terms){
   const fav=f(favList());
   const cre=f(act.slice().sort((a,b)=>b.created-a.created)).slice(0,n);
   const mod=f(act.filter(e=>e.updated>e.created).sort((a,b)=>b.updated-a.updated)).slice(0,n);
+  const opn=f(act.filter(e=>e.opened).sort((a,b)=>b.opened-a.opened)).slice(0,n);
+  const frq=f(act.filter(e=>(e.opens||0)>=2).sort((a,b)=>((b.opens||0)-(a.opens||0))||(b.opened-a.opened))).slice(0,n);
   const canOrd=fav.length>1&&!terms.length;
   if(!canOrd)favOrd=false;
   let h='<div class="favbar">Недавних в списках: <select data-favn aria-label="Число недавних">'+[5,10,15,20,30,50].map(v=>'<option value="'+v+'"'+(v===n?' selected':'')+'>'+v+'</option>').join('')+'</select></div>';
   h+='<div class="sech"><h3 class="sec">Избранное <span class="cnt">'+fav.length+'</span></h3><span class="sp"></span>'+(canOrd?'<button class="btn sm'+(favOrd?' pri':'')+'" data-a="favord">'+(favOrd?'Готово':'Порядок')+'</button>':'')+'</div>';
   if(favOrd)h+='<p class="hint secempty">Тяните ⠿ или используйте стрелки. Порядок сохраняется.</p>';
   h+=fav.length?'<div class="list favlist">'+fav.map(e=>cardHTML(e,{loc:true,terms,reorder:favOrd})).join('')+'</div>':'<div class="hint secempty">'+(terms.length?'Ничего не найдено.':'Откройте меню ⋯ у записи и выберите «Разместить в Избранном».')+'</div>';
-  const fold=(k,t,l,empty)=>{
+  const fold=(k,t,l,empty,uses)=>{
     const open=terms.length?true:!!ui[k];
     return '<div class="sech"><button class="foldb" data-a="favfold" data-k="'+k+'" aria-expanded="'+open+'">'+(open?'▾':'▸')+' '+t+' <span class="cnt">'+l.length+'</span></button></div>'+
-      (open?(l.length?listHTML(l,{loc:true,terms}):'<div class="hint secempty">'+(terms.length?'Ничего не найдено.':empty)+'</div>'):'');
+      (open?(l.length?listHTML(l,{loc:true,terms,uses}):'<div class="hint secempty">'+(terms.length?'Ничего не найдено.':empty)+'</div>'):'');
   };
-  h+=fold('cre','Недавние: созданные',cre,'Записей пока нет.')+fold('mod','Недавние: изменённые',mod,'Изменённых записей пока нет.');
+  h+=fold('opn','Недавно открывали',opn,'Откройте любую запись, и она появится здесь.')+fold('frq','Часто используемые',frq,'Здесь будут записи, которые вы открывали два раза и больше.',true)+fold('cre','Недавние: созданные',cre,'Записей пока нет.')+fold('mod','Недавние: изменённые',mod,'Изменённых записей пока нет.');
   m.innerHTML=h;
   if(favOrd){const box=$('.favlist',m);if(box)makeSortable(box,'.card',ids=>{ids.forEach((x,k)=>{get(x).favO=(k+1)*10});save();render()})}
 }
@@ -884,7 +924,7 @@ function tabView(m){
   const map=tabTree(curTab),mode=effMode();
   const total=S.entries.filter(e=>e.tabId===curTab&&e.status==='active').length;
   const hasG=S.groups.some(g=>g.tabId===curTab&&g.status==='active');
-  let h='';
+  let h=reorder?'':tagBarHTML();
   if(reorder)h+='<div class="rhint"><span>Режим порядка: тяните ⠿, чтобы переносить записи и группы куда угодно, в том числе внутрь групп. Стрелки ↑↓ двигают элемент на шаг.'+(profile()==='pc'&&vset().mode!=='one'?' На это время показана одна колонка.':'')+'</span>'+(selMode?'':'<button class="btn sm" data-a="entersel">Выбрать несколько</button>')+'<button class="btn sm pri" data-a="reorder">Готово</button></div>';
   if(!total&&!hasG)h+='<div class="empty"><b>Здесь пока пусто</b>Нажмите «+», чтобы добавить первую запись, или создайте группу.</div>';
   if(mode==='cols'){
@@ -1227,7 +1267,7 @@ async function bundleForever(gid){
   fixRefs();save();render();toast('Группа удалена навсегда');
 }
 
-function renderFab(){const on=view==='tab'&&curTab&&S.tabs.length&&!selMode;$('#fab').style.display=on?'block':'none';document.body.classList.toggle('nofab',!on)}
+function renderFab(){const on=view==='tab'&&curTab&&S.tabs.length&&!selMode;$('#fab').style.display=on?'block':'none';document.body.classList.toggle('nofab',!on);const qa=(view==='tab'||view==='fav')&&!selMode;$('#fab2').style.display=qa?'block':'none';document.body.classList.toggle('qa',qa)}
 
 /* ===== Навигация и события ===== */
 function gotoTab(id){view='tab';curTab=id;reorder=false;S.settings.lastTab=id;save();render();window.scrollTo(0,0)}
@@ -1294,6 +1334,8 @@ $('#q').addEventListener('input',e=>{q=e.target.value;clearTimeout(qT);qT=setTim
 $('#qClear').onclick=()=>{q='';$('#q').value='';render();$('#q').focus()};
 $('#btnMenu').onclick=openMenu;
 $('#fab').onclick=()=>openForm(null);
+$('#fab2').onclick=()=>openQuick();
+$('#btnKeys').onclick=()=>openKeySearch();
 $('#banner').addEventListener('click',e=>{
   const b=e.target.closest('[data-b]');if(!b)return;
   if(b.dataset.b==='export')doExport();
@@ -1308,6 +1350,9 @@ $('#main').addEventListener('click',async ev=>{
   if(b){
     const gh=b.closest('.gh'),gid=(gh&&gh.dataset.g)||(card&&card.dataset.gid);
     switch(b.dataset.a){
+      case 'tagf':{const t=b.dataset.t;if(tagF.has(t))tagF.delete(t);else tagF.add(t);render();break}
+      case 'tagclr':tagF=new Set();render();break;
+      case 'keyclr':keyQ='';render();break;
       case 'sel':toggleSel(id);break;
       case 'gsel':toggleGroupSel(gid);break;
       case 'entersel':enterSel();break;
@@ -1352,7 +1397,7 @@ function trashEntry(e){
 const keysCopy=h=>h.split(/\s*\+\s*/).filter(Boolean).map(k=>k==='Plus'?'+':k).join('+');
 const cpyKeys=h=>h?'<button type="button" class="cpyb c-keys" data-copy="'+esc(keysCopy(h))+'" title="Нажмите, чтобы скопировать">'+keysHTML(h)+'</button>':'';
 function entryHTML(e){
-  let h='<div class="vw"><p class="tt">'+esc(titleOf(e))+(e.status!=='active'?'<span class="badge">'+(e.status==='archive'?'в архиве':'в корзине')+'</span>':'')+'</p><div class="hint">'+esc(locOf(e))+'</div>';
+  let h='<div class="vw"><p class="tt">'+esc(titleOf(e))+(e.status!=='active'?'<span class="badge">'+(e.status==='archive'?'в архиве':'в корзине')+'</span>':'')+'</p><div class="hint">'+esc(locOf(e))+'</div>'+((e.tags||[]).length?'<div class="c-tags vtags">'+e.tags.map(t=>'<button type="button" class="tg" data-tag="'+esc(t)+'" title="Показать все записи с этим тегом">#'+esc(t)+'</button>').join('')+'</div>':'');
   if(e.hotkey)h+='<h4>Горячая клавиша</h4>'+cpyKeys(e.hotkey);
   if(e.command)h+='<h4>Команда</h4><div class="cmd"><button type="button" class="cpyb" data-copy="'+esc(e.command)+'" title="Нажмите, чтобы скопировать"><code>'+esc(e.command)+'</code></button><button class="btn sm" data-a="copy">Копировать</button></div>';
   if((e.keylist||[]).length)h+='<h4>Горячие клавиши <button class="btn lnk" data-a="copykeys">копировать список</button></h4><div class="kl">'+e.keylist.map(i=>'<div>'+cpyKeys(i.a)+'</div><div class="txt">'+esc(i.b)+'</div>').join('')+'</div>';
@@ -1368,6 +1413,7 @@ async function copyText(t,msg){
     try{document.execCommand('copy');toast(msg)}catch(__){toast('Не удалось скопировать')}ta.remove()}
 }
 function showEntry(id){
+  {const e0=get(id);if(e0&&e0.status==='active'){e0.opens=(e0.opens||0)+1;e0.opened=Date.now();try{save()}catch(_){}}}
   const sh=sheet({noHead:true,body:document.createElement('div')});
   const draw=()=>{
     const e=get(id);if(!e){sh.close();return}
@@ -1381,6 +1427,8 @@ function showEntry(id){
   };
   sh.redraw=draw;draw();
   sh.el.addEventListener('click',ev=>{
+    const tg=ev.target.closest('[data-tag]');
+    if(tg){sh.close();tagF=new Set([tg.dataset.tag.toLowerCase()]);keyQ='';q='';$('#q').value='';scope='all';view='tab';render();window.scrollTo(0,0);return}
     const c=ev.target.closest('[data-copy]');
     if(c){const t=c.dataset.copy;copyText(t,'Скопировано: '+(t.length>40?t.slice(0,40)+'…':t));return}
     const b=ev.target.closest('[data-a]');if(b)entryAction(id,b.dataset.a,sh)});
@@ -1884,9 +1932,13 @@ function openForm(id,ctx){
     note:'<div class="edw"><textarea data-f="note" rows="2"></textarea><div class="pvbox" hidden></div></div>'+tools,
     group:'<select data-f="group"><option value="">Без группы</option>'+gs.map(g=>'<option value="'+g.id+'">'+esc(g.label)+'</option>').join('')+'</select>'
   };
-  body.innerHTML='<div class="fld"><label>Название</label><input data-f="title" type="search" enterkeyhint="done" autocomplete="off"></div><div class="adds"></div>'+
+  body.innerHTML='<div class="fld"><label>Название</label><input data-f="title" type="search" enterkeyhint="done" autocomplete="off"></div><div class="fld tagsf"><label>Теги</label><input data-f="tags" type="search" enterkeyhint="done" autocomplete="off" placeholder="через запятую, например: SolidWorks, чертежи"><div class="tagsug"></div></div><div class="adds"></div>'+
     opts.map(([k,l])=>wrap(k,l,inner[k])).join('')+'<div class="err" hidden></div>';
   const val=(k,v)=>{const x=$('[data-f='+k+']',body);if(x)x.value=v};
+  val('tags',e?(e.tags||[]).join(', '):'');
+  {const ti=$('[data-f=tags]',body),sg=$('.tagsug',body);
+   const dr=()=>{const cur=new Set(tagsArr(ti.value).map(x=>x.toLowerCase()));sg.innerHTML=allTags().filter(t=>!cur.has(t.name.toLowerCase())).slice(0,12).map(t=>'<button type="button" class="tagchip" data-tg="'+esc(t.name)+'">#'+esc(t.name)+'</button>').join('')};
+   ti.addEventListener('input',dr);sg.addEventListener('click',ev=>{const b=ev.target.closest('[data-tg]');if(!b)return;const v=ti.value.trim().replace(/[,;\s]+$/,'');ti.value=(v?v+', ':'')+b.dataset.tg;dr()});setTimeout(dr,0)}
   val('title',e?e.title:'');['command','desc','steps','note'].forEach(k=>val(k,e?e[k]:''));
   val('group',e?(e.groupId&&gs.some(g=>g.id===e.groupId)?e.groupId:''):((ctx&&ctx.groupId&&gs.some(g=>g.id===ctx.groupId))?ctx.groupId:''));
   const hk=hotkeyWidget(e?e.hotkey:'',()=>{},true);
@@ -2023,17 +2075,126 @@ function openForm(id,ctx){
     if(!FIELDS.some(([k])=>(v[k]||'').trim())&&!v.keylist.length&&!v.cmdlist.length){const er=$('.err',body);er.hidden=false;er.textContent='Заполните хотя бы одно поле.';return}
     const gid=v.group||null,now=Date.now(),snap=e?JSON.stringify(S):null;
     if(gid){const pg0=grp(gid);if(pg0)pg0.collapsed=false}
-    if(e){const oldG=e.groupId||null;FIELDS.forEach(([k])=>e[k]=(v[k]||'').trim());e.keylist=v.keylist;e.cmdlist=v.cmdlist;if(gid!==oldG)e.o=nextO(tabId,gid);e.groupId=gid;e.updated=now}
-    else{const n={id:uid(),tabId,groupId:gid,fav:false,favG:false,status:'active',o:nextO(tabId,gid),bundle:null,created:now,updated:now,keylist:v.keylist,cmdlist:v.cmdlist,attachments:[],meta:null};FIELDS.forEach(([k])=>n[k]=(v[k]||'').trim());S.entries.push(n)}
+    if(e){const oldG=e.groupId||null;FIELDS.forEach(([k])=>e[k]=(v[k]||'').trim());e.keylist=v.keylist;e.cmdlist=v.cmdlist;e.tags=tagsArr(v.tags);if(gid!==oldG)e.o=nextO(tabId,gid);e.groupId=gid;e.updated=now}
+    else{const n={id:uid(),tabId,groupId:gid,fav:false,favG:false,status:'active',o:nextO(tabId,gid),bundle:null,created:now,updated:now,keylist:v.keylist,cmdlist:v.cmdlist,tags:tagsArr(v.tags),opens:0,opened:0,attachments:[],meta:null};FIELDS.forEach(([k])=>n[k]=(v[k]||'').trim());S.entries.push(n)}
     init=JSON.stringify(raw());sh.close();
     const okSave=save();render();
-    toast(okSave?'Запись сохранена':'Не удалось сохранить в браузере — сделайте экспорт',okSave&&snap?()=>{const st=S.settings;S=JSON.parse(snap);S.settings=st;save();render()}:null);
+    const dupE=(()=>{const cur=e||S.entries[S.entries.length-1];if(!cur||!cur.hotkey)return null;const k=comboSet(cur.hotkey);if(!k)return null;const kk=k.join('|');return S.entries.find(o=>o!==cur&&o.status==='active'&&o.tabId===cur.tabId&&entryCombos(o,false).some(c=>c.key===kk))||null})();
+    toast(okSave?(dupE?'Запись сохранена. Такая клавиша уже есть в «'+titleOf(dupE)+'»':'Запись сохранена'):'Не удалось сохранить в браузере — сделайте экспорт',okSave&&snap?()=>{const st=S.settings;S=JSON.parse(snap);S.settings=st;save();render()}:null);
     if(next)openForm(null,gid?{groupId:gid}:null);
   };
   ok.onclick=()=>commit(false);more.onclick=()=>commit(true);
   body.addEventListener('keydown',ev=>{if(ev.key==='Enter'&&(ev.ctrlKey||ev.metaKey)){ev.preventDefault();commit(false)}});
   refresh();
   $('[data-f=title]',body).focus();
+}
+
+/* ===== Теги, поиск по клавишам, дубли, быстрая запись ===== */
+function tagBarHTML(){
+  const sc=e=>(e.status==='active'||(inclArch&&e.status==='archive'))&&(scope==='all'||e.tabId===curTab);
+  const tags=allTags(sc);
+  if(!tags.length&&!tagF.size&&!keyQ)return '';
+  let h='<div class="tagbar" role="toolbar" aria-label="Теги и фильтры">';
+  if(keyQ)h+='<button type="button" class="tagc on" data-a="keyclr" title="Сбросить поиск по клавишам">⌨ '+esc(keyQ)+' ×</button>';
+  if(tagF.size)h+='<button type="button" class="tagc" data-a="tagclr">× сбросить теги</button>';
+  const have=new Set(tags.map(t=>t.name.toLowerCase()));
+  tagF.forEach(t=>{if(!have.has(t))tags.unshift({name:t,n:0})});
+  tags.forEach(t=>{const k=t.name.toLowerCase();h+='<button type="button" class="tagc'+(tagF.has(k)?' on':'')+'" data-a="tagf" data-t="'+esc(k)+'">#'+esc(t.name)+'<span class="n">'+t.n+'</span></button>'});
+  return h+'</div>';
+}
+const KN={control:'ctrl',ctl:'ctrl',escape:'esc',del:'delete',pgup:'pageup',pgdn:'pagedown','return':'enter',cmd:'win',meta:'win',command:'win',plus:'+',arrowup:'↑',arrowdown:'↓',arrowleft:'←',arrowright:'→',ins:'insert',spacebar:'space',prtsc:'prtscr',printscreen:'prtscr'};
+const kTok=x=>{x=String(x).trim().toLowerCase().replace(/ё/g,'е');return KN[x]||x};
+function comboSet(str){
+  const t=String(str||'').replace(/^\[\[|\]\]$/g,'').replace(/\+\s*\+/g,'+plus').trim();
+  const a=t.split(/\s*\+\s*/).map(kTok).filter(Boolean);
+  return a.length?[...new Set(a)].sort():null;
+}
+function entryCombos(e,withText){
+  const out=[];
+  const add=raw=>{String(raw||'').split(/\s*(?:;|\s\/\s|\sили\s|,\s+(?=(?:ctrl|shift|alt|win|cmd)\s*\+))\s*/i).forEach(p=>{p=p.trim();if(!p)return;const set=comboSet(p);if(set)out.push({set,key:set.join('|'),disp:p.replace(/\s*\+\s*/g,'+')})})};
+  add(e.hotkey);(e.keylist||[]).forEach(i=>add(i.a));
+  if(withText)['desc','steps','note','command'].forEach(k=>{String(e[k]||'').replace(/\[\[([^\[\]\n]+)\]\]/g,(_,x)=>{add(x);return _})});
+  return out;
+}
+function keyMatch(list,qs){
+  const qset=comboSet(qs)||[],qk=qset.join('|'),exact=[],part=[];
+  list.forEach(e=>{let ex=false,pt=false;entryCombos(e,true).forEach(c=>{if(c.key===qk)ex=true;else if(qset.length&&qset.every(k=>c.set.includes(k)))pt=true});if(ex)exact.push(e);else if(pt)part.push(e)});
+  return {exact,part};
+}
+const KEYNAME=ev=>{
+  const c=ev.code||'';let m;
+  if((m=/^Key([A-Z])$/.exec(c)))return m[1];
+  if((m=/^(?:Digit|Numpad)(\d)$/.exec(c)))return m[1];
+  if(/^F\d{1,2}$/.test(c))return c;
+  const T={Enter:'Enter',NumpadEnter:'Enter',Escape:'Esc',Tab:'Tab',Space:'Space',Backspace:'Backspace',Delete:'Delete',Insert:'Insert',Home:'Home',End:'End',PageUp:'PageUp',PageDown:'PageDown',ArrowUp:'↑',ArrowDown:'↓',ArrowLeft:'←',ArrowRight:'→',Minus:'-',Equal:'=',BracketLeft:'[',BracketRight:']',Backslash:'\\',Semicolon:';',Quote:"'",Comma:',',Period:'.',Slash:'/',Backquote:'`',PrintScreen:'PrtScr',Pause:'Pause',ContextMenu:'Menu',CapsLock:'CapsLock',NumLock:'NumLock',ScrollLock:'ScrollLock'};
+  if(T[c])return T[c];
+  const k=ev.key||'';return k.length===1?k.toUpperCase():k;
+};
+async function openKeySearch(){
+  const node=document.createElement('div');
+  node.innerHTML='<p class="hint">Нажмите сочетание на клавиатуре (кнопка ниже) или выберите клавиши. Найду записи с этой клавишей: в поле «Горячая клавиша», в списках клавиш и в тексте в двойных скобках.</p><button type="button" class="btn kscap">⌨ Нажать сочетание на клавиатуре</button><div class="kshost"></div>';
+  const host=$('.kshost',node),cap=$('.kscap',node);let w;
+  const mount=init=>{w=hotkeyWidget(init||'',()=>{});host.innerHTML='';host.append(w.el)};
+  mount(keyQ);
+  const stopCap=()=>{cap.classList.remove('on');cap.textContent='⌨ Нажать сочетание на клавиатуре';document.removeEventListener('keydown',onKey,true)};
+  function onKey(ev){
+    if(['Control','Shift','Alt','Meta','AltGraph'].includes(ev.key)){ev.preventDefault();return}
+    ev.preventDefault();ev.stopPropagation();
+    const parts=[];if(ev.ctrlKey)parts.push('Ctrl');if(ev.shiftKey)parts.push('Shift');if(ev.altKey)parts.push('Alt');if(ev.metaKey)parts.push('Win');
+    parts.push(KEYNAME(ev));mount(parts.join('+'));stopCap();
+  }
+  cap.onclick=()=>{
+    if(cap.classList.contains('on')){stopCap();return}
+    cap.classList.add('on');cap.textContent='Нажмите сочетание… (повторное нажатие кнопки отменяет)';document.addEventListener('keydown',onKey,true);
+  };
+  const btns=[{label:'Отмена',value:null}];if(keyQ)btns.push({label:'Сбросить',value:'clear'});btns.push({label:'Найти',value:'ok',kind:'pri'});
+  const r=await dlg({title:'Поиск по клавишам',node,noFocus:true,buttons:btns});
+  stopCap();
+  if(r.v==='clear'){keyQ='';render();return}
+  if(r.v==='ok'){const c=w.get();if(!c){keyQ='';render();return}keyQ=c;view='tab';reorder=false;render();window.scrollTo(0,0)}
+}
+function keyConflicts(){
+  const out=[],byTab=new Map();
+  S.entries.filter(e=>e.status==='active'&&tab(e.tabId)).forEach(e=>{
+    const seen=new Set();
+    entryCombos(e,false).forEach(c=>{if(seen.has(c.key))return;seen.add(c.key);
+      let m=byTab.get(e.tabId);if(!m)byTab.set(e.tabId,m=new Map());
+      let a=m.get(c.key);if(!a)m.set(c.key,a={disp:c.disp,items:[]});a.items.push(e)});
+  });
+  byTab.forEach((m,tid)=>m.forEach(a=>{if(a.items.length>1)out.push({tab:tab(tid),disp:a.disp,items:a.items})}));
+  return out;
+}
+function openDups(){
+  const list=keyConflicts(),el=document.createElement('div');
+  if(!list.length)el.innerHTML='<p>Дублей не найдено: в каждой вкладке одна клавиша назначена только одной записи. ✓</p>';
+  else{
+    const byTab=new Map();list.forEach(c=>{if(!byTab.has(c.tab.id))byTab.set(c.tab.id,[]);byTab.get(c.tab.id).push(c)});
+    el.innerHTML='<p class="hint">Одна и та же клавиша записана в нескольких записях одной вкладки. Если у них разный контекст (например, эскиз и сборка), это нормально. Нажмите на запись, чтобы открыть.</p>'+
+      [...byTab.values()].map(a=>'<div class="cfsec"><h4>'+esc(a[0].tab.name)+'</h4>'+a.map(c=>'<div class="hint">'+keysHTML(c.disp)+' · '+c.items.length+' '+pl(c.items.length,['запись','записи','записей'])+'</div>'+c.items.map(e=>'<button type="button" class="cfi" data-id="'+e.id+'">'+esc(titleOf(e))+'<div class="hint">'+esc(locOf(e))+'</div></button>').join('')).join('')+'</div>').join('');
+  }
+  const sh=sheet({title:'Проверка дублей клавиш',body:el});
+  el.addEventListener('click',ev=>{const b=ev.target.closest('[data-id]');if(!b)return;sh.close();showEntry(b.dataset.id)});
+}
+function ensureInbox(){let t=tab('inbox');if(!t){t={id:'inbox',name:'Входящие',arch:'show',archOpen:false,m:0,sh:''};S.tabs.unshift(t)}return t}
+function openQuick(){
+  const body=document.createElement('div');
+  body.innerHTML='<div class="fld"><label>Что узнали или не хотите потерять</label><textarea rows="7" placeholder="Например: Ctrl+Shift+E — выделить до конца строки"></textarea></div><p class="hint">Запись попадёт во вкладку «Входящие». Разобрать её и переложить куда нужно можно потом.</p>';
+  const ta=$('textarea',body);
+  const cancel=Object.assign(document.createElement('button'),{className:'btn',textContent:'Отмена'});
+  const ok=Object.assign(document.createElement('button'),{className:'btn pri',textContent:'Сохранить во «Входящие»'});
+  const sh=sheet({title:'Быстрая запись',body,foot:[cancel,ok],guard:async()=>!ta.value.trim()||await ask('Закрыть без сохранения?','Введённый текст будет потерян.','Закрыть без сохранения',true)});
+  cancel.onclick=()=>sh.tryClose();
+  const go=()=>{
+    const t=ta.value.trim();if(!t){ta.focus();return}
+    const snap=JSON.stringify(S),ib=ensureInbox(),now=Date.now();
+    S.entries.push({id:uid(),tabId:ib.id,groupId:null,title:'',hotkey:'',command:'',desc:t,steps:'',note:'',keylist:[],cmdlist:[],tags:[],fav:false,favG:false,status:'active',o:nextO(ib.id,null),favO:null,bundle:null,created:now,updated:now,attachments:[],meta:null,opens:0,opened:0});
+    ta.value='';sh.close();
+    const okS=save();render();
+    toast(okS?'Сохранено во «Входящие»':'Не удалось сохранить в браузере — сделайте экспорт',okS?()=>{const st=S.settings;S=JSON.parse(snap);S.settings=st;save();render()}:null);
+  };
+  ok.onclick=go;
+  ta.addEventListener('keydown',ev=>{if(ev.key==='Enter'&&(ev.ctrlKey||ev.metaKey)){ev.preventDefault();go()}});
+  setTimeout(()=>ta.focus(),50);
 }
 
 /* ===== Менеджеры вкладок и групп ===== */
@@ -2084,14 +2245,15 @@ function openMenu(){
   const el=document.createElement('div');el.className='menu';
   let more=false;
   const draw=()=>{
-    el.innerHTML=(S.tabs.length?'<button data-m="sel">☑ Выбрать несколько записей</button>':'')+(S.tabs.length&&curTab?'<button data-m="gnew">＋ Новая группа в этой вкладке</button>':'')+
+    el.innerHTML='<button data-m="quick">⚡ Быстрая запись во «Входящие»</button>'+(S.tabs.length?'<button data-m="sel">☑ Выбрать несколько записей</button>':'')+(S.tabs.length&&curTab?'<button data-m="gnew">＋ Новая группа в этой вкладке</button>':'')+
       '<button data-m="tabsmgr">Настройки вкладок</button><button data-m="look">Оформление и размеры</button>'+
+      '<button data-m="dups">Проверка дублей клавиш</button>'+
       '<button data-m="trash">Корзина<span class="n">'+cnt('trash')+'</span></button>'+
       '<button data-m="export" class="mhl">Экспорт в файл (резервная копия)</button>'+
       '<button data-m="import">Импорт из файла</button>'+
       '<button data-more>'+(more?'Свернуть ▴':'Ещё ▾')+'</button>'+
       (more?'<button data-m="sync">⟳ Синхронизировать</button><button data-m="update">Проверить обновление</button><button data-m="settings">Синхронизация, копии и данные</button><button data-m="text">Экспорт в текстовый файл</button>':'')+
-      '<div class="ver">Версия программы: '+APP_VERSION+'<br>Последний экспорт: '+(S.settings.lastExport?fmt(S.settings.lastExport):'—')+'<br>Последний импорт: '+(S.settings.lastImport?fmt(S.settings.lastImport):'—')+'<br>Синхронизация: '+(!syncCfg()?'не настроена':syncSt().lastSync?fmt(syncSt().lastSync):'ещё не было')+'</div>';
+      '<div class="ver">Записей: '+S.entries.filter(e=>e.status==='active').length+(S.entries.some(e=>e.status==='archive')?' (ещё '+S.entries.filter(e=>e.status==='archive').length+' в архиве)':'')+'<br>Версия программы: '+APP_VERSION+'<br>Последний экспорт: '+(S.settings.lastExport?fmt(S.settings.lastExport):'—')+'<br>Последний импорт: '+(S.settings.lastImport?fmt(S.settings.lastImport):'—')+'<br>Синхронизация: '+(!syncCfg()?'не настроена':syncSt().lastSync?fmt(syncSt().lastSync):'ещё не было')+'</div>';
   };
   draw();
   const sh=sheet({title:'Меню',body:el});
@@ -2102,6 +2264,8 @@ function openMenu(){
     else if(m==='gnew'){view='tab';reorder=false;render();newGroup(null)}
     else if(m==='tabsmgr')openTabs();
     else if(m==='look')openLookMenu();
+    else if(m==='quick')openQuick();
+    else if(m==='dups')openDups();
     else if(m==='update')checkUpdate();
     else if(m==='sync')syncNow();
     else if(['fav','archive','trash'].includes(m)){view=m;reorder=false;render();window.scrollTo(0,0)}
@@ -2146,6 +2310,7 @@ function entryText(e){
   if((e.keylist||[]).length){L.push('  Горячие клавиши:');e.keylist.forEach(i=>L.push('    '+i.a+(i.b?' — '+i.b:'')))}
   if((e.cmdlist||[]).length){L.push('  Команды:');e.cmdlist.forEach(i=>L.push('    '+i.a+(i.b?' — '+i.b:'')))}
   [['desc','Описание'],['steps','Инструкция'],['note','Примечание']].forEach(([k,l])=>{if(e[k]){L.push('  '+l+':');L.push(ind(clean(e[k]),4))}});
+  if((e.tags||[]).length)L.push('  Теги: '+e.tags.map(t=>'#'+t).join(' '));
   return L.join('\n');
 }
 function buildText(tabs){
@@ -2673,7 +2838,7 @@ const SYNC_KEY='mrtekhnik.sync',SYNC_DIR='tech-base';
 function syncCfg(){try{const v=JSON.parse(localStorage.getItem(SYNC_KEY)||'null');return v&&v.repo&&v.token?v:null}catch(e){return null}}
 function setSyncCfg(v){try{if(v)localStorage.setItem(SYNC_KEY,JSON.stringify(v));else localStorage.removeItem(SYNC_KEY)}catch(e){}}
 function apiBase(){try{return localStorage.getItem('mrtekhnik.sync.api')||'https://api.github.com'}catch(e){return 'https://api.github.com'}}
-function syncSt(){const st=S.settings;if(!st.sync||typeof st.sync!=='object')st.sync={};if(!st.sync.known||typeof st.sync.known!=='object')st.sync.known={};if(typeof st.sync.lastSync!=='number')st.sync.lastSync=0;if(typeof st.sync.delay!=='number')st.sync.delay=3600000;if(typeof st.sync.dirtySince!=='number')st.sync.dirtySince=0;return st.sync}
+function syncSt(){const st=S.settings;if(!st.sync||typeof st.sync!=='object')st.sync={};if(!st.sync.known||typeof st.sync.known!=='object')st.sync.known={};if(typeof st.sync.lastSync!=='number')st.sync.lastSync=0;if(typeof st.sync.delay!=='number')st.sync.delay=3600000;if(typeof st.sync.dirtySince!=='number')st.sync.dirtySince=0;if(st.sync.preview!=='off')st.sync.preview='ask';return st.sync}
 function resetKnown(){const sy=syncSt();sy.known={};sy.dirtySince=0}
 async function gh(cfg,path,opt={}){
   const h={Authorization:'Bearer '+cfg.token,Accept:opt.raw?'application/vnd.github.raw':'application/vnd.github+json'};if(opt.body)h['Content-Type']='application/json';
@@ -2693,11 +2858,11 @@ function syncErrText(e){
 const devName=()=>/Android/i.test(navigator.userAgent)?'Android':/Windows/i.test(navigator.userAgent)?'Windows':'устройство';
 function b64Utf8(str){const b=new TextEncoder().encode(str);let s='';for(let i=0;i<b.length;i+=8192)s+=String.fromCharCode.apply(null,b.subarray(i,i+8192));return btoa(s)}
 /* отпечатки содержимого: любое изменение записи, группы или вкладки даёт новый отпечаток и время изменения */
-const SYF={e:['id','tabId','groupId','title','hotkey','command','desc','steps','note','keylist','cmdlist','fav','favG','status','bundle','meta','created','updated','attachments'],g:['id','tabId','parentId','name','status','bundle','meta'],t:['id','name','arch']};
+const SYF={e:['id','tabId','groupId','title','hotkey','command','desc','steps','note','keylist','cmdlist','fav','favG','status','bundle','meta','created','updated','attachments','tags'],g:['id','tabId','parentId','name','status','bundle','meta'],t:['id','name','arch']};
 const SYO={e:['o','favO'],g:['o'],t:['o']};
 function stab(v){if(Array.isArray(v))return '['+v.map(stab).join(',')+']';if(v&&typeof v==='object')return '{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+stab(v[k])).join(',')+'}';return JSON.stringify(v===undefined?null:v)}
 function h53(str){let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<str.length;i++){const c=str.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return (4294967296*(2097151&h2)+(h1>>>0)).toString(36)}
-function sigOf(k,x,noOrd){return h53(stab(SYF[k].concat(noOrd?[]:SYO[k]).map(f=>x[f])))}
+function sigOf(k,x,noOrd){return h53(stab(SYF[k].concat(noOrd?[]:SYO[k]).filter(f=>!(f==='tags'&&(!x.tags||!x.tags.length))).map(f=>x[f])))}
 function syncChanges(){
   /* что изменилось после последней синхронизации: [есть ли изменения, самое раннее время изменения] */
   const sy=syncSt(),k=sy.known;let n=0,first=0,dirty=false;
@@ -2736,21 +2901,25 @@ function stampAll(){
   syncTrack();
 }
 const KS3=[['tabs','t'],['groups','g'],['entries','e']];
-const LOCALONLY={t:['archOpen'],g:['collapsed'],e:[]};
+const LOCALONLY={t:['archOpen'],g:['collapsed'],e:['opens','opened']};
+const SYLBL={title:'название',hotkey:'горячая клавиша',command:'команда',desc:'описание',steps:'инструкция',note:'примечание',keylist:'список клавиш',cmdlist:'список команд',tags:'теги',tabId:'вкладка',groupId:'группа',fav:'закреп в группе',favG:'избранное',status:'статус',name:'название',parentId:'вложенность',arch:'архив вкладки',bundle:'набор',attachments:'вложения'};
+function syDiff(a,b,k){const r=[];SYF[k].forEach(f=>{const l=SYLBL[f];if(l&&stab(a[f])!==stab(b[f]))r.push(l)});return r}
 function syncMerge(L,R,B,PR,now){
-  const st={up:0,down:0,del:0,conf:0,grp:0},purged=Object.assign({},PR),F={tabs:[],groups:[],entries:[]};
+  const st={up:0,down:0,del:0,conf:0,grp:0,items:[]},purged=Object.assign({},PR),F={tabs:[],groups:[],entries:[]};
   for(const [key,k] of KS3){
     const l=new Map(L[key].map(x=>[x.id,x])),r=new Map(R[key].map(x=>[x.id,x]));
     const bump=d=>{if(k==='e')st[d]++;else st.grp++};
+    const rec=(dir,x,o)=>st.items.push(Object.assign({dir,k,title:k==='e'?titleOf(x):(x.name||'')},o));
     for(const id of new Set([...l.keys(),...r.keys()])){
       const li=l.get(id),ri=r.get(id),b=B[id];
       if(li&&ri){
         if(li.sh===ri.sh){li.m=Math.max(li.m||0,ri.m||0);F[key].push(li)}
-        else if(li.sh===b){F[key].push(ri);bump('down')}
-        else if(ri.sh===b){F[key].push(li);bump('up')}
+        else if(li.sh===b){F[key].push(ri);bump('down');rec('down',ri,{fields:syDiff(li,ri,k)})}
+        else if(ri.sh===b){F[key].push(li);bump('up');rec('up',li,{fields:syDiff(ri,li,k)})}
         else{
           const w=(li.m||0)>=(ri.m||0)?li:ri,lo=w===li?ri:li;
           F[key].push(w);bump(w===li?'up':'down');
+          rec(w===li?'up':'down',w,{fields:syDiff(lo,w,k),conf:true});
           if(sigOf(k,li,true)!==sigOf(k,ri,true)){
             if(k==='e'){
               const cp=JSON.parse(JSON.stringify(lo));cp.id=uid();cp.title=(lo.title||titleOf(lo))+' (другая версия)';cp.fav=false;cp.favG=false;cp.favO=null;cp.m=now;cp.sh=sigOf('e',cp);
@@ -2759,16 +2928,29 @@ function syncMerge(L,R,B,PR,now){
           }
         }
       }else if(li){
-        if(purged[id]&&b!==undefined&&li.sh===b){bump('del')}
-        else{F[key].push(li);bump('up');delete purged[id]}
+        if(purged[id]&&b!==undefined&&li.sh===b){bump('del');rec('down',li,{del:true})}
+        else{F[key].push(li);bump('up');delete purged[id];rec('up',li,{add:true})}
       }else if(ri){
-        if(b!==undefined&&ri.sh===b){purged[id]=now;bump('del')}
-        else{F[key].push(ri);bump('down');delete purged[id]}
+        if(b!==undefined&&ri.sh===b){purged[id]=now;bump('del');rec('up',ri,{del:true})}
+        else{F[key].push(ri);bump('down');delete purged[id];rec('down',ri,{add:true})}
       }
     }
   }
   const lim=now-400*864e5;for(const id in purged)if(!(purged[id]>lim))delete purged[id];
   return {F,purged,st};
+}
+function syncPreview(items){
+  const KL={e:'запись',g:'группа',t:'вкладка'};
+  const line=i=>{const w=i.del?'удалена':i.add?'новая':(i.conf?'изменена на обоих устройствах':'изменена');const f=(i.del||i.add)?'':(i.fields&&i.fields.length?': '+i.fields.join(', '):': порядок');return '<li><b>'+esc(i.title||'Без названия')+'</b> <span class="hint">· '+KL[i.k]+', '+esc(w+f)+'</span></li>'};
+  const struct=a=>{const o=a.filter(i=>i.k!=='e');if(!o.length)return '';const c=(f)=>o.filter(f).length;const p=[];
+    if(c(i=>i.add))p.push('новых '+c(i=>i.add));if(c(i=>i.del))p.push('удалено '+c(i=>i.del));if(c(i=>!i.add&&!i.del))p.push('изменено '+c(i=>!i.add&&!i.del));
+    const names=o.filter(i=>i.add||i.del).slice(0,6).map(i=>(i.del?'−':'+')+' '+esc(i.title)).join(', ');
+    return '<li><b>Вкладки и группы</b> <span class="hint">· '+p.join(', ')+(names?' ('+names+(o.length>6?'…':'')+')':'')+'</span></li>'};
+  const sec=(t,a)=>{const ents=a.filter(i=>i.k==='e'),st=struct(a);return (ents.length||st)?'<h4>'+t+' ('+a.length+')</h4><ul>'+st+ents.slice(0,25).map(line).join('')+(ents.length>25?'<li class="hint">…и ещё '+(ents.length-25)+'</li>':'')+'</ul>':''};
+  const down=items.filter(i=>i.dir==='down'),up=items.filter(i=>i.dir==='up');
+  const n=document.createElement('div');n.className='sydiff';
+  n.innerHTML='<p class="hint">Пока ничего не применено. Если запись менялась на обоих устройствах, останется более новая версия, а другая сохранится рядом с пометкой «(другая версия)».</p>'+sec('Придёт с другого устройства',down)+sec('Уйдёт на другое устройство',up);
+  return dlg({title:'Что изменится при синхронизации',node:n,noFocus:true,buttons:[{label:'Отмена',value:null},{label:'Применить',value:'ok',kind:'pri'}]}).then(r=>r.v==='ok');
 }
 /* целостность ссылок после объединения; изменённые элементы получают новое время изменения */
 function syncFix(F,now){
@@ -2797,7 +2979,7 @@ function syncFix(F,now){
   fx.forEach(x=>{const k=F.tabs.includes(x)?'t':F.groups.includes(x)?'g':'e';x.m=now;x.sh=sigOf(k,x)});
 }
 const syncCore=(F,purged)=>{
-  const strip=(k,a)=>a.map(x=>{const c=JSON.parse(JSON.stringify(x));LOCALONLY[k].forEach(f=>delete c[f]);return c});
+  const strip=(k,a)=>a.map(x=>{const c=JSON.parse(JSON.stringify(x));LOCALONLY[k].forEach(f=>delete c[f]);if(k==='e'&&!Array.isArray(c.tags))c.tags=[];return c});
   return {tabs:strip('t',F.tabs),groups:strip('g',F.groups).sort((a,b)=>a.id<b.id?-1:1),entries:strip('e',F.entries).sort((a,b)=>a.id<b.id?-1:1),purged};
 };
 let syncing=false;
@@ -2830,6 +3012,7 @@ async function syncOnce(cfg){
   syncFix(M.F,now);
   const bad=validate({tabs:M.F.tabs,groups:M.F.groups,entries:M.F.entries},false);
   if(bad)throw new Error('после объединения данные не прошли проверку: '+bad);
+  if(sy.preview!=='off'&&M.st.items.some(i=>i.dir==='down'&&(i.k==='e'||i.add||i.del))){syncBusy(false);const go=await syncPreview(M.st.items);if(!go){const e=new Error('cancel');e.code='cancel';throw e}syncBusy(true,'Синхронизация…')}
   const core=syncCore(M.F,M.purged),after=stab(core);
   if(after!==before){
     const iso=new Date(now).toISOString();
@@ -2844,6 +3027,7 @@ async function syncOnce(cfg){
   const lg=new Map(S.groups.map(g=>[g.id,g])),lt=new Map(S.tabs.map(t=>[t.id,t]));
   M.F.groups.forEach(g=>{const o=lg.get(g.id);g.collapsed=o?!!o.collapsed:false});
   M.F.tabs.forEach(t=>{const o=lt.get(t.id);t.archOpen=o?!!o.archOpen:false});
+  {const le=new Map(S.entries.map(e=>[e.id,e]));M.F.entries.forEach(e=>{const o=le.get(e.id);e.opens=o?(o.opens||0):0;e.opened=o?(o.opened||0):0})}
   S.tabs=M.F.tabs;S.groups=M.F.groups;S.entries=M.F.entries;
   const known={};KS3.forEach(([key,k])=>M.F[key].forEach(x=>{known[x.id]=x.sh}));
   Object.assign(syncSt(),{known,lastSync:now,dirtySince:0});
@@ -2865,7 +3049,7 @@ async function syncNow(){
     if(res.up)parts.push('отправлено '+res.up);if(res.down)parts.push('получено '+res.down);if(res.del)parts.push('удалено '+res.del);if(res.grp)parts.push('обновлены вкладки и группы');
     if(res.conf)info('Синхронизация завершена',(parts.length?parts.join(', ')+'. ':'')+'Конфликтов: '+res.conf+'. Запись меняли на обоих устройствах: основной осталась более новая версия, другая сохранена рядом с пометкой «(другая версия)». Ничего не потеряно, лишнюю запись можно удалить.');
     else toast(parts.length?'Синхронизировано: '+parts.join(', '):'Всё уже синхронизировано');
-  }catch(e){syncBusy(false);info('Синхронизация не удалась',syncErrText(e)+' Данные на устройстве не изменены.')}
+  }catch(e){syncBusy(false);if(e&&e.code==='cancel'){toast('Синхронизация отменена, данные не изменены');return}info('Синхронизация не удалась',syncErrText(e)+' Данные на устройстве не изменены.')}
   finally{syncing=false;$('#btnSync').classList.remove('spin')}
 }
 function syncSettingsNode(){
@@ -2874,10 +3058,13 @@ function syncSettingsNode(){
     '<label class="hint">Репозиторий (имя/репозиторий)</label><input class="inp repo" placeholder="mrtekhnik/sync" autocomplete="off" autocapitalize="off" spellcheck="false">'+
     '<label class="hint">Токен доступа</label><input class="inp tok" type="password" placeholder="github_pat_…" autocomplete="off" autocapitalize="off" spellcheck="false">'+
     '<div class="row2"><button class="btn sy1">Сохранить и проверить</button><button class="btn sy0">Отключить</button></div><p class="hint sst"></p>'+
-    '<div class="vh">Напоминать о синхронизации (жёлтая точка на ⟳)</div><div class="segs sd">'+[[0,'Сразу'],[3600000,'Через 1 ч'],[10800000,'Через 3 ч'],[86400000,'Через сутки']].map(([v,l])=>'<button class="seg" data-d="'+v+'">'+l+'</button>').join('')+'</div><p class="hint">Отсчёт идёт от первого несинхронизированного изменения. Изменения, сделанные на другом устройстве, точка не показывает.</p>';
+    '<div class="vh">Напоминать о синхронизации (жёлтая точка на ⟳)</div><div class="segs sd">'+[[0,'Сразу'],[3600000,'Через 1 ч'],[10800000,'Через 3 ч'],[86400000,'Через сутки']].map(([v,l])=>'<button class="seg" data-d="'+v+'">'+l+'</button>').join('')+'</div><p class="hint">Отсчёт идёт от первого несинхронизированного изменения. Изменения, сделанные на другом устройстве, точка не показывает.</p>'+
+    '<div class="vh">Различия перед синхронизацией</div><div class="segs sgp"><button class="seg" data-p="ask">Показывать</button><button class="seg" data-p="off">Не показывать</button></div><p class="hint">Если на другом устройстве есть изменения, перед применением покажу, что именно изменится, и спрошу подтверждение. Отправка ваших изменений идёт без вопросов.</p>';
   const q=x=>box.querySelector(x);q('.repo').value=cfg?cfg.repo:'';if(cfg)q('.tok').placeholder='токен сохранён (скрыт)';
   q('.sst').textContent=cfg?'Подключено: '+cfg.repo+'. Последняя синхронизация: '+(syncSt().lastSync?fmt(syncSt().lastSync):'ещё не было')+'.':'Не подключено.';
   const mkD=()=>box.querySelectorAll('.sd button').forEach(b=>b.classList.toggle('on',+b.dataset.d===syncSt().delay));mkD();
+  const mkP=()=>box.querySelectorAll('.sgp button').forEach(b=>b.classList.toggle('on',b.dataset.p===syncSt().preview));mkP();
+  box.querySelectorAll('.sgp button').forEach(b=>b.onclick=()=>{syncSt().preview=b.dataset.p;save();mkP()});
   box.querySelectorAll('.sd button').forEach(b=>b.onclick=()=>{syncSt().delay=+b.dataset.d;save();mkD();updateSyncDot()});
   q('.sy0').onclick=()=>{setSyncCfg(null);q('.tok').value='';q('.tok').placeholder='github_pat_…';q('.sst').textContent='Отключено. Данные на устройстве не затронуты.';render()};
   q('.sy1').onclick=async()=>{
