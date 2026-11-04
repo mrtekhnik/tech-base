@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.56 -->
+<!-- Моя техническая база, версия 1.57 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -291,7 +291,7 @@ body.qa.nofab:not(.selon) #top{bottom:70px}
 #btnKeys{padding:0 8px}
 .kscap{margin:8px 0}
 .kscap.on{background:var(--acc);border-color:var(--acc);color:var(--accink)}
-@media(max-width:699px) and (max-height:620px){.edf>.fld.tagsf{display:none}}
+
 @media(max-width:699px){
   .sheet .tools{flex-wrap:nowrap;overflow-x:auto;gap:4px;padding:4px 0;margin-top:2px;scrollbar-width:none}
   .sheet .tools::-webkit-scrollbar{display:none}
@@ -304,7 +304,7 @@ body.qa.nofab:not(.selon) #top{bottom:70px}
   .edf .edw textarea{flex:1;height:auto!important;min-height:90px;resize:none}
   .edf .edw .pvbox{flex:none;max-height:35%}
 }
-@media(max-width:699px) and (max-height:620px){.edf>.adds,.edf>.fld:not(.opt)>label{display:none}}
+@media(max-width:699px){.sheet.kbm .edf>.adds,.sheet.kbm .edf>.fld:not(.opt)>label,.sheet.kbm .tagsug{display:none}}
 @media(min-width:700px){
   .wbtn{display:inline-block}
   .sheet.fs.wide{max-width:none;width:calc(100% - 24px);height:calc(100dvh - 24px);max-height:none}
@@ -386,7 +386,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.56';
+const APP_VERSION='1.57';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -458,6 +458,7 @@ function profile(){const p=vset().profile;return p==='pc'||p==='phone'?p:(window
 function effMode(){return profile()==='pc'&&!reorder?vset().mode:'one'}
 const tagsArr=a=>Array.isArray(a)?[...new Map(a.map(x=>String(x).trim().replace(/^#+/,'').trim()).filter(Boolean).map(x=>[x.toLowerCase(),x])).values()].slice(0,30):typeof a==='string'?tagsArr(a.split(/[,;\n]+/)):[];
 function allTags(fl){const m=new Map();S.entries.forEach(e=>{if(e.status==='trash')return;if(fl&&!fl(e))return;(e.tags||[]).forEach(t=>{const k=t.toLowerCase(),o=m.get(k)||{name:t,n:0};o.n++;m.set(k,o)})});return [...m.values()].sort((a,b)=>b.n-a.n||a.name.localeCompare(b.name,'ru'))}
+const tagsOn=()=>!S||S.settings.tags!==false;
 const tagOk=e=>!tagF.size||[...tagF].every(t=>(e.tags||[]).some(x=>x.toLowerCase()===t));
 const lst=x=>Array.isArray(x)?x.filter(i=>i&&typeof i==='object').map(i=>({a:String(i.a||''),b:String(i.b||'')})):[];
 function normalize(d,keep){
@@ -519,7 +520,7 @@ function sheet({title,body,foot,guard,noHead,cls}){
   const bd=$('.sheet-body',ov);if(body)bd.append(body);
   bd.addEventListener('focusin',ev=>{
     if(window.matchMedia&&matchMedia('(max-width:699px)').matches&&ev.target.matches&&ev.target.matches('input,textarea,select'))
-      setTimeout(()=>{if(ev.target.closest&&ev.target.closest('.typing'))return;try{ev.target.scrollIntoView({block:'center'})}catch(_){}},300);
+      setTimeout(()=>{if(ev.target.closest&&(ev.target.closest('.typing')||(ev.target.tagName==='TEXTAREA'&&ev.target.closest('.edf'))))return;try{ev.target.scrollIntoView({block:'center'})}catch(_){}},300);
   });
   const ft=$('.sh-foot',ov);if(foot)ft.append(...foot);
   {const sh=$('.sheet',ov),nav=document.createElement('div');nav.className='snav';nav.hidden=true;
@@ -625,7 +626,7 @@ function reorderSubset(arr,ids){
 const termsOf=s=>norm(s).replace(/[+#]/g,' ').split(/\s+/).filter(Boolean);
 const listText=(e,k)=>(e[k]||[]).map(i=>i.a+' '+i.b).join('\n');
 function matches(e,terms){
-  const hay=norm(FIELDS.map(f=>e[f[0]]).concat([listText(e,'keylist'),listText(e,'cmdlist'),(e.tags||[]).join(' ')]).join('\n')).replace(/\+/g,' ');
+  const hay=norm(FIELDS.map(f=>e[f[0]]).concat([listText(e,'keylist'),listText(e,'cmdlist'),tagsOn()?(e.tags||[]).join(' '):'']).join('\n')).replace(/\+/g,' ');
   return terms.every(t=>hay.includes(t));
 }
 function hl(text,terms){
@@ -637,6 +638,7 @@ function snippet(e,terms){
   if(!terms.length)return '';
   const ks=[['tags','Теги'],['hotkey','Горячая клавиша'],['command','Команда'],['keylist','Список клавиш'],['cmdlist','Список команд'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
   for(const [k,lab] of ks){
+    if(k==='tags'&&!tagsOn())continue;
     let t=k==='tags'?(e.tags||[]).join(', '):Array.isArray(e[k])?listText(e,k):e[k];if(!t)continue;
     t=plainFmt(t.replace(/\[\[([^\[\]\n]*)\]\]/g,'$1').replace(/`/g,''));
     const n=norm(t).replace(/\+/g,' ');
@@ -717,7 +719,7 @@ function cardHTML(e,o={}){
   if(e.command&&e.title)h+='<div class="c-cmd">'+hl(e.command.split('\n')[0],T)+'</div>';
   if(T.length)h+=snippet(e,T);else{const pv=cardPreview(e);if(pv)h+='<div class="c-desc">'+rich(pv,0,1)+'</div>'}
   if(listSummary(e))h+='<div class="c-loc">'+listSummary(e)+'</div>';
-  if((e.tags||[]).length)h+='<div class="c-tags">'+e.tags.map(t=>'<span class="tg">#'+esc(t)+'</span>').join('')+'</div>';
+  if(tagsOn()&&(e.tags||[]).length)h+='<div class="c-tags">'+e.tags.map(t=>'<span class="tg">#'+esc(t)+'</span>').join('')+'</div>';
   if(o.loc)h+='<div class="c-loc">'+esc(locOf(e))+(e.status==='archive'&&view!=='archive'?' · в архиве':'')+(o.uses&&e.opens?' · открывали '+e.opens+' раз':'')+'</div>';
   if(!selMode&&o.actions==='archive')h+='<div class="c-act"><button class="btn sm" data-a="restore">Восстановить</button><button class="btn sm" data-a="trash">Удалить</button></div>';
   if(!selMode&&o.actions==='trash')h+='<div class="c-act"><button class="btn sm" data-a="restore">Восстановить</button><button class="btn sm dng" data-a="forever">Удалить навсегда</button></div>';
@@ -728,6 +730,7 @@ function cardHTML(e,o={}){
   return h+'</article>';
 }
 function render(){
+  if(!tagsOn()&&tagF.size)tagF=new Set();
   if(selMode&&selCtx!==view+':'+curTab){selMode=false;sel.clear()}
   if(selMode)[...sel].forEach(id=>{if(!get(id))sel.delete(id)});
   applyWidths();renderHeader();renderBanner();renderMain();renderFab();renderSelBar();
@@ -1397,7 +1400,7 @@ function trashEntry(e){
 const keysCopy=h=>h.split(/\s*\+\s*/).filter(Boolean).map(k=>k==='Plus'?'+':k).join('+');
 const cpyKeys=h=>h?'<button type="button" class="cpyb c-keys" data-copy="'+esc(keysCopy(h))+'" title="Нажмите, чтобы скопировать">'+keysHTML(h)+'</button>':'';
 function entryHTML(e){
-  let h='<div class="vw"><p class="tt">'+esc(titleOf(e))+(e.status!=='active'?'<span class="badge">'+(e.status==='archive'?'в архиве':'в корзине')+'</span>':'')+'</p><div class="hint">'+esc(locOf(e))+'</div>'+((e.tags||[]).length?'<div class="c-tags vtags">'+e.tags.map(t=>'<button type="button" class="tg" data-tag="'+esc(t)+'" title="Показать все записи с этим тегом">#'+esc(t)+'</button>').join('')+'</div>':'');
+  let h='<div class="vw"><p class="tt">'+esc(titleOf(e))+(e.status!=='active'?'<span class="badge">'+(e.status==='archive'?'в архиве':'в корзине')+'</span>':'')+'</p><div class="hint">'+esc(locOf(e))+'</div>'+((tagsOn()&&(e.tags||[]).length)?'<div class="c-tags vtags">'+e.tags.map(t=>'<button type="button" class="tg" data-tag="'+esc(t)+'" title="Показать все записи с этим тегом">#'+esc(t)+'</button>').join('')+'</div>':'');
   if(e.hotkey)h+='<h4>Горячая клавиша</h4>'+cpyKeys(e.hotkey);
   if(e.command)h+='<h4>Команда</h4><div class="cmd"><button type="button" class="cpyb" data-copy="'+esc(e.command)+'" title="Нажмите, чтобы скопировать"><code>'+esc(e.command)+'</code></button><button class="btn sm" data-a="copy">Копировать</button></div>';
   if((e.keylist||[]).length)h+='<h4>Горячие клавиши <button class="btn lnk" data-a="copykeys">копировать список</button></h4><div class="kl">'+e.keylist.map(i=>'<div>'+cpyKeys(i.a)+'</div><div class="txt">'+esc(i.b)+'</div>').join('')+'</div>';
@@ -1936,7 +1939,7 @@ function openForm(id,ctx){
     opts.map(([k,l])=>wrap(k,l,inner[k])).join('')+'<div class="err" hidden></div>';
   const val=(k,v)=>{const x=$('[data-f='+k+']',body);if(x)x.value=v};
   val('tags',e?(e.tags||[]).join(', '):'');
-  {const ti=$('[data-f=tags]',body),sg=$('.tagsug',body);
+  {const ti=$('[data-f=tags]',body),sg=$('.tagsug',body);if(!tagsOn())$('.tagsf',body).hidden=true;
    const dr=()=>{const cur=new Set(tagsArr(ti.value).map(x=>x.toLowerCase()));sg.innerHTML=allTags().filter(t=>!cur.has(t.name.toLowerCase())).slice(0,12).map(t=>'<button type="button" class="tagchip" data-tg="'+esc(t.name)+'">#'+esc(t.name)+'</button>').join('')};
    ti.addEventListener('input',dr);sg.addEventListener('click',ev=>{const b=ev.target.closest('[data-tg]');if(!b)return;const v=ti.value.trim().replace(/[,;\s]+$/,'');ti.value=(v?v+', ':'')+b.dataset.tg;dr()});setTimeout(dr,0)}
   val('title',e?e.title:'');['command','desc','steps','note'].forEach(k=>val(k,e?e[k]:''));
@@ -2063,6 +2066,7 @@ function openForm(id,ctx){
   const sh=sheet({cls:'fs',title:(e?'Редактирование':'Новая запись · '+tabName(tabId)),body,foot:e?[cancel,ok]:[cancel,more,ok],
     guard:async()=>JSON.stringify(raw())===init||await ask('Закрыть без сохранения?','Внесённые изменения будут потеряны.','Закрыть без сохранения',true)});
   {const shel=sh.el.querySelector('.sheet');let ft=0;
+   if(isPhone()){let kt=0;body.addEventListener('focusin',ev=>{clearTimeout(kt);if(ev.target.tagName==='TEXTAREA')shel.classList.add('kbm')});body.addEventListener('focusout',()=>{clearTimeout(kt);kt=setTimeout(()=>{const a=document.activeElement;if(a&&body.contains(a)&&(/^(INPUT|TEXTAREA)$/.test(a.tagName)||a.closest('.tools')))return;shel.classList.remove('kbm')},250)})}
    const hd=shel.querySelector('.sh-head'),xb=hd&&hd.querySelector('[data-x]');
    if(hd&&xb){const wb=document.createElement('button');wb.className='ibtn wbtn';wb.type='button';wb.setAttribute('aria-label','Развернуть окно');wb.title='Развернуть или вернуть окно редактирования';wb.textContent='⤢';
      wb.onclick=()=>{S.settings.edWide=!S.settings.edWide;save();shel.classList.toggle('wide',!!S.settings.edWide);refit()};hd.insertBefore(wb,xb);
@@ -2092,7 +2096,7 @@ function openForm(id,ctx){
 /* ===== Теги, поиск по клавишам, дубли, быстрая запись ===== */
 function tagBarHTML(){
   const sc=e=>(e.status==='active'||(inclArch&&e.status==='archive'))&&(scope==='all'||e.tabId===curTab);
-  const tags=allTags(sc);
+  const tags=tagsOn()?allTags(sc):[];
   if(!tags.length&&!tagF.size&&!keyQ)return '';
   let h='<div class="tagbar" role="toolbar" aria-label="Теги и фильтры">';
   if(keyQ)h+='<button type="button" class="tagc on" data-a="keyclr" title="Сбросить поиск по клавишам">⌨ '+esc(keyQ)+' ×</button>';
@@ -2310,7 +2314,7 @@ function entryText(e){
   if((e.keylist||[]).length){L.push('  Горячие клавиши:');e.keylist.forEach(i=>L.push('    '+i.a+(i.b?' — '+i.b:'')))}
   if((e.cmdlist||[]).length){L.push('  Команды:');e.cmdlist.forEach(i=>L.push('    '+i.a+(i.b?' — '+i.b:'')))}
   [['desc','Описание'],['steps','Инструкция'],['note','Примечание']].forEach(([k,l])=>{if(e[k]){L.push('  '+l+':');L.push(ind(clean(e[k]),4))}});
-  if((e.tags||[]).length)L.push('  Теги: '+e.tags.map(t=>'#'+t).join(' '));
+  if(tagsOn()&&(e.tags||[]).length)L.push('  Теги: '+e.tags.map(t=>'#'+t).join(' '));
   return L.join('\n');
 }
 function buildText(tabs){
@@ -2671,6 +2675,7 @@ function openLookMenu(focus){
       '<span class="sw cu'+(L.accent==='custom'?' on':'')+'" title="Свой цвет"><input type="color" data-cu value="'+L.custom+'" aria-label="Свой цвет"></span></div>'+
       '\u0001tint|Оттенок фона\u0002<div class="segs">'+TINTS.map(([k,l])=>'<button class="seg'+(L.tint===k?' on':'')+'" data-ti="'+k+'">'+l+'</button>').join('')+'</div>'+
       (['sepia','contrast','black'].includes(L.theme)?'<p class="hint">Оттенок фона применяется к светлой и тёмной темам.</p>':'')+
+      '\u0001feat|Функции\u0002<div class="lsub" style="margin-top:0">Теги записей</div><div class="segs"><button class="seg'+(tagsOn()?' on':'')+'" data-tgs="1">Включены</button><button class="seg'+(!tagsOn()?' on':'')+'" data-tgs="0">Выключены</button></div><p class="hint">Выключенные теги не показываются в записях, не участвуют в поиске и не мешают в редакторе. Сами теги не удаляются и вернутся при включении.</p>'+
       '\u0001edit|Редактор записи\u0002<div class="lsub" style="margin-top:0">Отмена набора текста: один шаг отмены — это</div><div class="segs">'+[['pause','Серия набора (до паузы)'],['word','Слово'],['sentence','Предложение']].map(([k,l])=>'<button class="seg'+((S.settings.undoMode||'pause')===k?' on':'')+'" data-u="'+k+'">'+l+'</button>').join('')+'</div>'+'\u0001end|\u0002<p class="hint">Настройки действуют на этом устройстве: на телефоне и компьютере оформление можно выбрать разное.</p><button class="btn" data-reset>Сбросить оформление</button>');
   };
   draw();
@@ -2681,6 +2686,7 @@ function openLookMenu(focus){
     if(b.dataset.g){const id=b.dataset.g,bd=b.nextElementSibling,o=bd.hidden;bd.hidden=!o;b.setAttribute('aria-expanded',o);b.lastChild.textContent=o?'▴':'▾';o?lookOpen.add(id):lookOpen.delete(id);return}
     if(viewClick(b,vset())){draw();return}
     if(b.dataset.u){S.settings.undoMode=b.dataset.u;save();draw();return}
+    if(b.dataset.tgs!==undefined){S.settings.tags=b.dataset.tgs==='1';save();draw();render();return}
     if(b.dataset.cl){L.cl=b.dataset.cl}
     else if(b.dataset.cd){L.cd=b.dataset.cd}
     else if(b.dataset.kf){L.kf=b.dataset.kf}
@@ -3115,7 +3121,7 @@ initTreeDnD();
     if(v.scale>1.01)return;
     r.setProperty('--vvh',v.height+'px');r.setProperty('--vvt',v.offsetTop+'px');
     const a=document.activeElement;
-    if(a&&a.matches&&a.matches('.sheet-body input,.sheet-body textarea,.sheet-body select'))setTimeout(()=>{try{a.scrollIntoView({block:'center'})}catch(_){}},60);
+    if(a&&a.matches&&a.matches('.sheet-body input,.sheet-body textarea,.sheet-body select')&&!(a.tagName==='TEXTAREA'&&a.closest('.edf')))setTimeout(()=>{try{a.scrollIntoView({block:'center'})}catch(_){}},60);
   };
   f();v.addEventListener('resize',f);v.addEventListener('scroll',f);
 })();
