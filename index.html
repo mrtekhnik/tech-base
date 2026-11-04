@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.52 -->
+<!-- Моя техническая база, версия 1.53 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -358,7 +358,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.52';
+const APP_VERSION='1.53';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -2910,6 +2910,12 @@ initTreeDnD();
 load();
 applyLook();
 curTab=(S.tabs.find(t=>t.id===S.settings.lastTab)||S.tabs[0]||{}).id||null;
+/* не показывать подсказки автозаполнения/паролей над клавиатурой */
+(function(){let n=0;const fix=r=>{try{(r.matches&&r.matches('input,textarea')?[r]:[]).concat([...r.querySelectorAll?r.querySelectorAll('input,textarea'):[]]).forEach(x=>{if(x.dataset.nofill)return;x.dataset.nofill='1';
+ const tp=(x.type||'').toLowerCase();if(tp==='password'){x.setAttribute('autocomplete','new-password')}else x.setAttribute('autocomplete','off');
+ if(!x.name)x.name='f'+(++n)+Math.random().toString(36).slice(2,6);
+ x.setAttribute('data-lpignore','true');x.setAttribute('data-1p-ignore','true');x.setAttribute('data-bwignore','true');x.setAttribute('data-form-type','other')})}catch(_){}};
+ fix(document.body);new MutationObserver(m=>m.forEach(r=>r.addedNodes.forEach(nd=>{if(nd.nodeType===1)fix(nd)}))).observe(document.body,{childList:true,subtree:true})})();
 render();
 try{autoBackup(false)}catch(e){}
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
