@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.58 -->
+<!-- Моя техническая база, версия 1.59 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -304,7 +304,7 @@ body.qa.nofab:not(.selon) #top{bottom:70px}
   .edf .edw textarea{flex:1;height:auto!important;min-height:90px;resize:none}
   .edf .edw .pvbox{flex:none;max-height:35%}
 }
-@media(max-width:699px){.sheet.kbm .edf>.adds,.sheet.kbm .edf>.fld:not(.opt)>label,.sheet.kbm:not(:has(.tagsf:focus-within)) .tagsug{display:none}}
+@media(max-width:699px){.sheet.kbm .edf>.adds,.sheet.kbm .edf>.fld:not(.opt)>label,.sheet.kbm:not(.tgf) .tagsug{display:none}}
 @media(min-width:700px){
   .wbtn{display:inline-block}
   .sheet.fs.wide{max-width:none;width:calc(100% - 24px);height:calc(100dvh - 24px);max-height:none}
@@ -386,7 +386,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.58';
+const APP_VERSION='1.59';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -1941,7 +1941,7 @@ function openForm(id,ctx){
   val('tags',e?(e.tags||[]).join(', '):'');
   {const ti=$('[data-f=tags]',body),sg=$('.tagsug',body);if(!tagsOn())$('.tagsf',body).hidden=true;
    const dr=()=>{const cur=new Set(tagsArr(ti.value).map(x=>x.toLowerCase()));sg.innerHTML=allTags().filter(t=>!cur.has(t.name.toLowerCase())).slice(0,12).map(t=>'<button type="button" class="tagchip" data-tg="'+esc(t.name)+'">#'+esc(t.name)+'</button>').join('')};
-   ti.addEventListener('input',dr);sg.addEventListener('click',ev=>{const b=ev.target.closest('[data-tg]');if(!b)return;const v=ti.value.trim().replace(/[,;\s]+$/,'');ti.value=(v?v+', ':'')+b.dataset.tg;dr()});setTimeout(dr,0)}
+   ti.addEventListener('input',dr);ti.addEventListener('focus',dr);sg.addEventListener('click',ev=>{const b=ev.target.closest('[data-tg]');if(!b)return;const v=ti.value.trim().replace(/[,;\s]+$/,'');ti.value=(v?v+', ':'')+b.dataset.tg;dr()});setTimeout(dr,0)}
   val('title',e?e.title:'');['command','desc','steps','note'].forEach(k=>val(k,e?e[k]:''));
   val('group',e?(e.groupId&&gs.some(g=>g.id===e.groupId)?e.groupId:''):((ctx&&ctx.groupId&&gs.some(g=>g.id===ctx.groupId))?ctx.groupId:''));
   const hk=hotkeyWidget(e?e.hotkey:'',()=>{},true);
@@ -2066,7 +2066,7 @@ function openForm(id,ctx){
   const sh=sheet({cls:'fs',title:(e?'Редактирование':'Новая запись · '+tabName(tabId)),body,foot:e?[cancel,ok]:[cancel,more,ok],
     guard:async()=>JSON.stringify(raw())===init||await ask('Закрыть без сохранения?','Внесённые изменения будут потеряны.','Закрыть без сохранения',true)});
   {const shel=sh.el.querySelector('.sheet');let ft=0;
-   if(isPhone()){let kt=0;body.addEventListener('focusin',ev=>{clearTimeout(kt);if(ev.target.tagName==='TEXTAREA')shel.classList.add('kbm')});body.addEventListener('focusout',()=>{clearTimeout(kt);kt=setTimeout(()=>{const a=document.activeElement;if(a&&body.contains(a)&&(/^(INPUT|TEXTAREA)$/.test(a.tagName)||a.closest('.tools')))return;shel.classList.remove('kbm')},250)})}
+   if(isPhone()){let kt=0;body.addEventListener('focusin',ev=>{clearTimeout(kt);if(ev.target.tagName==='TEXTAREA')shel.classList.add('kbm');shel.classList.toggle('tgf',!!(ev.target.closest&&ev.target.closest('.tagsf')))});body.addEventListener('focusout',()=>{clearTimeout(kt);kt=setTimeout(()=>{const a=document.activeElement;if(!(a&&a.closest&&a.closest('.tagsf')))shel.classList.remove('tgf');if(a&&body.contains(a)&&(/^(INPUT|TEXTAREA)$/.test(a.tagName)||a.closest('.tools')))return;shel.classList.remove('kbm')},250)})}
    const hd=shel.querySelector('.sh-head'),xb=hd&&hd.querySelector('[data-x]');
    if(hd&&xb){const wb=document.createElement('button');wb.className='ibtn wbtn';wb.type='button';wb.setAttribute('aria-label','Развернуть окно');wb.title='Развернуть или вернуть окно редактирования';wb.textContent='⤢';
      wb.onclick=()=>{S.settings.edWide=!S.settings.edWide;save();shel.classList.toggle('wide',!!S.settings.edWide);refit()};hd.insertBefore(wb,xb);
