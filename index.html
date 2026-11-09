@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.63 -->
+<!-- Моя техническая база, версия 1.64 -->
 <script>
 /* защита входа: экран блокировки включается до отрисовки программы */
 try{if(localStorage.getItem('techbase_lock')){var _k=+sessionStorage.getItem('techbase_keep')||0;sessionStorage.removeItem('techbase_keep');if(!(_k&&Date.now()-_k<10000))document.documentElement.classList.add('applock')}}catch(e){}
@@ -428,7 +428,7 @@ html.applock,html.applock body{overflow:hidden}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.63';
+const APP_VERSION='1.64';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -2295,12 +2295,12 @@ function openMenu(){
     el.innerHTML='<button data-m="quick">⚡ Быстрая запись во «Входящие»</button>'+(S.tabs.length?'<button data-m="sel">☑ Выбрать несколько записей</button>':'')+(S.tabs.length&&curTab?'<button data-m="gnew">＋ Новая группа в этой вкладке</button>':'')+
       '<button data-m="tabsmgr">Настройки вкладок</button><button data-m="look">Оформление и размеры</button>'+
       '<button data-m="dups">Проверка дублей клавиш</button>'+
-      '<button data-m="lock">🔒 Защита входа'+(lkRec()?'<span class="n">включена</span>':'')+'</button>'+(lkRec()?'<button data-m="lockNow">Заблокировать сейчас</button>':'')+
+      (lkRec()?'<button data-m="lockNow">🔒 Заблокировать сейчас</button>':'')+
       '<button data-m="trash">Корзина<span class="n">'+cnt('trash')+'</span></button>'+
       '<button data-m="export" class="mhl">Экспорт в файл (резервная копия)</button>'+
       '<button data-m="import">Импорт из файла</button>'+
       '<button data-more>'+(more?'Свернуть ▴':'Ещё ▾')+'</button>'+
-      (more?'<button data-m="sync">⟳ Синхронизировать</button><button data-m="update">Проверить обновление</button><button data-m="settings">Синхронизация, копии и данные</button><button data-m="text">Экспорт в текстовый файл</button>':'')+
+      (more?'<button data-m="sync">⟳ Синхронизировать</button><button data-m="lock">🔒 Защита входа'+(lkRec()?'<span class="n">включена</span>':'')+'</button><button data-m="update">Проверить обновление</button><button data-m="settings">Синхронизация, копии и данные</button><button data-m="text">Экспорт в текстовый файл</button>':'')+
       '<div class="ver">Записей: '+S.entries.filter(e=>e.status==='active').length+(S.entries.some(e=>e.status==='archive')?' (ещё '+S.entries.filter(e=>e.status==='archive').length+' в архиве)':'')+'<br>Версия программы: '+APP_VERSION+'<br>Последний экспорт: '+(S.settings.lastExport?fmt(S.settings.lastExport):'—')+'<br>Последний импорт: '+(S.settings.lastImport?fmt(S.settings.lastImport):'—')+'<br>Синхронизация: '+(!syncCfg()?'не настроена':syncSt().lastSync?fmt(syncSt().lastSync):'ещё не было')+'</div>';
   };
   draw();
