@@ -12,7 +12,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.62 -->
+<!-- Моя техническая база, версия 1.63 -->
+<script>
+/* защита входа: экран блокировки включается до отрисовки программы */
+try{if(localStorage.getItem('techbase_lock')){var _k=+sessionStorage.getItem('techbase_keep')||0;sessionStorage.removeItem('techbase_keep');if(!(_k&&Date.now()-_k<10000))document.documentElement.classList.add('applock')}}catch(e){}
+</script>
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -344,6 +348,23 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 .kl .c-keys{margin:0}
 .vw code.ic,.c-desc code.ic{font:var(--cm-fw,400) calc(.88em*var(--cm-k,1)) ui-monospace,Consolas,monospace;color:var(--cm-tx,inherit);background:var(--key);border:var(--cm-bw,1px) solid var(--cm-bd,var(--line));border-radius:4px;padding:0 4px;display:inline;flex:none}
 .vw .kl code{flex:none}
+#lockscr{display:none;position:fixed;inset:0;z-index:1000;background:var(--bg);align-items:center;justify-content:center;padding:20px;overflow:auto}
+html.applock #lockscr{display:flex}
+html.applock body>*:not(#lockscr),html.pcov body>*:not(#lockscr){visibility:hidden}
+html.applock,html.applock body{overflow:hidden}
+.lkbox{width:100%;max-width:340px;text-align:center}
+.lkico{font-size:44px;line-height:1;margin-bottom:8px}
+.lkbox h2{margin:0 0 4px;font-size:1.25rem}
+.lkmsg{color:var(--mut);margin:0 0 14px;min-height:1.4em}
+.lkmsg.err{color:var(--danger)}
+.lkrow{position:relative;margin-bottom:10px}
+.lkin{width:100%;padding:12px 70px 12px 14px;font-size:1.15rem;text-align:center;letter-spacing:.1em;border:1px solid var(--line);border-radius:10px;background:var(--surf)}
+.mask{-webkit-text-security:disc;text-security:disc}
+.lkeye{position:absolute;right:4px;top:4px;bottom:4px;width:64px;border:0;background:none;color:var(--mut);font-size:.8rem}
+#lockscr .btn{display:block;width:100%;margin-top:8px;padding:12px 14px}
+#lockscr .btn.lnk{padding:10px 8px}
+.lkf .mask{letter-spacing:.08em}
+.lkerr{color:var(--danger);min-height:1.3em;margin:4px 0 0;font-size:.9rem}
 </style>
 </head>
 <body>
@@ -382,12 +403,32 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <div id="selbar" hidden></div>
 <div id="updbar" hidden role="status"></div>
 <div id="modalRoot"></div>
+<div id="lockscr" role="dialog" aria-modal="true" aria-label="Вход в программу">
+  <div class="lkbox">
+    <div id="lkMain">
+      <div class="lkico" aria-hidden="true">🔒</div>
+      <h2>Моя техническая база</h2>
+      <p class="lkmsg" id="lkMsg">Введите пароль</p>
+      <div class="lkrow"><input id="lkIn" class="lkin mask" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Пароль"><button type="button" class="lkeye" id="lkEye">Показать</button></div>
+      <button type="button" class="btn pri" id="lkGo">Войти</button>
+      <button type="button" class="btn" id="lkBio" hidden>Войти по отпечатку или лицу</button>
+      <button type="button" class="btn lnk" id="lkForgot">Забыли пароль?</button>
+    </div>
+    <div id="lkWipe" hidden>
+      <div class="lkico" aria-hidden="true">⚠️</div>
+      <h2>Сброс защиты</h2>
+      <p class="lkmsg" style="color:var(--ink);text-align:left">Пароль восстановить нельзя. Можно стереть все данные программы на этом устройстве (записи, копии, настройки синхронизации) вместе с защитой. Потом записи можно вернуть из файла экспорта или через синхронизацию, если у вас есть к ним доступ. Действие необратимо.</p>
+      <button type="button" class="btn dng" id="lkWipeGo">Стереть данные и сбросить защиту</button>
+      <button type="button" class="btn" id="lkBack">Назад</button>
+    </div>
+  </div>
+</div>
 <noscript>Для работы приложения нужен JavaScript.</noscript>
 
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.62';
+const APP_VERSION='1.63';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -2254,6 +2295,7 @@ function openMenu(){
     el.innerHTML='<button data-m="quick">⚡ Быстрая запись во «Входящие»</button>'+(S.tabs.length?'<button data-m="sel">☑ Выбрать несколько записей</button>':'')+(S.tabs.length&&curTab?'<button data-m="gnew">＋ Новая группа в этой вкладке</button>':'')+
       '<button data-m="tabsmgr">Настройки вкладок</button><button data-m="look">Оформление и размеры</button>'+
       '<button data-m="dups">Проверка дублей клавиш</button>'+
+      '<button data-m="lock">🔒 Защита входа'+(lkRec()?'<span class="n">включена</span>':'')+'</button>'+(lkRec()?'<button data-m="lockNow">Заблокировать сейчас</button>':'')+
       '<button data-m="trash">Корзина<span class="n">'+cnt('trash')+'</span></button>'+
       '<button data-m="export" class="mhl">Экспорт в файл (резервная копия)</button>'+
       '<button data-m="import">Импорт из файла</button>'+
@@ -2272,6 +2314,8 @@ function openMenu(){
     else if(m==='look')openLookMenu();
     else if(m==='quick')openQuick();
     else if(m==='dups')openDups();
+    else if(m==='lock')openLock();
+    else if(m==='lockNow')lkLockNow();
     else if(m==='update')checkUpdate();
     else if(m==='sync')syncNow();
     else if(['fav','archive','trash'].includes(m)){view=m;reorder=false;render();window.scrollTo(0,0)}
@@ -2801,7 +2845,7 @@ async function applyUpdate(){
   if(!swWaiting)return;
   if(curDirty&&curDirty()&&!await ask('Обновить сейчас?','В открытой форме есть несохранённые изменения, при обновлении они потеряются.','Обновить',true))return;
   swWaiting.postMessage({type:'SKIP_WAITING'});
-  setTimeout(()=>{if(!swReloading){swReloading=true;location.reload()}},4000);
+  setTimeout(()=>{if(!swReloading){swReloading=true;keepUnl();location.reload()}},4000);
 }
 $('#updbar').addEventListener('click',ev=>{
   const b=ev.target.closest('[data-u]');if(!b)return;
@@ -2844,7 +2888,7 @@ async function checkUpdate(){
 }
 (function(){
   if(!('serviceWorker' in navigator)||!/^https?:$/.test(location.protocol))return;
-  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(swReloading)return;swReloading=true;location.reload()});
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(swReloading)return;swReloading=true;keepUnl();location.reload()});
   window.addEventListener('load',()=>{
     navigator.serviceWorker.register('sw.js').then(reg=>{swReg=reg;watchSW(reg);reg.update().catch(()=>{});navigator.serviceWorker.ready.then(r=>repairCache(r)).catch(()=>{})}).catch(()=>{});
   });
@@ -2856,6 +2900,243 @@ try{
   if(pv&&pv!==APP_VERSION)setTimeout(()=>toast('Приложение обновлено до версии '+APP_VERSION),600);
   localStorage.setItem('techbase_seen_ver',APP_VERSION);
 }catch(e){}
+
+/* ===== Защита входа: пароль / ПИН и биометрия (всё необязательно) ===== */
+const LKEY='techbase_lock',LHTML=document.documentElement;
+const LK_AUTO=[[0,'Сразу при выходе'],[60,'Через 1 мин'],[300,'Через 5 мин'],[900,'Через 15 мин'],[-1,'Только при запуске']];
+let lkHiddenAt=0,lkUnlockedAt=0,lkBusy=false,lkTimer=0,lkBioTried=false;
+const lkb64=u=>{let t='';u.forEach(c=>{t+=String.fromCharCode(c)});return btoa(t)};
+const lkun64=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
+function lkRec(){try{const r=JSON.parse(localStorage.getItem(LKEY)||'null');return r&&r.hash&&r.salt?r:null}catch(e){return null}}
+function lkSave(r){try{if(r)localStorage.setItem(LKEY,JSON.stringify(r));else localStorage.removeItem(LKEY);return true}catch(e){return false}}
+const lkIsLocked=()=>LHTML.classList.contains('applock');
+const lkCrypto=()=>!!(window.crypto&&crypto.subtle);
+const lkWord=k=>k==='pin'?'ПИН-код':'пароль';
+async function lkHash(pw,salt,iter){
+  const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(String(pw).normalize('NFC')),'PBKDF2',false,['deriveBits']);
+  const bits=await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:lkun64(salt),iterations:iter},k,256);
+  return lkb64(new Uint8Array(bits));
+}
+/* проверка пароля с паузой после серии неверных попыток */
+async function lkVerify(pw){
+  const r=lkRec();if(!r)return {ok:true};
+  const now=Date.now();
+  if(r.until&&r.until>now)return {ok:false,wait:Math.ceil((r.until-now)/1000)};
+  let h='';try{h=await lkHash(pw,r.salt,r.iter)}catch(e){return {ok:false,err:1}}
+  if(h===r.hash){if(r.fails||r.until){r.fails=0;r.until=0;lkSave(r)}return {ok:true}}
+  r.fails=(r.fails||0)+1;
+  if(r.fails>=5)r.until=Date.now()+Math.min(900,30*Math.pow(2,r.fails-5))*1000;
+  lkSave(r);
+  return {ok:false,left:Math.max(0,5-r.fails),wait:r.until>Date.now()?Math.ceil((r.until-Date.now())/1000):0};
+}
+/* биометрия: системное подтверждение отпечатком, лицом или экраном блокировки (WebAuthn) */
+async function bioSupported(){
+  try{return !!(window.isSecureContext&&window.PublicKeyCredential&&PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable&&await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())}catch(e){return false}
+}
+async function bioEnroll(){
+  const c=await navigator.credentials.create({publicKey:{
+    challenge:crypto.getRandomValues(new Uint8Array(32)),rp:{name:'Моя техническая база'},
+    user:{id:crypto.getRandomValues(new Uint8Array(16)),name:'tech-base',displayName:'Моя техническая база'},
+    pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+    authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'discouraged'},
+    timeout:60000,attestation:'none'}});
+  return lkb64(new Uint8Array(c.rawId));
+}
+async function bioCheck(id){
+  const a=await navigator.credentials.get({publicKey:{
+    challenge:crypto.getRandomValues(new Uint8Array(32)),
+    allowCredentials:[{type:'public-key',id:lkun64(id),transports:['internal']}],
+    userVerification:'required',timeout:60000}});
+  return !!a;
+}
+/* экран блокировки */
+function lkMsg(t,err){const m=$('#lkMsg');m.textContent=t;m.classList.toggle('err',!!err)}
+function lkTick(){
+  clearTimeout(lkTimer);
+  const r=lkRec(),inp=$('#lkIn'),go=$('#lkGo');if(!r)return;
+  const w=Math.ceil(((r.until||0)-Date.now())/1000);
+  if(w>0){inp.disabled=true;go.disabled=true;lkMsg('Слишком много неверных попыток. Подождите '+w+' с.',true);lkTimer=setTimeout(lkTick,1000)}
+  else if(inp.disabled){inp.disabled=false;go.disabled=false;lkMsg('Введите '+lkWord(r.kind))}
+}
+function lkShow(){
+  const r=lkRec();
+  if(!r){lkUnlock();return}
+  LHTML.classList.add('applock');
+  const inp=$('#lkIn');
+  inp.value='';inp.disabled=false;$('#lkGo').disabled=false;
+  inp.inputMode=r.kind==='pin'?'numeric':'text';inp.setAttribute('aria-label',r.kind==='pin'?'ПИН-код':'Пароль');
+  inp.classList.add('mask');$('#lkEye').textContent='Показать';
+  $('#lkMain').hidden=false;$('#lkWipe').hidden=true;
+  $('#lkBio').hidden=!r.bio;
+  lkMsg('Введите '+lkWord(r.kind));lkTick();
+  if(document.visibilityState==='visible'){
+    if(r.bio&&!lkBioTried){lkBioTried=true;setTimeout(lkBio,250)}
+    else if(!r.bio)setTimeout(()=>{try{inp.focus()}catch(e){}},100);
+  }
+}
+function lkUnlock(){
+  LHTML.classList.remove('applock');lkUnlockedAt=Date.now();lkHiddenAt=0;clearTimeout(lkTimer);
+  try{$('#lkIn').value=''}catch(e){}
+}
+function lkLockNow(){
+  if(!lkRec())return;
+  lkBioTried=false;
+  try{if(document.activeElement)document.activeElement.blur()}catch(e){}
+  lkShow();
+}
+function keepUnl(){try{if(!lkIsLocked()&&lkRec())sessionStorage.setItem('techbase_keep',String(Date.now()))}catch(e){}}
+async function lkSubmit(){
+  const inp=$('#lkIn'),pw=inp.value;if(!pw)return;
+  $('#lkGo').disabled=true;
+  const r=await lkVerify(pw);
+  $('#lkGo').disabled=false;
+  if(r.ok){lkUnlock();return}
+  inp.value='';
+  const k=(lkRec()||{}).kind;
+  if(r.err)lkMsg('Не удалось проверить '+lkWord(k)+' в этом браузере.',true);
+  else if(r.wait)lkTick();
+  else lkMsg('Неверный '+lkWord(k)+'. Попыток до паузы: '+r.left,true);
+  if(!r.wait)try{inp.focus()}catch(e){}
+}
+async function lkBio(){
+  const r=lkRec();if(!r||!r.bio||lkBusy)return;
+  lkBusy=true;let ok=false;
+  try{ok=await bioCheck(r.bio)}catch(e){}
+  lkBusy=false;
+  if(ok){lkUnlock();return}
+  if(lkIsLocked()){lkMsg('Не подтверждено. Введите '+lkWord(r.kind),true);try{$('#lkIn').focus()}catch(e){}}
+}
+function lkWipe(){
+  try{Object.keys(localStorage).filter(k=>/^techbase_|^mrtekhnik\./.test(k)).forEach(k=>localStorage.removeItem(k))}catch(e){}
+  try{indexedDB.deleteDatabase('techbase_fs')}catch(e){}
+  try{sessionStorage.clear()}catch(e){}
+  location.reload();
+}
+(function(){
+  const inp=$('#lkIn');
+  $('#lkGo').addEventListener('click',lkSubmit);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lkSubmit()}});
+  inp.addEventListener('input',()=>{const r=lkRec();if(r&&r.kind==='pin'){const v=inp.value.replace(/\D/g,'');if(v!==inp.value)inp.value=v}});
+  $('#lkEye').addEventListener('click',()=>{const on=inp.classList.toggle('mask');$('#lkEye').textContent=on?'Показать':'Скрыть';inp.focus()});
+  $('#lkBio').addEventListener('click',lkBio);
+  $('#lkForgot').addEventListener('click',()=>{$('#lkMain').hidden=true;$('#lkWipe').hidden=false});
+  $('#lkBack').addEventListener('click',()=>{$('#lkWipe').hidden=true;$('#lkMain').hidden=false});
+  $('#lkWipeGo').addEventListener('click',lkWipe);
+  /* пока закрыто, клавиши не доходят до программы под экраном (Esc закрыл бы окна) */
+  document.addEventListener('keydown',e=>{if(lkIsLocked()&&e.key==='Escape'){e.stopImmediatePropagation();e.preventDefault()}},true);
+  document.addEventListener('visibilitychange',()=>{
+    const r=lkRec();
+    if(document.visibilityState==='hidden'){
+      if(!r||lkBusy)return;
+      LHTML.classList.add('pcov');
+      if(!lkIsLocked()){lkHiddenAt=Date.now();if(r.auto===0)lkLockNow()}
+    }else{
+      LHTML.classList.remove('pcov');
+      if(!r||lkBusy){lkHiddenAt=0;return}
+      if(!lkIsLocked()&&lkHiddenAt&&Date.now()-lkUnlockedAt>2000&&r.auto>=0&&Date.now()-lkHiddenAt>=r.auto*1000)lkLockNow();
+      lkHiddenAt=0;
+      if(lkIsLocked()&&r.bio&&!lkBioTried){lkBioTried=true;setTimeout(lkBio,250)}
+    }
+  });
+  if(lkIsLocked())lkShow();
+})();
+/* форма ввода пароля: создание (с повтором) или проверка текущего */
+function lkForm({title,intro,pick,kind,okLabel,repeat,check}){
+  return new Promise(resolve=>{
+    let k=kind||'pass',done=false;
+    const el=document.createElement('div');el.className='lkf';
+    el.innerHTML=(intro?'<p class="hint">'+intro+'</p>':'')+
+      (pick?'<div class="segs" style="margin-bottom:10px"><button type="button" class="seg" data-k="pin">ПИН-код (цифры)</button><button type="button" class="seg" data-k="pass">Пароль</button></div><p class="hint" data-r></p>':'')+
+      '<div class="fld"><input type="text" class="mask" data-i="1" autocomplete="off" autocapitalize="off" spellcheck="false"></div>'+
+      (repeat?'<div class="fld"><input type="text" class="mask" data-i="2" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Повторите ещё раз"></div>':'')+
+      '<button type="button" class="btn lnk" data-eye style="padding-left:0">Показать символы</button><p class="lkerr" data-e></p>';
+    const i1=$('[data-i="1"]',el),i2=$('[data-i="2"]',el),err=$('[data-e]',el);
+    const setKind=()=>{
+      $$('[data-k]',el).forEach(b=>b.classList.toggle('on',b.dataset.k===k));
+      const r=$('[data-r]',el);if(r)r.textContent=k==='pin'?'От 4 до 12 цифр.':'Не короче 6 символов, лучше с буквами и цифрами.';
+      [i1,i2].forEach(x=>{if(!x)return;x.inputMode=k==='pin'?'numeric':'text';x.value=''});
+      i1.placeholder=k==='pin'?'ПИН-код':'Пароль';err.textContent='';
+    };
+    setKind();
+    const cancel=document.createElement('button');cancel.className='btn';cancel.textContent='Отмена';
+    const ok=document.createElement('button');ok.className='btn pri';ok.textContent=okLabel||'Готово';
+    const sh=sheet({title,body:el,foot:[cancel,ok]});
+    const fin=v=>{if(done)return;done=true;resolve(v)};
+    const oc=sh.close;sh.close=()=>{oc();fin(null)};
+    cancel.onclick=()=>sh.close();
+    el.addEventListener('click',e=>{
+      const b=e.target.closest('[data-k]');if(b){k=b.dataset.k;setKind();return}
+      if(e.target.closest('[data-eye]')){const on=i1.classList.toggle('mask');if(i2)i2.classList.toggle('mask',on);e.target.closest('[data-eye]').textContent=on?'Показать символы':'Скрыть символы'}
+    });
+    el.addEventListener('input',e=>{if(k==='pin'&&e.target.matches('[data-i]')){const v=e.target.value.replace(/\D/g,'');if(v!==e.target.value)e.target.value=v}err.textContent=''});
+    const go=async()=>{
+      const p=i1.value;err.textContent='';
+      if(pick||repeat){
+        if(k==='pin'&&!/^\d{4,12}$/.test(p))return err.textContent='ПИН-код: от 4 до 12 цифр.';
+        if(k==='pass'&&p.length<6)return err.textContent='Пароль: не короче 6 символов.';
+        if(repeat&&p!==i2.value)return err.textContent='Значения не совпадают.';
+      }else if(!p)return err.textContent='Введите значение.';
+      if(check){ok.disabled=true;const m=await check(p);ok.disabled=false;if(m)return err.textContent=m}
+      done=true;oc();resolve({kind:k,pw:p});
+    };
+    ok.onclick=go;
+    el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();if(e.target===i1&&i2)i2.focus();else go()}});
+    setTimeout(()=>{try{i1.focus()}catch(_){}},50);
+  });
+}
+const lkAskCurrent=title=>{
+  const r=lkRec();if(!r)return Promise.resolve({pw:''});
+  return lkForm({title,intro:'Введите текущий '+lkWord(r.kind)+'.',kind:r.kind,okLabel:'Продолжить',check:async pw=>{
+    const v=await lkVerify(pw);
+    return v.ok?'':v.wait?'Слишком много попыток. Подождите '+v.wait+' с.':v.err?'Не удалось проверить в этом браузере.':'Неверный '+lkWord(r.kind)+'.';
+  }});
+};
+async function lkSetNew(title,intro,keep){
+  const f=await lkForm({title,intro,pick:true,kind:(lkRec()||{}).kind||'pin',okLabel:keep?'Сохранить':'Включить',repeat:true});
+  if(!f)return false;
+  const salt=lkb64(crypto.getRandomValues(new Uint8Array(16))),iter=200000;
+  let hash;try{hash=await lkHash(f.pw,salt,iter)}catch(e){info('Не получилось','Этот браузер не смог обработать пароль.');return false}
+  const old=keep?lkRec():null;
+  return lkSave({v:1,kind:f.kind,salt,iter,hash,auto:old&&old.auto!=null?old.auto:60,bio:old?old.bio:null,fails:0,until:0});
+}
+async function openLock(){
+  const bs=await bioSupported(),cr=lkCrypto();
+  const el=document.createElement('div');
+  const sh=sheet({title:'Защита входа',body:el});
+  const draw=()=>{
+    const r=lkRec();
+    const note='<p class="hint" style="margin-top:14px">Защита закрывает вход в программу на этом устройстве. Она не шифрует данные: файл экспорта и копия в синхронизации паролем не защищены. Забытый пароль восстановить нельзя: останется стереть данные программы на устройстве и вернуть записи из файла или через синхронизацию. Делайте экспорт заранее.</p>';
+    if(!cr){el.innerHTML='<p class="hint">В этом браузере защита недоступна: нужен защищённый режим (адрес https).</p>';return}
+    if(!r){
+      el.innerHTML='<p class="hint">Вход в программу по паролю или ПИН-коду. По желанию можно добавить вход по отпечатку или лицу. Пока защита выключена, программа открывается сразу.</p><button class="btn pri" data-a="on">Включить защиту</button>'+note;return}
+    el.innerHTML='<p class="hint">Защита включена: '+(r.kind==='pin'?'ПИН-код':'пароль')+(r.bio?' и вход по отпечатку или лицу':'')+'.</p>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px"><button class="btn" data-a="now">Заблокировать сейчас</button></div>'+
+      '<div class="vh">Когда блокировать</div><div class="segs">'+LK_AUTO.map(([v,l])=>'<button class="seg'+((r.auto==null?60:r.auto)===v?' on':'')+'" data-au="'+v+'">'+l+'</button>').join('')+'</div>'+
+      '<p class="hint">Отсчёт идёт с момента, когда вы свернули программу или переключились на другое приложение. При запуске программа всегда просит войти.</p>'+
+      '<div class="vh">Отпечаток или лицо</div>'+
+      (bs?'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn'+(r.bio?'':' pri')+'" data-a="bio">'+(r.bio?'Выключить вход по отпечатку или лицу':'Включить вход по отпечатку или лицу')+'</button></div><p class="hint">Пароль остаётся запасным способом: если биометрия не сработает, войдёте по нему.</p>':'<p class="hint">На этом устройстве или в этом режиме биометрия недоступна.</p>')+
+      '<div class="vh">Пароль</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-a="chg">Сменить '+lkWord(r.kind)+'</button><button class="btn dng" data-a="off">Отключить защиту</button></div>'+note;
+  };
+  draw();
+  el.addEventListener('click',async ev=>{
+    const au=ev.target.closest('[data-au]');
+    if(au){const r=lkRec();if(!r)return;r.auto=+au.dataset.au;lkSave(r);draw();return}
+    const b=ev.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
+    if(a==='on'){if(await lkSetNew('Включить защиту','Выберите способ входа и задайте его. Запишите пароль где-нибудь вне программы.')){toast('Защита включена');draw()}}
+    else if(a==='now'){sh.close();lkLockNow()}
+    else if(a==='chg'){const c=await lkAskCurrent('Смена');if(!c)return;if(await lkSetNew('Новый вход','Задайте новый ПИН-код или пароль.',true)){toast('Сохранено');draw()}}
+    else if(a==='off'){const c=await lkAskCurrent('Отключить защиту');if(!c)return;lkSave(null);toast('Защита отключена');draw()}
+    else if(a==='bio'){
+      const r=lkRec();if(!r)return;
+      if(r.bio){r.bio=null;lkSave(r);toast('Вход по отпечатку выключен');draw();return}
+      lkBusy=true;
+      try{const id=await bioEnroll();const r2=lkRec();if(r2){r2.bio=id;lkSave(r2)}toast('Вход по отпечатку или лицу включён')}
+      catch(e){const cancel=e&&(e.name==='NotAllowedError'||e.name==='AbortError');if(cancel)toast('Не включено');else info('Не получилось включить',(e&&e.message)?e.message:'Устройство не поддержало подтверждение отпечатком или лицом.')}
+      finally{lkBusy=false;lkHiddenAt=0;lkUnlockedAt=Date.now()}
+      draw();
+    }
+  });
+}
 
 /* ===== Синхронизация через GitHub ===== */
 const SYNC_KEY='mrtekhnik.sync',SYNC_DIR='tech-base';
