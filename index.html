@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.64 -->
+<!-- Моя техническая база, версия 1.65 -->
 <script>
 /* защита входа: экран блокировки включается до отрисовки программы */
 try{if(localStorage.getItem('techbase_lock')){var _k=+sessionStorage.getItem('techbase_keep')||0;sessionStorage.removeItem('techbase_keep');if(!(_k&&Date.now()-_k<10000))document.documentElement.classList.add('applock')}}catch(e){}
@@ -428,7 +428,7 @@ html.applock,html.applock body{overflow:hidden}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.64';
+const APP_VERSION='1.65';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -2903,8 +2903,9 @@ try{
 
 /* ===== Защита входа: пароль / ПИН и биометрия (всё необязательно) ===== */
 const LKEY='techbase_lock',LHTML=document.documentElement;
-const LK_AUTO=[[0,'Сразу при выходе'],[60,'Через 1 мин'],[300,'Через 5 мин'],[900,'Через 15 мин'],[-1,'Только при запуске']];
-let lkHiddenAt=0,lkUnlockedAt=0,lkBusy=false,lkTimer=0,lkBioTried=false;
+const LK_AUTO=[[0,'Сразу при сворачивании'],[60,'Через 1 минуту'],[300,'Через 5 минут'],[900,'Через 15 минут'],[-1,'Только при открытии приложения']];
+const LK_IDLE=[[0,'Не блокировать'],[60,'Через 1 минуту'],[300,'Через 5 минут'],[900,'Через 15 минут']];
+let lkAct=Date.now(),lkHiddenAt=0,lkUnlockedAt=0,lkBusy=false,lkTimer=0,lkBioTried=false;
 const lkb64=u=>{let t='';u.forEach(c=>{t+=String.fromCharCode(c)});return btoa(t)};
 const lkun64=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
 function lkRec(){try{const r=JSON.parse(localStorage.getItem(LKEY)||'null');return r&&r.hash&&r.salt?r:null}catch(e){return null}}
@@ -2975,7 +2976,7 @@ function lkShow(){
   }
 }
 function lkUnlock(){
-  LHTML.classList.remove('applock');lkUnlockedAt=Date.now();lkHiddenAt=0;clearTimeout(lkTimer);
+  LHTML.classList.remove('applock');lkUnlockedAt=Date.now();lkAct=Date.now();lkHiddenAt=0;clearTimeout(lkTimer);
   try{$('#lkIn').value=''}catch(e){}
 }
 function lkLockNow(){
@@ -3031,13 +3032,16 @@ function lkWipe(){
       LHTML.classList.add('pcov');
       if(!lkIsLocked()){lkHiddenAt=Date.now();if(r.auto===0)lkLockNow()}
     }else{
-      LHTML.classList.remove('pcov');
+      LHTML.classList.remove('pcov');lkAct=Date.now();
       if(!r||lkBusy){lkHiddenAt=0;return}
       if(!lkIsLocked()&&lkHiddenAt&&Date.now()-lkUnlockedAt>2000&&r.auto>=0&&Date.now()-lkHiddenAt>=r.auto*1000)lkLockNow();
       lkHiddenAt=0;
       if(lkIsLocked()&&r.bio&&!lkBioTried){lkBioTried=true;setTimeout(lkBio,250)}
     }
   });
+  /* простой: блокировка, если в открытой программе давно нет действий */
+  ['pointerdown','keydown','touchstart','wheel','scroll'].forEach(t=>document.addEventListener(t,()=>{lkAct=Date.now()},{capture:true,passive:true}));
+  setInterval(()=>{const r=lkRec();if(!r||!r.idle||lkIsLocked()||lkBusy||document.visibilityState!=='visible')return;if(Date.now()-lkAct>=r.idle*1000)lkLockNow()},5000);
   if(lkIsLocked())lkShow();
 })();
 /* форма ввода пароля: создание (с повтором) или проверка текущего */
@@ -3111,16 +3115,21 @@ async function openLock(){
       el.innerHTML='<p class="hint">Вход в программу по паролю или ПИН-коду. По желанию можно добавить вход по отпечатку или лицу. Пока защита выключена, программа открывается сразу.</p><button class="btn pri" data-a="on">Включить защиту</button>'+note;return}
     el.innerHTML='<p class="hint">Защита включена: '+(r.kind==='pin'?'ПИН-код':'пароль')+(r.bio?' и вход по отпечатку или лицу':'')+'.</p>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px"><button class="btn" data-a="now">Заблокировать сейчас</button></div>'+
-      '<div class="vh">Когда блокировать</div><div class="segs">'+LK_AUTO.map(([v,l])=>'<button class="seg'+((r.auto==null?60:r.auto)===v?' on':'')+'" data-au="'+v+'">'+l+'</button>').join('')+'</div>'+
-      '<p class="hint">Отсчёт идёт с момента, когда вы свернули программу или переключились на другое приложение. При запуске программа всегда просит войти.</p>'+
+      '<div class="vh">Блокировка</div>'+
+      '<div class="fld"><label>При сворачивании или переключении на другое приложение</label><select data-sel="auto">'+LK_AUTO.map(([v,l])=>'<option value="'+v+'"'+((r.auto==null?60:r.auto)===v?' selected':'')+'>'+l+'</option>').join('')+'</select></div>'+
+      '<div class="fld"><label>Если не пользуетесь приложением</label><select data-sel="idle">'+LK_IDLE.map(([v,l])=>'<option value="'+v+'"'+((r.idle||0)===v?' selected':'')+'>'+l+'</option>').join('')+'</select></div>'+
+      '<p class="hint">Первое правило работает после сворачивания программы, второе: когда программа открыта, но вы ничего не нажимаете. При запуске программа всегда просит войти.</p>'+
       '<div class="vh">Отпечаток или лицо</div>'+
       (bs?'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn'+(r.bio?'':' pri')+'" data-a="bio">'+(r.bio?'Выключить вход по отпечатку или лицу':'Включить вход по отпечатку или лицу')+'</button></div><p class="hint">Пароль остаётся запасным способом: если биометрия не сработает, войдёте по нему.</p>':'<p class="hint">На этом устройстве или в этом режиме биометрия недоступна.</p>')+
       '<div class="vh">Пароль</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-a="chg">Сменить '+lkWord(r.kind)+'</button><button class="btn dng" data-a="off">Отключить защиту</button></div>'+note;
   };
   draw();
+  el.addEventListener('change',ev=>{
+    const sl=ev.target.closest&&ev.target.closest('[data-sel]');if(!sl)return;
+    const r=lkRec();if(!r)return;
+    r[sl.dataset.sel]=+sl.value;lkSave(r);lkAct=Date.now();
+  });
   el.addEventListener('click',async ev=>{
-    const au=ev.target.closest('[data-au]');
-    if(au){const r=lkRec();if(!r)return;r.auto=+au.dataset.au;lkSave(r);draw();return}
     const b=ev.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
     if(a==='on'){if(await lkSetNew('Включить защиту','Выберите способ входа и задайте его. Запишите пароль где-нибудь вне программы.')){toast('Защита включена');draw()}}
     else if(a==='now'){sh.close();lkLockNow()}
