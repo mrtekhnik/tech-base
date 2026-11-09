@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.61 -->
+<!-- Моя техническая база, версия 1.62 -->
 <style>
 :root{--bg:#ECEFF3;--surf:#fff;--ink:#17202B;--mut:#5C6877;--line:#D3D9E1;--acc:#245B8F;--accink:#fff;--star:#D99A00;--danger:#B3352B;--key:#F6F7F9;--mark:#FFE9A8;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#11161C;--surf:#1A212A;--ink:#E7ECF2;--mut:#98A4B3;--line:#2B3541;--acc:#6EA6DA;--accink:#0C1620;--star:#F0B429;--danger:#FF8A80;--key:#232C37;--mark:#5A4A12;color-scheme:dark}}
@@ -387,7 +387,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.61';
+const APP_VERSION='1.62';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -2815,6 +2815,22 @@ function watchSW(reg){
     nw.addEventListener('statechange',()=>{if(nw.state==='installed')mark(nw)});
   });
 }
+async function cacheStatus(){
+  try{
+    if(!window.caches)return 'Офлайн-кэш: недоступен в этом браузере.';
+    const ks=(await caches.keys()).filter(k=>k.startsWith('techbase-pwa-'));
+    if(!ks.length)return 'Офлайн-кэш: пуст, без сети программа не откроется.';
+    const out=[];
+    for(const k of ks){const c=await caches.open(k);const n=(await c.keys()).length;const has=!!(await c.match('./index.html'));out.push(k.replace('techbase-pwa-','')+': файлов '+n+(has?'':', страницы нет'))}
+    return 'Офлайн-кэш: '+out.join('; ')+'.';
+  }catch(e){return 'Офлайн-кэш: не удалось проверить.'}
+}
+async function repairCache(reg){
+  try{
+    if(!window.caches||!reg||!reg.active||!navigator.onLine)return;
+    if(!(await caches.match('./index.html')))reg.active.postMessage({type:'REPAIR'});
+  }catch(e){}
+}
 async function checkUpdate(){
   if(!swReg)return info('Проверка недоступна','Обновления проверяются в установленной версии приложения (по адресу https). В этом режиме программа обновляется только заменой файла. Текущая версия: '+APP_VERSION+'.');
   if(swWaiting){showUpdate();return}
@@ -2824,15 +2840,15 @@ async function checkUpdate(){
   while(!swWaiting&&swReg.installing&&Date.now()-t0<20000)await new Promise(r=>setTimeout(r,300));
   if(swReg.waiting&&!swWaiting){swWaiting=swReg.waiting}
   if(swWaiting)showUpdate();
-  else info('Обновлений нет','У вас последняя версия: '+APP_VERSION+'.');
+  else info('Обновлений нет','У вас последняя версия: '+APP_VERSION+'. '+await cacheStatus());
 }
 (function(){
   if(!('serviceWorker' in navigator)||!/^https?:$/.test(location.protocol))return;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(swReloading)return;swReloading=true;location.reload()});
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('sw.js').then(reg=>{swReg=reg;watchSW(reg);reg.update().catch(()=>{})}).catch(()=>{});
+    navigator.serviceWorker.register('sw.js').then(reg=>{swReg=reg;watchSW(reg);reg.update().catch(()=>{});navigator.serviceWorker.ready.then(r=>repairCache(r)).catch(()=>{})}).catch(()=>{});
   });
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&swReg)swReg.update().catch(()=>{})});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&swReg){swReg.update().catch(()=>{});repairCache(swReg)}});
 })();
 /* после обновления сообщаем версию */
 try{
