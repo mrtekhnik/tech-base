@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.65 -->
+<!-- Моя техническая база, версия 1.66 -->
 <script>
 /* защита входа: экран блокировки включается до отрисовки программы */
 try{if(localStorage.getItem('techbase_lock')){var _k=+sessionStorage.getItem('techbase_keep')||0;sessionStorage.removeItem('techbase_keep');if(!(_k&&Date.now()-_k<10000))document.documentElement.classList.add('applock')}}catch(e){}
@@ -363,6 +363,7 @@ html.applock,html.applock body{overflow:hidden}
 .lkeye{position:absolute;right:4px;top:4px;bottom:4px;width:64px;border:0;background:none;color:var(--mut);font-size:.8rem}
 #lockscr .btn{display:block;width:100%;margin-top:8px;padding:12px 14px}
 #lockscr .btn.lnk{padding:10px 8px}
+#lockscr [hidden]{display:none!important}
 .lkf .mask{letter-spacing:.08em}
 .lkerr{color:var(--danger);min-height:1.3em;margin:4px 0 0;font-size:.9rem}
 </style>
@@ -428,7 +429,7 @@ html.applock,html.applock body{overflow:hidden}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.65';
+const APP_VERSION='1.66';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
