@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.68 -->
+<!-- Моя техническая база, версия 1.69 -->
 <script>
 /* защита входа: экран блокировки включается до отрисовки программы */
 try{if(localStorage.getItem('techbase_lock')){var _k=+sessionStorage.getItem('techbase_keep')||0;sessionStorage.removeItem('techbase_keep');if(!(_k&&Date.now()-_k<10000))document.documentElement.classList.add('applock')}}catch(e){}
@@ -433,7 +433,7 @@ html.applock,html.applock body{overflow:hidden}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.68';
+const APP_VERSION='1.69';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -2110,9 +2110,12 @@ function openForm(id,ctx){
     $$('.opt',body).forEach(x=>{x.hidden=!shown.has(x.dataset.o)});
     const rest=opts.filter(([k])=>!shown.has(k)),bt=([k,l])=>'<button type="button" class="btn" data-add="'+k+'">+ '+l+'</button>';
     const ess=rest.filter(([k])=>ESS.includes(k)),more=rest.filter(([k])=>!ESS.includes(k));
-    $('.adds',body).innerHTML=ess.map(bt).join('')+(more.length?(moreOpen?more.map(bt).join('')+'<button type="button" class="btn" data-more>Свернуть ▴</button>':'<button type="button" class="btn" data-more>Ещё ▾</button>'):'');
+    /* на компьютере все кнопки в одну строку, «Ещё» нужно только на телефоне */
+    $('.adds',body).innerHTML=!isPhone()?ess.concat(more).map(bt).join(''):ess.map(bt).join('')+(more.length?(moreOpen?more.map(bt).join('')+'<button type="button" class="btn" data-more>Свернуть ▴</button>':'<button type="button" class="btn" data-more>Ещё ▾</button>'):'');
     $$('textarea',body).forEach(t=>{if(!t.closest('.opt').hidden)fit(t)});pvAll();
   };
+  {let wasPh=isPhone();
+   const chk=()=>{if(!body.isConnected){window.removeEventListener('resize',chk);return}const n=isPhone();if(n!==wasPh){wasPh=n;refresh()}};window.addEventListener('resize',chk)}
   body.addEventListener('click',async ev=>{
     const a=ev.target.closest('[data-add]'),r=ev.target.closest('[data-rm]'),ins=ev.target.closest('[data-ins]'),mo=ev.target.closest('[data-more]');
     if(mo){moreOpen=!moreOpen;refresh()}
