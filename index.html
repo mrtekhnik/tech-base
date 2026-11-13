@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.69 -->
+<!-- Моя техническая база, версия 1.70 -->
 <script>
 /* защита входа: экран блокировки включается до отрисовки программы */
 try{if(localStorage.getItem('techbase_lock')){var _k=+sessionStorage.getItem('techbase_keep')||0;sessionStorage.removeItem('techbase_keep');if(!(_k&&Date.now()-_k<10000))document.documentElement.classList.add('applock')}}catch(e){}
@@ -433,7 +433,7 @@ html.applock,html.applock body{overflow:hidden}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.69';
+const APP_VERSION='1.70';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -1997,6 +1997,8 @@ function listEditor(kind,items){
 
 /* ===== Форма записи ===== */
 const OPT=[['hotkey','Горячая клавиша'],['command','Команда'],['keylist','Список клавиш'],['cmdlist','Список команд'],['desc','Описание'],['steps','Инструкция'],['note','Примечание'],['group','Группа']];
+const ADD_HIDE_DEF=['keylist','cmdlist','note','group'];
+const addHidden=()=>{const a=S.settings.addMore;return Array.isArray(a)?a.filter(k=>OPT.some(o=>o[0]===k)):ADD_HIDE_DEF};
 const OPT_LBL={keylist:'Список клавиш с расшифровкой',cmdlist:'Список команд с расшифровкой'};
 function openForm(id,ctx){
   const e=id?get(id):null,tabId=e?e.tabId:curTab;
@@ -2105,17 +2107,13 @@ function openForm(id,ctx){
     else if(ev.code==='KeyY'||(ev.code==='KeyZ'&&ev.shiftKey)){ev.preventDefault();hgo(1)}
   });
   let moreOpen=false;
-  const ESS=['hotkey','command','desc','steps'];
   const refresh=()=>{
     $$('.opt',body).forEach(x=>{x.hidden=!shown.has(x.dataset.o)});
     const rest=opts.filter(([k])=>!shown.has(k)),bt=([k,l])=>'<button type="button" class="btn" data-add="'+k+'">+ '+l+'</button>';
-    const ess=rest.filter(([k])=>ESS.includes(k)),more=rest.filter(([k])=>!ESS.includes(k));
-    /* на компьютере все кнопки в одну строку, «Ещё» нужно только на телефоне */
-    $('.adds',body).innerHTML=!isPhone()?ess.concat(more).map(bt).join(''):ess.map(bt).join('')+(more.length?(moreOpen?more.map(bt).join('')+'<button type="button" class="btn" data-more>Свернуть ▴</button>':'<button type="button" class="btn" data-more>Ещё ▾</button>'):'');
+    const hid=addHidden(),ess=rest.filter(([k])=>!hid.includes(k)),more=rest.filter(([k])=>hid.includes(k));
+    $('.adds',body).innerHTML=ess.map(bt).join('')+(more.length?(moreOpen?more.map(bt).join('')+'<button type="button" class="btn" data-more>Свернуть ▴</button>':'<button type="button" class="btn" data-more>Ещё ▾</button>'):'');
     $$('textarea',body).forEach(t=>{if(!t.closest('.opt').hidden)fit(t)});pvAll();
   };
-  {let wasPh=isPhone();
-   const chk=()=>{if(!body.isConnected){window.removeEventListener('resize',chk);return}const n=isPhone();if(n!==wasPh){wasPh=n;refresh()}};window.addEventListener('resize',chk)}
   body.addEventListener('click',async ev=>{
     const a=ev.target.closest('[data-add]'),r=ev.target.closest('[data-rm]'),ins=ev.target.closest('[data-ins]'),mo=ev.target.closest('[data-more]');
     if(mo){moreOpen=!moreOpen;refresh()}
@@ -2767,7 +2765,7 @@ function openLookMenu(focus){
       '\u0001tint|Оттенок фона\u0002<div class="segs">'+TINTS.map(([k,l])=>'<button class="seg'+(L.tint===k?' on':'')+'" data-ti="'+k+'">'+l+'</button>').join('')+'</div>'+
       (['sepia','contrast','black'].includes(L.theme)?'<p class="hint">Оттенок фона применяется к светлой и тёмной темам.</p>':'')+
       '\u0001feat|Функции\u0002<div class="lsub" style="margin-top:0">Теги записей</div><div class="segs"><button class="seg'+(tagsOn()?' on':'')+'" data-tgs="1">Включены</button><button class="seg'+(!tagsOn()?' on':'')+'" data-tgs="0">Выключены</button></div><p class="hint">Выключенные теги не показываются в записях, не участвуют в поиске и не мешают в редакторе. Сами теги не удаляются и вернутся при включении.</p>'+
-      '\u0001edit|Редактор записи\u0002<div class="lsub" style="margin-top:0">Отмена набора текста: один шаг отмены — это</div><div class="segs">'+[['pause','Серия набора (до паузы)'],['word','Слово'],['sentence','Предложение']].map(([k,l])=>'<button class="seg'+((S.settings.undoMode||'pause')===k?' on':'')+'" data-u="'+k+'">'+l+'</button>').join('')+'</div>'+'\u0001end|\u0002<p class="hint">Настройки действуют на этом устройстве: на телефоне и компьютере оформление можно выбрать разное.</p><button class="btn" data-reset>Сбросить оформление</button>');
+      '\u0001edit|Редактор записи\u0002<div class="lsub" style="margin-top:0">Отмена набора текста: один шаг отмены — это</div><div class="segs">'+[['pause','Серия набора (до паузы)'],['word','Слово'],['sentence','Предложение']].map(([k,l])=>'<button class="seg'+((S.settings.undoMode||'pause')===k?' on':'')+'" data-u="'+k+'">'+l+'</button>').join('')+'</div>'+'<div class="lsub">Кнопки добавления полей</div><p class="hint" style="margin-top:0">Отметьте то, что прятать под кнопку «Ещё». Остальное остаётся в строке сразу.</p>'+OPT.map(([k,l])=>'<label class="chk"><input type="checkbox" data-ah="'+k+'"'+(addHidden().includes(k)?' checked':'')+'><span>'+l+'</span></label>').join('')+'\u0001end|\u0002<p class="hint">Настройки действуют на этом устройстве: на телефоне и компьютере оформление можно выбрать разное.</p><button class="btn" data-reset>Сбросить оформление</button>');
   };
   draw();
   const sh=sheet({title:'Оформление и размеры',body:el});
@@ -2791,6 +2789,10 @@ function openLookMenu(focus){
     else if(b.dataset.ac){L.accent=b.dataset.ac}else if(b.dataset.ti){L.tint=b.dataset.ti}
     else if(b.hasAttribute('data-reset')){Object.assign(L,LOOK_DEF)}else return;
     upd();
+  });
+  el.addEventListener('change',e=>{
+    if(!(e.target.matches&&e.target.matches('[data-ah]')))return;
+    S.settings.addMore=OPT.map(o=>o[0]).filter(k=>{const c=$('[data-ah="'+k+'"]',el);return c&&c.checked});save();
   });
   el.addEventListener('input',e=>{const i=e.target.closest('[data-cu]');if(!i)return;L.custom=i.value;L.accent='custom';applyLook();save();$$('.swr .sw',el).forEach(x=>x.classList.toggle('on',x.classList.contains('cu')));$$('.swr button',el).forEach(x=>x.classList.remove('on'))});
 }
