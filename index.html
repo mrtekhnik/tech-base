@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.67 -->
+<!-- Моя техническая база, версия 1.68 -->
 <script>
 /* защита входа: экран блокировки включается до отрисовки программы */
 try{if(localStorage.getItem('techbase_lock')){var _k=+sessionStorage.getItem('techbase_keep')||0;sessionStorage.removeItem('techbase_keep');if(!(_k&&Date.now()-_k<10000))document.documentElement.classList.add('applock')}}catch(e){}
@@ -220,6 +220,8 @@ body.nofab:not(.selon) #top{bottom:16px}
 .snav{position:absolute;right:12px;bottom:70px;display:flex;flex-direction:column;gap:8px;z-index:6}
 .snav[hidden],.snav button[hidden]{display:none}
 .snav button{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--surf);color:var(--ink);font-size:20px;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.25);opacity:.92}
+.dlg.dwide{max-width:min(860px,calc(100% - 28px))}
+@media(min-width:700px){.dlg.dwide{width:860px}}
 .dlg{background:var(--surf);border-radius:12px;padding:18px;width:calc(100% - 28px);max-width:440px;max-height:90vh;overflow:auto}
 .dlg h3{margin:0 0 8px;font-size:1.1rem}
 .dlg p{margin:0 0 10px;color:var(--mut)}
@@ -431,7 +433,7 @@ html.applock,html.applock body{overflow:hidden}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.67';
+const APP_VERSION='1.68';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -589,11 +591,11 @@ function sheet({title,body,foot,guard,noHead,cls}){
   stack.push(api);$('#modalRoot').append(ov);lockSync();return api;
 }
 function lockSync(){document.documentElement.classList.toggle('lock',stack.length>0)}
-function dlg({title,text,html,node,buttons,noFocus}){
+function dlg({title,text,html,node,buttons,noFocus,cls}){
   return new Promise(res=>{
     const ov=document.createElement('div');ov.className='ov center';
     ov.innerHTML='<div class="dlg" role="alertdialog" aria-modal="true"><h3></h3><div class="dbody"></div><div class="dbtns"></div></div>';
-    $('h3',ov).textContent=title;const b=$('.dbody',ov);
+    $('h3',ov).textContent=title;const b=$('.dbody',ov);if(cls)$('.dlg',ov).classList.add(cls);
     if(text){const p=document.createElement('p');p.textContent=text;b.append(p)}
     if(html)b.insertAdjacentHTML('beforeend',html);
     if(node)b.append(node);
@@ -1725,7 +1727,7 @@ function hotkeyWidget(initial,onChange,collapsible){
 /* ===== Вставка клавиш и списки ===== */
 async function pickKeys(initial,title,okLabel){
   const w=hotkeyWidget(initial||'',()=>{});
-  const r=await dlg({title:title||'Выбор клавиш',node:w.el,noFocus:true,buttons:[{label:'Отмена',value:null},{label:okLabel||'Готово',value:'ok',kind:'pri'}]});
+  const r=await dlg({title:title||'Выбор клавиш',node:w.el,noFocus:true,cls:'dwide',buttons:[{label:'Отмена',value:null},{label:okLabel||'Готово',value:'ok',kind:'pri'}]});
   return r.v==='ok'?w.get():null;
 }
 const KEYCHAIN=/(?<![\w\[`])(?:(?:Ctrl|Control|Ctl|Alt|Shift|Win|Cmd|Meta)\s*\+\s*)+(?:F\d{1,2}|Enter|Esc|Escape|Tab|Space|Del|Delete|Backspace|Home|End|PgUp|PgDn|Insert|[A-Za-z0-9])(?![\w\]])/gi;
@@ -2235,7 +2237,7 @@ async function openKeySearch(){
     cap.classList.add('on');cap.textContent='Нажмите сочетание… (повторное нажатие кнопки отменяет)';document.addEventListener('keydown',onKey,true);
   };
   const btns=[{label:'Отмена',value:null}];if(keyQ)btns.push({label:'Сбросить',value:'clear'});btns.push({label:'Найти',value:'ok',kind:'pri'});
-  const r=await dlg({title:'Поиск по клавишам',node,noFocus:true,buttons:btns});
+  const r=await dlg({title:'Поиск по клавишам',node,noFocus:true,cls:'dwide',buttons:btns});
   stopCap();
   if(r.v==='clear'){keyQ='';render();return}
   if(r.v==='ok'){const c=w.get();if(!c){keyQ='';render();return}keyQ=c;view='tab';reorder=false;render();window.scrollTo(0,0)}
