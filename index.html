@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.66 -->
+<!-- Моя техническая база, версия 1.67 -->
 <script>
 /* защита входа: экран блокировки включается до отрисовки программы */
 try{if(localStorage.getItem('techbase_lock')){var _k=+sessionStorage.getItem('techbase_keep')||0;sessionStorage.removeItem('techbase_keep');if(!(_k&&Date.now()-_k<10000))document.documentElement.classList.add('applock')}}catch(e){}
@@ -339,6 +339,8 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 .pvl code.ic{font:.88em ui-monospace,Consolas,monospace;background:var(--key);border:1px solid var(--line);border-radius:4px;padding:0 4px}
 .pvl .warn{color:var(--star);margin-left:4px}
 .pvl .dup{opacity:.5}
+.hk-capb{font-size:.85rem;padding:2px 0}
+.hk-caph{font-size:.82rem;margin:0 0 6px}
 .le-row{border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px;background:var(--bg)}
 .le-top{display:flex;gap:6px;margin-bottom:6px;align-items:center}
 .le-row input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surf);font-size:1rem}
@@ -429,7 +431,7 @@ html.applock,html.applock body{overflow:hidden}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.66';
+const APP_VERSION='1.67';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -1601,13 +1603,14 @@ function splitCombo(text){
   if(tk.length>1&&tk.every(x=>KEYLIKE(x)))return tk;
   return [t];
 }
+const HKCAP_UI=()=>!(window.matchMedia&&matchMedia('(pointer:coarse)').matches);
 function hotkeyWidget(initial,onChange,collapsible){
   const keys=(initial||'').split(/\s*\+\s*/).filter(x=>x.trim());
   while(keys.length<2)keys.push('');
   let act=keys.findIndex(k=>!k);if(act<0)act=keys.length-1;
   let cat=act===0?'mod':'let';
   const el=document.createElement('div');el.className='hk';
-  el.innerHTML='<div class="hk-slots"></div>'+(collapsible?'<button type="button" class="btn sm hk-tg" data-tg></button>':'')+'<div class="hk-pick"><div class="hk-cats"></div><div class="hk-chips"></div></div>';
+  el.innerHTML='<div class="hk-slots"></div>'+(HKCAP_UI()?'<div class="hk-cap"><button type="button" class="btn lnk sm hk-capb" data-cap></button><div class="hint hk-caph"></div></div>':'')+(collapsible?'<button type="button" class="btn sm hk-tg" data-tg></button>':'')+'<div class="hk-pick"><div class="hk-cats"></div><div class="hk-chips"></div></div>';
   const pick=$('.hk-pick',el),tg=$('[data-tg]',el);
   const setPick=()=>{if(!tg)return;const open=S.settings.hkOpen!==false;pick.hidden=!open;tg.textContent=open?'▴ Свернуть выбор клавиш':'▾ Показать выбор клавиш'};
   if(tg){setPick();tg.addEventListener('click',()=>{S.settings.hkOpen=S.settings.hkOpen===false;save();setPick()})}
@@ -1620,6 +1623,41 @@ function hotkeyWidget(initial,onChange,collapsible){
     const inp=$$('.slot input',slots)[i];if(inp)inp.value=keys[i];
   };
   const cn=v=>{v=v.trim();const f=HK_ALL.find(x=>x.toLowerCase()===v.toLowerCase());return f||(v.length===1?v.toUpperCase():v)};
+  /* ввод нажатием: сочетание, нажатое на клавиатуре, раскладывается по ячейкам */
+  const capOn=()=>S.settings.hkCap!==false;
+  const held=new Set(),MODN={Control:'Ctrl',Shift:'Shift',Alt:'Alt',Meta:'Win'},MORD=['Ctrl','Shift','Alt','Win'];let used=false;
+  const setCombo=parts=>{
+    keys.length=0;parts.forEach(p=>keys.push(cn(p)));
+    while(keys.length<2)keys.push('');
+    act=keys.findIndex(k=>!k);if(act<0)act=keys.length-1;
+    cat=act===0?'mod':'let';
+    drawSlots();drawChips();onChange();
+    const ins=$$('.slot input',slots)[act];if(ins)ins.focus();
+  };
+  const capKey=ev=>{
+    if(!capOn()||ev.isComposing)return;
+    if(ev.key in MODN){held.add(MODN[ev.key]);return}
+    if(['AltGraph','Dead','Process','Unidentified'].includes(ev.key))return;
+    if(ev.getModifierState&&ev.getModifierState('AltGraph'))return;
+    if(!ev.ctrlKey)held.delete('Ctrl');if(!ev.shiftKey)held.delete('Shift');if(!ev.altKey)held.delete('Alt');if(!ev.metaKey)held.delete('Win');
+    const mod=ev.ctrlKey||ev.altKey||ev.metaKey,fk=/^F\d{1,2}$/.test(ev.code||''),sp=ev.shiftKey&&ev.key.length>1&&ev.key!=='Tab';
+    if(!(mod||fk||sp))return;
+    ev.preventDefault();ev.stopImmediatePropagation();used=true;
+    const p=[];if(ev.ctrlKey)p.push('Ctrl');if(ev.shiftKey)p.push('Shift');if(ev.altKey)p.push('Alt');if(ev.metaKey)p.push('Win');
+    p.push(KEYNAME(ev));setCombo(p);
+  };
+  const capUp=ev=>{
+    if(!capOn()||!(ev.key in MODN))return;
+    if(!used&&held.size>=2){setCombo(MORD.filter(x=>held.has(x)));held.clear();used=true;return}
+    held.delete(MODN[ev.key]);if(!held.size)used=false;
+  };
+  const capBtn=$('[data-cap]',el);
+  const setCap=()=>{
+    if(!capBtn)return;const on=capOn();
+    capBtn.textContent='⌨ Ввод нажатием клавиш: '+(on?'вкл':'выкл');
+    $('.hk-caph',el).textContent=on?'Нажмите сочетание на клавиатуре, и оно разложится по ячейкам. Нужен Ctrl, Alt или Win, либо F-клавиша. Обычные буквы вводятся как текст. Чтобы вставить текст по Ctrl+V, выключите.':'Нажатия клавиш не захватываются: сочетание можно набрать текстом через «+» или выбрать кнопками.';
+  };
+  if(capBtn){setCap();capBtn.addEventListener('click',()=>{S.settings.hkCap=!capOn();save();setCap()})}
   const distribute=(text,start,replace)=>{
     const parts=splitCombo(text);
     if(replace)keys.length=start;
@@ -1647,6 +1685,7 @@ function hotkeyWidget(initial,onChange,collapsible){
         if(splitCombo(t).length>1){ev.preventDefault();distribute(t,i,true)}
       });
       inp.addEventListener('change',()=>{canon(i);drawChips();onChange()});
+      inp.addEventListener('keydown',capKey);inp.addEventListener('keyup',capUp);
       inp.addEventListener('keydown',ev=>{
         if(ev.key!=='Enter')return;
         ev.preventDefault();
