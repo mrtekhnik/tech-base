@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.80 -->
+<!-- Моя техническая база, версия 1.81 -->
 <script>
 /* защита входа: экран блокировки включается до отрисовки программы */
 try{if(localStorage.getItem('techbase_lock')){var _k=+sessionStorage.getItem('techbase_keep')||0;sessionStorage.removeItem('techbase_keep');if(!(_k&&Date.now()-_k<10000))document.documentElement.classList.add('applock')}}catch(e){}
@@ -339,6 +339,7 @@ body.qa.nofab:not(.selon) #top{bottom:70px}
 .tools .fm{min-width:38px;padding:5px 9px}
 span.sz-p1{font-size:1.3em}span.sz-p2{font-size:1.7em;line-height:1.2}span.sz-m1{font-size:.85em}span.sz-m2{font-size:.7em}
 mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
+mark mark.sm,.vw mark.hlt mark.sm{outline:1.5px solid var(--acc);outline-offset:0}
 .c-desc b,.c-desc i{color:var(--ink)}
 .le-bar{display:flex;gap:6px;flex-wrap:wrap}
 .pvl{margin-top:6px;max-height:34vh;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:8px}
@@ -469,7 +470,7 @@ html.applock,html.applock body{overflow:hidden}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.80';
+const APP_VERSION='1.81';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -1493,7 +1494,7 @@ const kcSet=(k,on)=>{let a=(Array.isArray(S.settings.kcol)?S.settings.kcol:[]).f
 const klHTML=(arr,isK,eid)=>{let hid=false;const cntOf=n=>{let c=0;for(let j=n+1;j<arr.length&&!arr[j].h;j++)c++;return c};
 return '<div class="kl'+(kSwap()?' ksw':'')+'">'+arr.map((i,n)=>{
   if(i.h&&!i.b){hid=false;return '<div class="khd khs" aria-hidden="true"></div>'}
-  if(i.h){const key=kcKey(eid,isK,i.b);hid=kcHas(key);return '<button type="button" class="khd" data-kh="'+esc(key)+'" aria-expanded="'+(!hid)+'" title="Свернуть или развернуть раздел"><span class="chv">'+(hid?'▸':'▾')+'</span>'+esc(i.b)+(hid?' <span class="cnt">· строк: '+cntOf(n)+'</span>':'')+'</button>'}
+  if(i.h){const key=kcKey(eid,isK,i.b);hid=kcHas(key);return '<button type="button" class="khd" data-kh="'+esc(key)+'" aria-expanded="'+(!hid)+'" title="Свернуть или развернуть раздел"><span class="chv">'+(hid?'▸':'▾')+'</span><span class="ht">'+esc(i.b)+'</span>'+(hid?' <span class="cnt">· строк: '+cntOf(n)+'</span>':'')+'</button>'}
   if(hid)return '';
   const ka='<div>'+(isK?cpyKeys(i.a):(i.a?'<button type="button" class="cpyb" data-copy="'+esc(i.a)+'" title="Нажмите, чтобы скопировать"><code class="ic">'+esc(i.a)+'</code></button>':''))+'</div>';
   const tb='<div class="txt">'+esc(i.b)+'</div>';
@@ -1518,12 +1519,27 @@ async function copyText(t,msg){
     const ta=document.createElement('textarea');ta.value=t;document.body.append(ta);ta.select();
     try{document.execCommand('copy');toast(msg)}catch(__){toast('Не удалось скопировать')}ta.remove()}
 }
+/* подсветка найденных слов в открытой записи (только пока идёт поиск) */
+function markTerms(root,terms){
+  const ts=terms.filter(Boolean);if(!ts.length)return;
+  const re=new RegExp('('+ts.map(t=>reEsc(t).replace(/е/g,'[еёЕЁ]')).join('|')+')','gi');
+  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>{
+    if(!n.nodeValue.trim())return NodeFilter.FILTER_REJECT;
+    const p=n.parentElement;if(!p||p.closest('h4,.badge,script,style,[data-a],.khd .chv,.khd .cnt,.hint'))return NodeFilter.FILTER_REJECT;
+    re.lastIndex=0;return re.test(n.nodeValue)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT}});
+  const list=[];while(w.nextNode())list.push(w.currentNode);
+  list.forEach(n=>{
+    const parts=n.nodeValue.split(re),fr=document.createDocumentFragment();
+    parts.forEach((t,i)=>{if(!t)return;if(i%2){const m=document.createElement('mark');m.className='sm';m.textContent=t;fr.append(m)}else fr.append(document.createTextNode(t))});
+    n.replaceWith(fr)});
+}
 function showEntry(id){
   {const e0=get(id);if(e0&&e0.status==='active'){e0.opens=(e0.opens||0)+1;e0.opened=Date.now();try{save()}catch(_){}}}
   const sh=sheet({noHead:true,body:document.createElement('div')});
   const draw=()=>{
     const e=get(id);if(!e){sh.close();return}
     sh.body.innerHTML=entryHTML(e);
+    if(q&&q.trim())markTerms(sh.body,termsOf(q));
     const B=(a,l,k)=>'<button class="btn '+(k||'')+'" data-a="'+a+'">'+l+'</button>';
     let f='';
     if(e.status==='active')f='<button class="btn pri" style="flex:1" data-a="edit">Редактировать</button><button class="btn" data-a="trash" aria-label="Удалить" title="Удалить">🗑</button><button class="btn" data-a="menu" aria-label="Другие действия" title="Другие действия">⋯</button>';
