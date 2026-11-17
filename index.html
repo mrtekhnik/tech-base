@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.79 -->
+<!-- Моя техническая база, версия 1.80 -->
 <script>
 /* защита входа: экран блокировки включается до отрисовки программы */
 try{if(localStorage.getItem('techbase_lock')){var _k=+sessionStorage.getItem('techbase_keep')||0;sessionStorage.removeItem('techbase_keep');if(!(_k&&Date.now()-_k<10000))document.documentElement.classList.add('applock')}}catch(e){}
@@ -50,6 +50,8 @@ a.lnk:hover{text-decoration-thickness:2px}
 button.cpt{padding:0 .25em;display:inline;line-height:inherit;background:var(--key);border:1px solid var(--line);border-bottom:2px dashed var(--acc);border-radius:5px}
 button.cpt::after{content:'⧉';font-size:.95em;margin-left:.3em;color:var(--acc);font-weight:700}
 button.cpt:hover,button.cpt:focus-visible{border-color:var(--acc);background:var(--bg)}
+.pvbox span.cpt{padding:0 1px;display:inline;line-height:inherit;border:1px solid var(--line);border-bottom:2px dashed var(--acc);border-radius:5px}
+.pvbox span.cpt::after{content:'⧉';font-size:.95em;margin-left:.3em;color:var(--acc);font-weight:700}
 .cpyb{border:0;background:none;padding:3px 4px;border-radius:6px;cursor:pointer;text-align:left;font:inherit;color:inherit;max-width:100%}
 .cpyb:hover,.cpyb:focus-visible{background:var(--bg);outline:1px solid var(--line)}
 .vw .cmd .cpyb{flex:1;min-width:0}
@@ -353,7 +355,7 @@ mark.hlt{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 .mono{font-family:ui-monospace,Consolas,monospace}
 .kl{display:grid;grid-template-columns:fit-content(45%) 1fr;gap:8px 14px;align-items:start}
 .kl .c-keys{margin:0}
-.vw code.ic,.c-desc code.ic{font:var(--cm-fw,400) calc(.88em*var(--cm-k,1)) ui-monospace,Consolas,monospace;color:var(--cm-tx,inherit);background:var(--key);border:var(--cm-bw,1px) solid var(--cm-bd,var(--line));border-radius:4px;padding:0 4px;display:inline;flex:none}
+.pvbox code.ic,.vw code.ic,.c-desc code.ic{font:var(--cm-fw,400) calc(.88em*var(--cm-k,1)) ui-monospace,Consolas,monospace;color:var(--cm-tx,inherit);background:var(--key);border:var(--cm-bw,1px) solid var(--cm-bd,var(--line));border-radius:4px;padding:0 4px;display:inline;flex:none}
 .vw .kl code{flex:none}
 #lockscr{display:none;position:fixed;inset:0;z-index:1000;background:var(--bg);align-items:center;justify-content:center;padding:20px;overflow:auto}
 html.applock #lockscr{display:flex}
@@ -467,7 +469,7 @@ html.applock,html.applock body{overflow:hidden}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.79';
+const APP_VERSION='1.80';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
