@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.75 -->
+<!-- Моя техническая база, версия 1.76 -->
 <script>
 /* защита входа: экран блокировки включается до отрисовки программы */
 try{if(localStorage.getItem('techbase_lock')){var _k=+sessionStorage.getItem('techbase_keep')||0;sessionStorage.removeItem('techbase_keep');if(!(_k&&Date.now()-_k<10000))document.documentElement.classList.add('applock')}}catch(e){}
@@ -460,7 +460,7 @@ html.applock,html.applock body{overflow:hidden}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.75';
+const APP_VERSION='1.76';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -2034,7 +2034,13 @@ function listEditor(kind,items,eid){
   bar.append(addBtn,pasteBtn);
   const foldAll=document.createElement('button');foldAll.type='button';foldAll.className='btn sm';foldAll.hidden=true;bar.append(foldAll);
   foldAll.onclick=()=>{const hs=$$('.le-row',el).filter(r=>r.dataset.h==='1');const any=hs.some(r=>!r.classList.contains('fold'));hs.forEach(r=>{r.classList.toggle('fold',any);if(eid)kcSet(kcKey(eid,isK,$('.b',r).value.trim()),any)});applyFold()};
-  const setHead=r=>{const on=r.dataset.h==='1';r.classList.toggle('hd',on);const bb=$('.b',r);bb.placeholder=on?'заголовок раздела':'расшифровка';bb.setAttribute('aria-label',on?'Заголовок раздела':'Расшифровка');const hb=$('[data-r=head]',r);if(hb)hb.classList.toggle('fa',on)};
+  const setHead=r=>{const on=r.dataset.h==='1';r.classList.toggle('hd',on);const bb=$('.b',r);bb.placeholder=on?'заголовок раздела':'расшифровка';bb.setAttribute('aria-label',on?'Заголовок раздела':'Расшифровка');const hb=$('[data-r=head]',r);if(hb)hb.classList.toggle('fa',on);const u=$('[data-r=up]',r),w=$('[data-r=down]',r);if(u)u.title=on?'Раздел вверх (вместе со строками)':'Строку вверх';if(w)w.title=on?'Раздел вниз (вместе со строками)':'Строку вниз'};
+  const secOf=r=>{const a=[r];let n=r.nextElementSibling;while(n&&n.dataset.h!=='1'){a.push(n);n=n.nextElementSibling}return a};
+  const moveSec=(r,d)=>{const blk=secOf(r);
+    if(d<0){let p=r.previousElementSibling;while(p&&p.dataset.h!=='1')p=p.previousElementSibling;
+      const first=p||rows.firstElementChild;if(first===r)return;blk.forEach(x=>first.before(x))}
+    else{const nx=blk[blk.length-1].nextElementSibling;if(!nx)return;const nb=secOf(nx);const last=nb[nb.length-1];[...blk].reverse().forEach(x=>last.after(x))}
+    r.scrollIntoView({block:'nearest'})};
   const applyFold=()=>{let hid=false;$$('.le-row',el).forEach(r=>{if(r.dataset.h==='1'){hid=r.classList.contains('fold');const f=$('[data-r=fold]',r);if(f)f.textContent=hid?'▸':'▾';r.classList.remove('fhid')}else r.classList.toggle('fhid',hid)});const hs=$$('.le-row',el).filter(r=>r.dataset.h==='1');foldAll.hidden=hs.length<2;foldAll.textContent=hs.some(r=>!r.classList.contains('fold'))?'▾ Свернуть все разделы':'▸ Развернуть все разделы'};
   const add=(a,b,focus,after,h)=>{
     const r=document.createElement('div');r.className='le-row';
@@ -2064,8 +2070,8 @@ function listEditor(kind,items,eid){
     if(b.dataset.r==='fold'){r.classList.toggle('fold');if(eid)kcSet(kcKey(eid,isK,$('.b',r).value.trim()),r.classList.contains('fold'));applyFold()}
     else if(b.dataset.r==='del'){r.remove();if(!rows.children.length)add('','');applyFold()}
     else if(b.dataset.r==='head'){r.dataset.h=r.dataset.h==='1'?'':'1';if(r.dataset.h==='1'){const a=$('.a',r),bb=$('.b',r);if(!bb.value.trim()&&a.value.trim()){bb.value=a.value;}a.value=''}setHead(r);r.classList.remove('fold');applyFold();$('.b',r).focus()}
-    else if(b.dataset.r==='up'){if(r.previousElementSibling)r.previousElementSibling.before(r);applyFold()}
-    else if(b.dataset.r==='down'){if(r.nextElementSibling)r.nextElementSibling.after(r);applyFold()}
+    else if(b.dataset.r==='up'){if(r.dataset.h==='1')moveSec(r,-1);else if(r.previousElementSibling)r.previousElementSibling.before(r);applyFold()}
+    else if(b.dataset.r==='down'){if(r.dataset.h==='1')moveSec(r,1);else if(r.nextElementSibling)r.nextElementSibling.after(r);applyFold()}
     else if(b.dataset.r==='pick'){const inp=$('.a',r);const k=await pickKeys(inp.value,'Выбор клавиш','Готово');if(k!==null)inp.value=k}
   });
   el.addEventListener('change',ev=>{if(isK&&ev.target.classList.contains('a'))ev.target.value=normKeys(ev.target.value)});
