@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.72 -->
+<!-- Моя техническая база, версия 1.73 -->
 <script>
 /* защита входа: экран блокировки включается до отрисовки программы */
 try{if(localStorage.getItem('techbase_lock')){var _k=+sessionStorage.getItem('techbase_keep')||0;sessionStorage.removeItem('techbase_keep');if(!(_k&&Date.now()-_k<10000))document.documentElement.classList.add('applock')}}catch(e){}
@@ -373,6 +373,11 @@ html.applock,html.applock body{overflow:hidden}
 .alt{margin:0 8px;color:var(--mut);font-size:.85em}
 .kl .khd{grid-column:1/-1;font-weight:700;margin-top:8px;padding-bottom:3px;border-bottom:1px solid var(--line)}
 .kl .khd:first-child{margin-top:0}
+.kl button.khd{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);color:inherit;font:inherit;font-weight:700;cursor:pointer;padding:0 0 3px;min-height:32px}
+.kl .khd .chv{flex:none;width:14px;color:var(--mut);font-size:.8em}
+.kl .khd .cnt{color:var(--mut);font-weight:400;font-size:.85em}
+.le-row.fhid{display:none}
+.le-row:not(.hd) .mv[data-r=fold]{display:none}
 .kl.ksw{grid-template-columns:1fr fit-content(45%)}
 .hkm .hkv+.hkv{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)}
 .hkv-h{display:flex;align-items:center;gap:10px;margin-bottom:4px;color:var(--mut)}
@@ -444,7 +449,7 @@ html.applock,html.applock body{overflow:hidden}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.72';
+const APP_VERSION='1.73';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -1459,12 +1464,15 @@ function trashEntry(e){
 /* ===== Просмотр записи ===== */
 const keysCopy=h=>String(h).split(ALTRE).map(x=>x.trim()).filter(Boolean).map(g=>g.split(/\s*\+\s*/).filter(Boolean).map(k=>k==='Plus'?'+':k).join('+')).join(' / ');
 const kSwap=()=>!!S.settings.kswap;
-const klHTML=(arr,isK)=>'<div class="kl'+(kSwap()?' ksw':'')+'">'+arr.map(i=>{
-  if(i.h)return '<div class="khd">'+esc(i.b)+'</div>';
+const KCOL=new Set();
+const klHTML=(arr,isK)=>{let hid=false;const cntOf=n=>{let c=0;for(let j=n+1;j<arr.length&&!arr[j].h;j++)c++;return c};
+return '<div class="kl'+(kSwap()?' ksw':'')+'">'+arr.map((i,n)=>{
+  if(i.h){const key=(isK?'k':'c')+'|'+i.b;hid=KCOL.has(key);return '<button type="button" class="khd" data-kh="'+esc(key)+'" aria-expanded="'+(!hid)+'" title="Свернуть или развернуть раздел"><span class="chv">'+(hid?'▸':'▾')+'</span>'+esc(i.b)+(hid?' <span class="cnt">· строк: '+cntOf(n)+'</span>':'')+'</button>'}
+  if(hid)return '';
   const ka='<div>'+(isK?cpyKeys(i.a):(i.a?'<button type="button" class="cpyb" data-copy="'+esc(i.a)+'" title="Нажмите, чтобы скопировать"><code class="ic">'+esc(i.a)+'</code></button>':''))+'</div>';
   const tb='<div class="txt">'+esc(i.b)+'</div>';
   return kSwap()?tb+ka:ka+tb;
-}).join('')+'</div>';
+}).join('')+'</div>'};
 const listCopy=arr=>arr.map(i=>i.h?'# '+i.b:i.a+' — '+i.b).join('\n');
 const cpyKeys=h=>h?'<button type="button" class="cpyb c-keys" data-copy="'+esc(keysCopy(h))+'" title="Нажмите, чтобы скопировать">'+keysHTML(h)+'</button>':'';
 function entryHTML(e){
@@ -1502,6 +1510,8 @@ function showEntry(id){
     if(tg){sh.close();tagF=new Set([tg.dataset.tag.toLowerCase()]);keyQ='';q='';$('#q').value='';scope='all';view='tab';render();window.scrollTo(0,0);return}
     const c=ev.target.closest('[data-copy]');
     if(c){const t=c.dataset.copy;copyText(t,'Скопировано: '+(t.length>40?t.slice(0,40)+'…':t));return}
+    const kh=ev.target.closest('[data-kh]');
+    if(kh){const k=kh.dataset.kh;KCOL.has(k)?KCOL.delete(k):KCOL.add(k);if(sh.redraw)sh.redraw();return}
     const b=ev.target.closest('[data-a]');if(b)entryAction(id,b.dataset.a,sh)});
 }
 async function entryAction(id,a,sh){
@@ -2010,12 +2020,15 @@ function listEditor(kind,items){
   const pasteBtn=document.createElement('button');pasteBtn.type='button';pasteBtn.className='btn sm';pasteBtn.textContent='Вставить списком';
   bar.append(addBtn,pasteBtn);
   const setHead=r=>{const on=r.dataset.h==='1';r.classList.toggle('hd',on);const bb=$('.b',r);bb.placeholder=on?'заголовок раздела':'расшифровка';bb.setAttribute('aria-label',on?'Заголовок раздела':'Расшифровка');const hb=$('[data-r=head]',r);if(hb)hb.classList.toggle('fa',on)};
+  const applyFold=()=>{let hid=false;$$('.le-row',el).forEach(r=>{if(r.dataset.h==='1'){hid=r.classList.contains('fold');const f=$('[data-r=fold]',r);if(f)f.textContent=hid?'▸':'▾';r.classList.remove('fhid')}else r.classList.toggle('fhid',hid)})};
   const add=(a,b,focus,after,h)=>{
     const r=document.createElement('div');r.className='le-row';
-    r.innerHTML='<div class="le-top"><input class="a'+(isK?'':' mono')+'" placeholder="'+(isK?'сочетание клавиш':'команда')+'" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="'+(isK?'Клавиши':'Команда')+'">'+(isK?'<button type="button" class="mv" data-r="pick" aria-label="Выбрать клавиши">⌨</button>':'')+'<button type="button" class="mv" data-r="head" title="Сделать строку заголовком раздела" aria-label="Заголовок раздела">Т</button><button type="button" class="mv" data-r="up" aria-label="Вверх">↑</button><button type="button" class="mv" data-r="down" aria-label="Вниз">↓</button><button type="button" class="mv" data-r="del" aria-label="Удалить строку">×</button></div><input class="b" placeholder="расшифровка" autocomplete="off" aria-label="Расшифровка">';
+    r.innerHTML='<div class="le-top"><input class="a'+(isK?'':' mono')+'" placeholder="'+(isK?'сочетание клавиш':'команда')+'" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="'+(isK?'Клавиши':'Команда')+'">'+(isK?'<button type="button" class="mv" data-r="pick" aria-label="Выбрать клавиши">⌨</button>':'')+'<button type="button" class="mv" data-r="fold" title="Свернуть или развернуть раздел" aria-label="Свернуть раздел">▾</button><button type="button" class="mv" data-r="head" title="Сделать строку заголовком раздела" aria-label="Заголовок раздела">Т</button><button type="button" class="mv" data-r="up" aria-label="Вверх">↑</button><button type="button" class="mv" data-r="down" aria-label="Вниз">↓</button><button type="button" class="mv" data-r="del" aria-label="Удалить строку">×</button></div><input class="b" placeholder="расшифровка" autocomplete="off" aria-label="Расшифровка">';
     r.dataset.h=h?'1':'';setHead(r);
     $('.a',r).value=a||'';$('.b',r).value=b||'';
     if(after)after.after(r);else rows.append(r);
+    if(focus){let p=r.previousElementSibling;while(p&&p.dataset.h!=='1')p=p.previousElementSibling;if(p)p.classList.remove('fold')}
+    applyFold();
     if(focus)$('.a',r).focus();
   };
   (items&&items.length?items:[{a:'',b:''}]).forEach(i=>add(i.a,i.b,false,null,i.h));
@@ -2032,10 +2045,11 @@ function listEditor(kind,items){
   };
   el.addEventListener('click',async ev=>{
     const b=ev.target.closest('[data-r]');if(!b)return;const r=b.closest('.le-row');
-    if(b.dataset.r==='del'){r.remove();if(!rows.children.length)add('','')}
-    else if(b.dataset.r==='head'){r.dataset.h=r.dataset.h==='1'?'':'1';if(r.dataset.h==='1'){const a=$('.a',r),bb=$('.b',r);if(!bb.value.trim()&&a.value.trim()){bb.value=a.value;}a.value=''}setHead(r);$('.b',r).focus()}
-    else if(b.dataset.r==='up'){if(r.previousElementSibling)r.previousElementSibling.before(r)}
-    else if(b.dataset.r==='down'){if(r.nextElementSibling)r.nextElementSibling.after(r)}
+    if(b.dataset.r==='fold'){r.classList.toggle('fold');applyFold()}
+    else if(b.dataset.r==='del'){r.remove();if(!rows.children.length)add('','');applyFold()}
+    else if(b.dataset.r==='head'){r.dataset.h=r.dataset.h==='1'?'':'1';if(r.dataset.h==='1'){const a=$('.a',r),bb=$('.b',r);if(!bb.value.trim()&&a.value.trim()){bb.value=a.value;}a.value=''}setHead(r);r.classList.remove('fold');applyFold();$('.b',r).focus()}
+    else if(b.dataset.r==='up'){if(r.previousElementSibling)r.previousElementSibling.before(r);applyFold()}
+    else if(b.dataset.r==='down'){if(r.nextElementSibling)r.nextElementSibling.after(r);applyFold()}
     else if(b.dataset.r==='pick'){const inp=$('.a',r);const k=await pickKeys(inp.value,'Выбор клавиш','Готово');if(k!==null)inp.value=k}
   });
   el.addEventListener('change',ev=>{if(isK&&ev.target.classList.contains('a'))ev.target.value=normKeys(ev.target.value)});
