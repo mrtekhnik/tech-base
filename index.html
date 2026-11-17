@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.71 -->
+<!-- Моя техническая база, версия 1.72 -->
 <script>
 /* защита входа: экран блокировки включается до отрисовки программы */
 try{if(localStorage.getItem('techbase_lock')){var _k=+sessionStorage.getItem('techbase_keep')||0;sessionStorage.removeItem('techbase_keep');if(!(_k&&Date.now()-_k<10000))document.documentElement.classList.add('applock')}}catch(e){}
@@ -373,7 +373,7 @@ html.applock,html.applock body{overflow:hidden}
 .alt{margin:0 8px;color:var(--mut);font-size:.85em}
 .kl .khd{grid-column:1/-1;font-weight:700;margin-top:8px;padding-bottom:3px;border-bottom:1px solid var(--line)}
 .kl .khd:first-child{margin-top:0}
-.kl.sw{grid-template-columns:1fr fit-content(45%)}
+.kl.ksw{grid-template-columns:1fr fit-content(45%)}
 .hkm .hkv+.hkv{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)}
 .hkv-h{display:flex;align-items:center;gap:10px;margin-bottom:4px;color:var(--mut)}
 .le-row.hd{border-left:4px solid var(--line)}
@@ -444,7 +444,7 @@ html.applock,html.applock body{overflow:hidden}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.71';
+const APP_VERSION='1.72';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -1459,7 +1459,7 @@ function trashEntry(e){
 /* ===== Просмотр записи ===== */
 const keysCopy=h=>String(h).split(ALTRE).map(x=>x.trim()).filter(Boolean).map(g=>g.split(/\s*\+\s*/).filter(Boolean).map(k=>k==='Plus'?'+':k).join('+')).join(' / ');
 const kSwap=()=>!!S.settings.kswap;
-const klHTML=(arr,isK)=>'<div class="kl'+(kSwap()?' sw':'')+'">'+arr.map(i=>{
+const klHTML=(arr,isK)=>'<div class="kl'+(kSwap()?' ksw':'')+'">'+arr.map(i=>{
   if(i.h)return '<div class="khd">'+esc(i.b)+'</div>';
   const ka='<div>'+(isK?cpyKeys(i.a):(i.a?'<button type="button" class="cpyb" data-copy="'+esc(i.a)+'" title="Нажмите, чтобы скопировать"><code class="ic">'+esc(i.a)+'</code></button>':''))+'</div>';
   const tb='<div class="txt">'+esc(i.b)+'</div>';
