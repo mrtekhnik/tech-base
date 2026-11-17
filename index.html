@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.73 -->
+<!-- Моя техническая база, версия 1.74 -->
 <script>
 /* защита входа: экран блокировки включается до отрисовки программы */
 try{if(localStorage.getItem('techbase_lock')){var _k=+sessionStorage.getItem('techbase_keep')||0;sessionStorage.removeItem('techbase_keep');if(!(_k&&Date.now()-_k<10000))document.documentElement.classList.add('applock')}}catch(e){}
@@ -377,6 +377,17 @@ html.applock,html.applock body{overflow:hidden}
 .kl .khd .chv{flex:none;width:14px;color:var(--mut);font-size:.8em}
 .kl .khd .cnt{color:var(--mut);font-weight:400;font-size:.85em}
 .le-row.fhid{display:none}
+@media(min-width:700px){
+  .le-row{display:flex;align-items:center;gap:6px;padding:4px 6px;margin-bottom:4px}
+  .le-top{display:contents}
+  .le-top .a{order:1;flex:0 0 34%;width:auto}
+  .le-row>.b{order:2;flex:1;min-width:0;width:auto}
+  .le-top .mv{order:3;flex:none}
+  .le-row.hd .le-top .mv[data-r=fold]{order:0}
+  .le-row input{padding:6px 9px}
+  .le-row.hd .a{display:none}
+}
+@media(min-width:700px){.sheet.fs.wide .edf>.fld.opt:not([hidden]):has(textarea){min-height:max(260px,42vh)}}
 .le-row:not(.hd) .mv[data-r=fold]{display:none}
 .kl.ksw{grid-template-columns:1fr fit-content(45%)}
 .hkm .hkv+.hkv{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)}
@@ -449,7 +460,7 @@ html.applock,html.applock body{overflow:hidden}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.73';
+const APP_VERSION='1.74';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -2019,8 +2030,10 @@ function listEditor(kind,items){
   const addBtn=document.createElement('button');addBtn.type='button';addBtn.className='btn sm';addBtn.textContent='+ Строка';
   const pasteBtn=document.createElement('button');pasteBtn.type='button';pasteBtn.className='btn sm';pasteBtn.textContent='Вставить списком';
   bar.append(addBtn,pasteBtn);
+  const foldAll=document.createElement('button');foldAll.type='button';foldAll.className='btn sm';foldAll.hidden=true;bar.append(foldAll);
+  foldAll.onclick=()=>{const hs=$$('.le-row',el).filter(r=>r.dataset.h==='1');const any=hs.some(r=>!r.classList.contains('fold'));hs.forEach(r=>r.classList.toggle('fold',any));applyFold()};
   const setHead=r=>{const on=r.dataset.h==='1';r.classList.toggle('hd',on);const bb=$('.b',r);bb.placeholder=on?'заголовок раздела':'расшифровка';bb.setAttribute('aria-label',on?'Заголовок раздела':'Расшифровка');const hb=$('[data-r=head]',r);if(hb)hb.classList.toggle('fa',on)};
-  const applyFold=()=>{let hid=false;$$('.le-row',el).forEach(r=>{if(r.dataset.h==='1'){hid=r.classList.contains('fold');const f=$('[data-r=fold]',r);if(f)f.textContent=hid?'▸':'▾';r.classList.remove('fhid')}else r.classList.toggle('fhid',hid)})};
+  const applyFold=()=>{let hid=false;$$('.le-row',el).forEach(r=>{if(r.dataset.h==='1'){hid=r.classList.contains('fold');const f=$('[data-r=fold]',r);if(f)f.textContent=hid?'▸':'▾';r.classList.remove('fhid')}else r.classList.toggle('fhid',hid)});const hs=$$('.le-row',el).filter(r=>r.dataset.h==='1');foldAll.hidden=hs.length<2;foldAll.textContent=hs.some(r=>!r.classList.contains('fold'))?'▾ Свернуть все разделы':'▸ Развернуть все разделы'};
   const add=(a,b,focus,after,h)=>{
     const r=document.createElement('div');r.className='le-row';
     r.innerHTML='<div class="le-top"><input class="a'+(isK?'':' mono')+'" placeholder="'+(isK?'сочетание клавиш':'команда')+'" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="'+(isK?'Клавиши':'Команда')+'">'+(isK?'<button type="button" class="mv" data-r="pick" aria-label="Выбрать клавиши">⌨</button>':'')+'<button type="button" class="mv" data-r="fold" title="Свернуть или развернуть раздел" aria-label="Свернуть раздел">▾</button><button type="button" class="mv" data-r="head" title="Сделать строку заголовком раздела" aria-label="Заголовок раздела">Т</button><button type="button" class="mv" data-r="up" aria-label="Вверх">↑</button><button type="button" class="mv" data-r="down" aria-label="Вниз">↓</button><button type="button" class="mv" data-r="del" aria-label="Удалить строку">×</button></div><input class="b" placeholder="расшифровка" autocomplete="off" aria-label="Расшифровка">';
