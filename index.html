@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.74 -->
+<!-- Моя техническая база, версия 1.75 -->
 <script>
 /* защита входа: экран блокировки включается до отрисовки программы */
 try{if(localStorage.getItem('techbase_lock')){var _k=+sessionStorage.getItem('techbase_keep')||0;sessionStorage.removeItem('techbase_keep');if(!(_k&&Date.now()-_k<10000))document.documentElement.classList.add('applock')}}catch(e){}
@@ -460,7 +460,7 @@ html.applock,html.applock body{overflow:hidden}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.74';
+const APP_VERSION='1.75';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -1475,10 +1475,12 @@ function trashEntry(e){
 /* ===== Просмотр записи ===== */
 const keysCopy=h=>String(h).split(ALTRE).map(x=>x.trim()).filter(Boolean).map(g=>g.split(/\s*\+\s*/).filter(Boolean).map(k=>k==='Plus'?'+':k).join('+')).join(' / ');
 const kSwap=()=>!!S.settings.kswap;
-const KCOL=new Set();
-const klHTML=(arr,isK)=>{let hid=false;const cntOf=n=>{let c=0;for(let j=n+1;j<arr.length&&!arr[j].h;j++)c++;return c};
+const kcKey=(eid,isK,t)=>eid+'|'+(isK?'k':'c')+'|'+t;
+const kcHas=k=>Array.isArray(S.settings.kcol)&&S.settings.kcol.includes(k);
+const kcSet=(k,on)=>{let a=(Array.isArray(S.settings.kcol)?S.settings.kcol:[]).filter(x=>x!==k);if(on)a.push(k);if(a.length>600)a=a.slice(-600);S.settings.kcol=a;save()};
+const klHTML=(arr,isK,eid)=>{let hid=false;const cntOf=n=>{let c=0;for(let j=n+1;j<arr.length&&!arr[j].h;j++)c++;return c};
 return '<div class="kl'+(kSwap()?' ksw':'')+'">'+arr.map((i,n)=>{
-  if(i.h){const key=(isK?'k':'c')+'|'+i.b;hid=KCOL.has(key);return '<button type="button" class="khd" data-kh="'+esc(key)+'" aria-expanded="'+(!hid)+'" title="Свернуть или развернуть раздел"><span class="chv">'+(hid?'▸':'▾')+'</span>'+esc(i.b)+(hid?' <span class="cnt">· строк: '+cntOf(n)+'</span>':'')+'</button>'}
+  if(i.h){const key=kcKey(eid,isK,i.b);hid=kcHas(key);return '<button type="button" class="khd" data-kh="'+esc(key)+'" aria-expanded="'+(!hid)+'" title="Свернуть или развернуть раздел"><span class="chv">'+(hid?'▸':'▾')+'</span>'+esc(i.b)+(hid?' <span class="cnt">· строк: '+cntOf(n)+'</span>':'')+'</button>'}
   if(hid)return '';
   const ka='<div>'+(isK?cpyKeys(i.a):(i.a?'<button type="button" class="cpyb" data-copy="'+esc(i.a)+'" title="Нажмите, чтобы скопировать"><code class="ic">'+esc(i.a)+'</code></button>':''))+'</div>';
   const tb='<div class="txt">'+esc(i.b)+'</div>';
@@ -1490,8 +1492,8 @@ function entryHTML(e){
   let h='<div class="vw"><p class="tt">'+esc(titleOf(e))+(e.status!=='active'?'<span class="badge">'+(e.status==='archive'?'в архиве':'в корзине')+'</span>':'')+'</p><div class="hint">'+esc(locOf(e))+'</div>'+((tagsOn()&&(e.tags||[]).length)?'<div class="c-tags vtags">'+e.tags.map(t=>'<button type="button" class="tg" data-tag="'+esc(t)+'" title="Показать все записи с этим тегом">#'+esc(t)+'</button>').join('')+'</div>':'');
   if(e.hotkey)h+='<h4>Горячая клавиша</h4>'+cpyKeys(e.hotkey);
   if(e.command)h+='<h4>Команда</h4><div class="cmd"><button type="button" class="cpyb" data-copy="'+esc(e.command)+'" title="Нажмите, чтобы скопировать"><code>'+esc(e.command)+'</code></button><button class="btn sm" data-a="copy">Копировать</button></div>';
-  if((e.keylist||[]).length)h+='<h4>Горячие клавиши <button class="btn lnk" data-a="copykeys">копировать список</button> <button class="btn lnk" data-a="kswap" title="Поменять местами колонки клавиш и расшифровок">⇄ поменять колонки</button></h4>'+klHTML(e.keylist,true);
-  if((e.cmdlist||[]).length)h+='<h4>Команды <button class="btn lnk" data-a="copycmds">копировать список</button></h4>'+klHTML(e.cmdlist,false);
+  if((e.keylist||[]).length)h+='<h4>Горячие клавиши <button class="btn lnk" data-a="copykeys">копировать список</button> <button class="btn lnk" data-a="kswap" title="Поменять местами колонки клавиш и расшифровок">⇄ поменять колонки</button></h4>'+klHTML(e.keylist,true,e.id);
+  if((e.cmdlist||[]).length)h+='<h4>Команды <button class="btn lnk" data-a="copycmds">копировать список</button></h4>'+klHTML(e.cmdlist,false,e.id);
   if(e.desc)h+='<h4>Описание</h4><div class="txt">'+rich(e.desc)+'</div>';
   if(e.steps)h+='<h4>Инструкция</h4><div class="txt">'+rich(e.steps)+'</div>';
   if(e.note)h+='<h4>Примечание</h4><div class="txt">'+rich(e.note)+'</div>';
@@ -1522,7 +1524,7 @@ function showEntry(id){
     const c=ev.target.closest('[data-copy]');
     if(c){const t=c.dataset.copy;copyText(t,'Скопировано: '+(t.length>40?t.slice(0,40)+'…':t));return}
     const kh=ev.target.closest('[data-kh]');
-    if(kh){const k=kh.dataset.kh;KCOL.has(k)?KCOL.delete(k):KCOL.add(k);if(sh.redraw)sh.redraw();return}
+    if(kh){const k=kh.dataset.kh;kcSet(k,!kcHas(k));if(sh.redraw)sh.redraw();return}
     const b=ev.target.closest('[data-a]');if(b)entryAction(id,b.dataset.a,sh)});
 }
 async function entryAction(id,a,sh){
@@ -2022,7 +2024,7 @@ function pasteList(kind,existing){
     ta.focus();
   });
 }
-function listEditor(kind,items){
+function listEditor(kind,items,eid){
   const isK=kind==='keys';
   const el=document.createElement('div');el.className='le';
   const rows=document.createElement('div');el.append(rows);
@@ -2031,13 +2033,14 @@ function listEditor(kind,items){
   const pasteBtn=document.createElement('button');pasteBtn.type='button';pasteBtn.className='btn sm';pasteBtn.textContent='Вставить списком';
   bar.append(addBtn,pasteBtn);
   const foldAll=document.createElement('button');foldAll.type='button';foldAll.className='btn sm';foldAll.hidden=true;bar.append(foldAll);
-  foldAll.onclick=()=>{const hs=$$('.le-row',el).filter(r=>r.dataset.h==='1');const any=hs.some(r=>!r.classList.contains('fold'));hs.forEach(r=>r.classList.toggle('fold',any));applyFold()};
+  foldAll.onclick=()=>{const hs=$$('.le-row',el).filter(r=>r.dataset.h==='1');const any=hs.some(r=>!r.classList.contains('fold'));hs.forEach(r=>{r.classList.toggle('fold',any);if(eid)kcSet(kcKey(eid,isK,$('.b',r).value.trim()),any)});applyFold()};
   const setHead=r=>{const on=r.dataset.h==='1';r.classList.toggle('hd',on);const bb=$('.b',r);bb.placeholder=on?'заголовок раздела':'расшифровка';bb.setAttribute('aria-label',on?'Заголовок раздела':'Расшифровка');const hb=$('[data-r=head]',r);if(hb)hb.classList.toggle('fa',on)};
   const applyFold=()=>{let hid=false;$$('.le-row',el).forEach(r=>{if(r.dataset.h==='1'){hid=r.classList.contains('fold');const f=$('[data-r=fold]',r);if(f)f.textContent=hid?'▸':'▾';r.classList.remove('fhid')}else r.classList.toggle('fhid',hid)});const hs=$$('.le-row',el).filter(r=>r.dataset.h==='1');foldAll.hidden=hs.length<2;foldAll.textContent=hs.some(r=>!r.classList.contains('fold'))?'▾ Свернуть все разделы':'▸ Развернуть все разделы'};
   const add=(a,b,focus,after,h)=>{
     const r=document.createElement('div');r.className='le-row';
     r.innerHTML='<div class="le-top"><input class="a'+(isK?'':' mono')+'" placeholder="'+(isK?'сочетание клавиш':'команда')+'" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="'+(isK?'Клавиши':'Команда')+'">'+(isK?'<button type="button" class="mv" data-r="pick" aria-label="Выбрать клавиши">⌨</button>':'')+'<button type="button" class="mv" data-r="fold" title="Свернуть или развернуть раздел" aria-label="Свернуть раздел">▾</button><button type="button" class="mv" data-r="head" title="Сделать строку заголовком раздела" aria-label="Заголовок раздела">Т</button><button type="button" class="mv" data-r="up" aria-label="Вверх">↑</button><button type="button" class="mv" data-r="down" aria-label="Вниз">↓</button><button type="button" class="mv" data-r="del" aria-label="Удалить строку">×</button></div><input class="b" placeholder="расшифровка" autocomplete="off" aria-label="Расшифровка">';
     r.dataset.h=h?'1':'';setHead(r);
+    if(h&&eid&&kcHas(kcKey(eid,isK,b||'')))r.classList.add('fold');
     $('.a',r).value=a||'';$('.b',r).value=b||'';
     if(after)after.after(r);else rows.append(r);
     if(focus){let p=r.previousElementSibling;while(p&&p.dataset.h!=='1')p=p.previousElementSibling;if(p)p.classList.remove('fold')}
@@ -2058,7 +2061,7 @@ function listEditor(kind,items){
   };
   el.addEventListener('click',async ev=>{
     const b=ev.target.closest('[data-r]');if(!b)return;const r=b.closest('.le-row');
-    if(b.dataset.r==='fold'){r.classList.toggle('fold');applyFold()}
+    if(b.dataset.r==='fold'){r.classList.toggle('fold');if(eid)kcSet(kcKey(eid,isK,$('.b',r).value.trim()),r.classList.contains('fold'));applyFold()}
     else if(b.dataset.r==='del'){r.remove();if(!rows.children.length)add('','');applyFold()}
     else if(b.dataset.r==='head'){r.dataset.h=r.dataset.h==='1'?'':'1';if(r.dataset.h==='1'){const a=$('.a',r),bb=$('.b',r);if(!bb.value.trim()&&a.value.trim()){bb.value=a.value;}a.value=''}setHead(r);r.classList.remove('fold');applyFold();$('.b',r).focus()}
     else if(b.dataset.r==='up'){if(r.previousElementSibling)r.previousElementSibling.before(r);applyFold()}
@@ -2113,7 +2116,7 @@ function openForm(id,ctx){
   val('group',e?(e.groupId&&gs.some(g=>g.id===e.groupId)?e.groupId:''):((ctx&&ctx.groupId&&gs.some(g=>g.id===ctx.groupId))?ctx.groupId:''));
   const hk=hotkeyMulti(e?e.hotkey:'',()=>{},true);
   const hkBox=$('[data-hk]',body);if(hkBox)hkBox.append(hk.el);
-  const ed={keylist:listEditor('keys',e?e.keylist:[]),cmdlist:listEditor('cmds',e?e.cmdlist:[])};
+  const ed={keylist:listEditor('keys',e?e.keylist:[],e&&e.id),cmdlist:listEditor('cmds',e?e.cmdlist:[],e&&e.id)};
   $('[data-le=keylist]',body).append(ed.keylist.el);$('[data-le=cmdlist]',body).append(ed.cmdlist.el);
   const raw=()=>{const o={hotkey:hk.get(),keylist:ed.keylist.get(),cmdlist:ed.cmdlist.get()};$$('[data-f]',body).forEach(x=>o[x.dataset.f]=x.value);return o};
   let init=JSON.stringify(raw());
