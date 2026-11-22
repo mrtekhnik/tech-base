@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.81 -->
+<!-- Моя техническая база, версия 1.82 -->
 <script>
 /* защита входа: экран блокировки включается до отрисовки программы */
 try{if(localStorage.getItem('techbase_lock')){var _k=+sessionStorage.getItem('techbase_keep')||0;sessionStorage.removeItem('techbase_keep');if(!(_k&&Date.now()-_k<10000))document.documentElement.classList.add('applock')}}catch(e){}
@@ -407,6 +407,27 @@ html.applock,html.applock body{overflow:hidden}
 .le-row.hd .b{font-weight:700}
 .le-row.hd .le-top{justify-content:flex-end}
 .cfig{margin:2px 0 6px}
+
+/* мини-окно поверх всех окон */
+#btnMini,#btnSize{display:none}
+@media (min-width:700px){html.mok #btnMini{display:inline-block}}
+body.mini #btnMini,body.mini #btnSize{display:inline-block!important}
+#miniNote{padding:60px 20px;text-align:center;font-size:1.1rem}
+#miniNote div{margin-bottom:16px}
+body.mini{padding-bottom:12px}
+body.mini #fab,body.mini #fab2,body.mini #top{display:none!important}
+body.mini .top .ibtn{width:38px;height:38px;font-size:20px}
+body.mini .top .ttl{font-size:1.05rem}
+body.m-compact #btnFold,body.m-compact #btnView,body.m-compact #btnReorder,body.m-line #btnFold,body.m-line #btnView,body.m-line #btnReorder,body.m-line #btnSync{display:none!important}
+body.m-compact #banner,body.m-line #banner{display:none}
+body.m-compact .card .c-desc,body.m-compact .card .c-loc,body.m-compact .card .c-tags,body.m-compact .card .c-cmd{display:none}
+body.m-compact .card{padding-top:6px;padding-bottom:6px}
+body.m-line .tabrow,body.m-line #btnKeys,body.m-line #btnScope,body.m-line #btnArch{display:none!important}
+body.m-line #main .resline,body.m-line #main .sech,body.m-line #main .tagbar,body.m-line #main .card:not(.m1){display:none}
+body.m-line #main.nohit>*{display:none}
+body.m-line #main.nohit::before{content:'Введите запрос';display:block;padding:14px 16px;color:var(--mut)}
+body.m-line .card .c-desc,body.m-line .card .c-tags,body.m-line .card .c-loc{display:none}
+body.m-line .card .star,body.m-line .card .dots{display:none}
 </style>
 </head>
 <body>
@@ -417,6 +438,8 @@ html.applock,html.applock body{overflow:hidden}
     <button class="ibtn" id="btnView" aria-label="Режим отображения" title="Режим отображения" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="16" rx="1"/><rect x="17" y="4" width="4" height="16" rx="1"/></svg></button>
     <button class="ibtn" id="btnReorder" aria-label="Режим порядка и перетаскивания" title="Порядок и перетаскивание" hidden>↕</button>
     <button class="ibtn" id="btnSync" aria-label="Синхронизировать" title="Синхронизировать" hidden>⟳</button>
+    <button class="ibtn" id="btnSize" aria-label="Размер мини-окна" title="Размер мини-окна (Ctrl+↑ / Ctrl+↓)"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4v16M4 8l4-4 4 4M16 20V4M12 16l4 4 4-4"/></svg></button>
+    <button class="ibtn" id="btnMini" aria-label="Мини-окно поверх всех окон" title="Мини-окно поверх всех окон (Ctrl+M)"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><rect x="11" y="12" width="8" height="6" rx="1" fill="currentColor"/></svg></button>
     <button class="ibtn" id="btnMenu" aria-label="Меню">☰</button>
   </div>
   <div class="tabrow">
@@ -470,7 +493,7 @@ html.applock,html.applock body{overflow:hidden}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.81';
+const APP_VERSION='1.82';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -480,8 +503,13 @@ const ordOf=e=>{const o=ordClean(e&&e.ord);return o.concat(BLK.filter(k=>!o.incl
 const DAY=86400000;
 let tagF=new Set(), keyQ='', S, view='tab', curTab=null, scope='tab', inclArch=false, q='', reorder=false, storageFailed=false, corruptFound=false, stack=[], curDirty=null;
 
-const $=(s,r=document)=>r.querySelector(s);
-const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+let DOC=document,WIN=window,pip=null;
+const $=(s,r=DOC)=>r.querySelector(s);
+const $$=(s,r=DOC)=>[...r.querySelectorAll(s)];
+/* постоянные обработчики документа и окна: при переносе в мини-окно подключаются и к нему */
+const GL=[];
+function onDoc(t,f,o){GL.push([0,t,f,o]);document.addEventListener(t,f,o)}
+function onWin(t,f,o){GL.push([1,t,f,o]);window.addEventListener(t,f,o)}
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const reEsc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 const uid=()=>'i'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
@@ -528,7 +556,7 @@ const WM=[['auto','По режиму'],['700','700'],['860','860'],['1000','1000
 const WS=[['auto','Стандартная'],['560','560'],['680','680'],['800','800'],['960','960'],['1200','1200'],['full','Во всю ширину окна']];
 function applyWidths(){
   if(typeof S==='undefined'||!S)return;
-  const r=document.documentElement.style,v=vset(),pc=profile()==='pc';
+  const r=DOC.documentElement.style,v=vset(),pc=profile()==='pc';
   const set=(n,x)=>x==null?r.removeProperty(n):r.setProperty(n,x);
   if(pc&&v.wm==='full'){set('--wmain','none');set('--wbn','none')}
   else if(pc&&/^\d+$/.test(v.wm)){set('--wmain',v.wm+'px');set('--wbn',(+v.wm-20)+'px')}
@@ -537,11 +565,11 @@ function applyWidths(){
   else if(pc&&/^\d+$/.test(v.ws))set('--wsheet',v.ws+'px');
   else set('--wsheet',null);
 }
-window.addEventListener('resize',()=>{try{applyWidths()}catch(e){}});
+onWin('resize',()=>{try{applyWidths()}catch(e){}});
 function fset(){const st=S.settings;if(!st.favUI)st.favUI={n:10,cre:false,mod:false};if(st.favUI.opn===undefined){st.favUI.opn=true;st.favUI.frq=true}return st.favUI}
 let favOrd=false;
 let selMode=false,selCtx=null,lpFired=false;const sel=new Set();
-function profile(){const p=vset().profile;return p==='pc'||p==='phone'?p:(window.innerWidth>=700?'pc':'phone')}
+function profile(){if(pip)return 'phone';const p=vset().profile;return p==='pc'||p==='phone'?p:(WIN.innerWidth>=700?'pc':'phone')}
 function effMode(){return profile()==='pc'&&!reorder?vset().mode:'one'}
 const tagsArr=a=>Array.isArray(a)?[...new Map(a.map(x=>String(x).trim().replace(/^#+/,'').trim()).filter(Boolean).map(x=>[x.toLowerCase(),x])).values()].slice(0,30):typeof a==='string'?tagsArr(a.split(/[,;\n]+/)):[];
 function allTags(fl){const m=new Map();S.entries.forEach(e=>{if(e.status==='trash')return;if(fl&&!fl(e))return;(e.tags||[]).forEach(t=>{const k=t.toLowerCase(),o=m.get(k)||{name:t,n:0};o.n++;m.set(k,o)})});return [...m.values()].sort((a,b)=>b.n-a.n||a.name.localeCompare(b.name,'ru'))}
@@ -591,33 +619,33 @@ function act(fn,msg){
 let toastT;
 function toast(msg,undo){
   const t=$('#toast');t.innerHTML='';
-  const s=document.createElement('span');s.textContent=msg;t.append(s);
-  if(undo){const b=document.createElement('button');b.textContent='Отменить';b.onclick=()=>{hideToast();undo()};t.append(b)}
+  const s=DOC.createElement('span');s.textContent=msg;t.append(s);
+  if(undo){const b=DOC.createElement('button');b.textContent='Отменить';b.onclick=()=>{hideToast();undo()};t.append(b)}
   t.style.display='flex';clearTimeout(toastT);toastT=setTimeout(hideToast,undo?7000:3500);
 }
 function hideToast(){$('#toast').style.display='none'}
 
 /* ===== Модальные окна ===== */
 function sheet({title,body,foot,guard,noHead,cls}){
-  const ov=document.createElement('div');ov.className='ov';
+  const ov=DOC.createElement('div');ov.className='ov';
   ov.innerHTML='<div class="sheet" role="dialog" aria-modal="true"><div class="sh-head"><h3></h3><button class="ibtn" data-x aria-label="Закрыть">✕</button></div><div class="sheet-body"></div><div class="sh-foot"></div></div>';
   if(noHead){$('.sh-head',ov).remove();$('.sheet',ov).insertAdjacentHTML('afterbegin','<button class="ibtn sh-x" data-x aria-label="Закрыть">✕</button>')}
   else $('h3',ov).textContent=title;
   if(cls)$('.sheet',ov).classList.add(cls);
   const bd=$('.sheet-body',ov);if(body)bd.append(body);
   bd.addEventListener('focusin',ev=>{
-    if(window.matchMedia&&matchMedia('(max-width:699px)').matches&&ev.target.matches&&ev.target.matches('input,textarea,select'))
+    if(WIN.matchMedia&&WIN.matchMedia('(max-width:699px)').matches&&ev.target.matches&&ev.target.matches('input,textarea,select'))
       setTimeout(()=>{if(ev.target.closest&&(ev.target.closest('.typing')||(ev.target.tagName==='TEXTAREA'&&ev.target.closest('.edf'))))return;try{ev.target.scrollIntoView({block:'center'})}catch(_){}},300);
   });
   const ft=$('.sh-foot',ov);if(foot)ft.append(...foot);
-  {const sh=$('.sheet',ov),nav=document.createElement('div');nav.className='snav';nav.hidden=true;
+  {const sh=$('.sheet',ov),nav=DOC.createElement('div');nav.className='snav';nav.hidden=true;
    nav.innerHTML='<button type="button" class="sn-up" aria-label="В начало" title="В начало">↑</button><button type="button" class="sn-dn" aria-label="В конец" title="В конец">↓</button>';
    sh.append(nav);const up=nav.firstChild,dn=nav.lastChild;let raf=0;
    const upd=()=>{raf=0;const m=bd.scrollHeight-bd.clientHeight,long=m>90;nav.hidden=!long;if(!long)return;
      up.hidden=bd.scrollTop<60;dn.hidden=bd.scrollTop>m-60;
      if(sh.classList.contains('fs')){nav.style.bottom='auto';nav.style.top=(bd.offsetTop+10)+'px'}else nav.style.bottom=(sh.clientHeight-bd.offsetTop-bd.offsetHeight+12)+'px'};
-   const q=()=>{if(!raf)raf=requestAnimationFrame(upd)};
-   bd.addEventListener('scroll',q,{passive:true});window.addEventListener('resize',q);
+   const q=()=>{if(!raf)raf=WIN.requestAnimationFrame(upd)};
+   bd.addEventListener('scroll',q,{passive:true});WIN.addEventListener('resize',q);
    try{new MutationObserver(q).observe(bd,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','style']})}catch(_){}
    setTimeout(q,50);setTimeout(q,400);
    up.onclick=()=>bd.scrollTo({top:0,behavior:'smooth'});dn.onclick=()=>bd.scrollTo({top:bd.scrollHeight,behavior:'smooth'});}
@@ -630,19 +658,19 @@ function sheet({title,body,foot,guard,noHead,cls}){
   $('[data-x]',ov).onclick=()=>api.tryClose();
   stack.push(api);$('#modalRoot').append(ov);lockSync();return api;
 }
-function lockSync(){document.documentElement.classList.toggle('lock',stack.length>0)}
+function lockSync(){DOC.documentElement.classList.toggle('lock',stack.length>0)}
 function dlg({title,text,html,node,buttons,noFocus,cls}){
   return new Promise(res=>{
-    const ov=document.createElement('div');ov.className='ov center';
+    const ov=DOC.createElement('div');ov.className='ov center';
     ov.innerHTML='<div class="dlg" role="alertdialog" aria-modal="true"><h3></h3><div class="dbody"></div><div class="dbtns"></div></div>';
     $('h3',ov).textContent=title;const b=$('.dbody',ov);if(cls)$('.dlg',ov).classList.add(cls);
-    if(text){const p=document.createElement('p');p.textContent=text;b.append(p)}
+    if(text){const p=DOC.createElement('p');p.textContent=text;b.append(p)}
     if(html)b.insertAdjacentHTML('beforeend',html);
     if(node)b.append(node);
     const api={};
     const fin=v=>{ov.remove();stack=stack.filter(x=>x!==api);lockSync();res({v,el:b})};
     api.esc=()=>fin(null);
-    buttons.forEach(bt=>{const x=document.createElement('button');x.className='btn '+(bt.kind||'');x.textContent=bt.label;x.onclick=()=>fin(bt.value);$('.dbtns',ov).append(x)});
+    buttons.forEach(bt=>{const x=DOC.createElement('button');x.className='btn '+(bt.kind||'');x.textContent=bt.label;x.onclick=()=>fin(bt.value);$('.dbtns',ov).append(x)});
     stack.push(api);$('#modalRoot').append(ov);lockSync();
     const f=noFocus?null:($('input,select',ov)||$('.btn.pri,.btn.dng',ov));if(f)f.focus();
   });
@@ -653,7 +681,7 @@ async function ask(title,text,okLabel,danger){
   return r.v==='ok';
 }
 async function promptName(title,val,ph){
-  const el=document.createElement('div');
+  const el=DOC.createElement('div');
   el.innerHTML='<div class="fld"><input type="text" autocomplete="off"></div>';
   const inp=$('input',el);inp.value=val||'';inp.placeholder=ph||'';
   inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('.dbtns .pri').click()}});
@@ -661,9 +689,16 @@ async function promptName(title,val,ph){
   if(r.v!=='ok')return null;
   return inp.value.trim()||null;
 }
-document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&stack.length){e.preventDefault();stack[stack.length-1].esc()}
+onDoc('keydown',e=>{
+  if(e.key==='Escape'&&stack.length){e.preventDefault();stack[stack.length-1].esc();return}
+  if(e.defaultPrevented||!e.ctrlKey||e.altKey||e.shiftKey||e.metaKey||lkIsLocked())return;
+  const t=e.target,tg=t&&t.tagName;
+  if(t&&t.closest&&t.closest('.hk,.hkm'))return;
+  const k=(e.key||'').toLowerCase();
+  if(k==='m'||k==='ь'||e.code==='KeyM'){e.preventDefault();openMini();return}
+  if(pip&&(e.key==='ArrowDown'||e.key==='ArrowUp')&&tg!=='TEXTAREA'){e.preventDefault();stepMini(e.key==='ArrowDown'?1:-1)}
 });
+onWin('pagehide',()=>{if(pip){try{pip.close()}catch(e){}}});
 window.addEventListener('beforeunload',e=>{if(curDirty&&curDirty()){e.preventDefault();e.returnValue=''}});
 
 /* ===== Перетаскивание ===== */
@@ -675,7 +710,7 @@ function makeSortable(box,sel,done){
     ev.preventDefault();
     const from=items.indexOf(item),rects=items.map(i=>i.getBoundingClientRect());
     const step=from<n-1?rects[from+1].top-rects[from].top:rects[from].top-rects[from-1].top;
-    const sc=box.closest('.sheet-body');const pos=()=>sc?sc.scrollTop:window.scrollY;
+    const sc=box.closest('.sheet-body');const pos=()=>sc?sc.scrollTop:WIN.scrollY;
     const y0=ev.clientY,s0=pos();let y=y0,to=from,raf=0;
     try{g.setPointerCapture(ev.pointerId)}catch(_){}
     item.classList.add('drag');
@@ -687,14 +722,14 @@ function makeSortable(box,sel,done){
         it.style.transform=s?'translateY('+s+'px)':''});
     };
     const loop=()=>{
-      let top=0,bot=innerHeight;if(sc){const r=sc.getBoundingClientRect();top=r.top;bot=r.bottom}
+      let top=0,bot=WIN.innerHeight;if(sc){const r=sc.getBoundingClientRect();top=r.top;bot=r.bottom}
       const d=y<top+70?-12:y>bot-70?12:0;
-      if(d){if(sc)sc.scrollTop+=d;else window.scrollBy(0,d)}
-      upd();raf=requestAnimationFrame(loop);
+      if(d){if(sc)sc.scrollTop+=d;else WIN.scrollBy(0,d)}
+      upd();raf=WIN.requestAnimationFrame(loop);
     };
     const mv=e=>{y=e.clientY};
     const end=()=>{
-      cancelAnimationFrame(raf);
+      WIN.cancelAnimationFrame(raf);
       g.removeEventListener('pointermove',mv);g.removeEventListener('pointerup',end);g.removeEventListener('pointercancel',end);
       items.forEach(i=>{i.style.transform=''});item.classList.remove('drag');
       if(to!==from){const ids=items.map(i=>i.dataset.id);ids.splice(to,0,ids.splice(from,1)[0]);done(ids)}
@@ -849,7 +884,7 @@ function renderHeader(){
   ba.classList.toggle('on',inclArch);
   bs.setAttribute('aria-pressed',scope==='all');ba.setAttribute('aria-pressed',inclArch);
   br.classList.toggle('on',reorder);
-  const ph={tab:(scope==='all'?'Поиск везде':'Поиск в «'+(tabName(curTab)||'')+'»')+(inclArch?' и в архиве':''),fav:'Поиск в избранном и недавних',archive:'Поиск в архиве',trash:'Поиск в корзине'}[view];
+  const ph={tab:(scAll()?'Поиск везде':'Поиск в «'+(tabName(curTab)||'')+'»')+(inclArch?' и в архиве':''),fav:'Поиск в избранном и недавних',archive:'Поиск в архиве',trash:'Поиск в корзине'}[view];
   $('#q').placeholder=ph;$('#sbox').classList.toggle('has',!!q);
 }
 
@@ -872,8 +907,8 @@ function renderMain(){
   if(view==='tab'){
     if(!S.tabs.length){m.innerHTML='<div class="empty"><b>Вкладок пока нет</b>Создайте первую вкладку, чтобы начать записывать.<br><br><button class="btn pri" data-a="tabs">Создать вкладку</button></div>';return}
     if(terms.length||tagF.size||keyQ){
-      let list=S.entries.filter(e=>(e.status==='active'||(inclArch&&e.status==='archive'))&&(scope==='all'||e.tabId===curTab)&&(!terms.length||matches(e,terms))&&tagOk(e));
-      const where=(scope==='all'?'везде':'в «'+esc(tabName(curTab))+'»')+(inclArch?', включая архив':'');
+      let list=S.entries.filter(e=>(e.status==='active'||(inclArch&&e.status==='archive'))&&(scAll()||e.tabId===curTab)&&(!terms.length||matches(e,terms))&&tagOk(e));
+      const where=(scAll()?'везде':'в «'+esc(tabName(curTab))+'»')+(inclArch?', включая архив':'');
       let body='';
       if(keyQ){
         const r=keyMatch(list,keyQ);list=r.exact.concat(r.part);
@@ -1077,7 +1112,7 @@ function dropTarget(e,y,drag){
 }
 function initTreeDnD(){
   const main=$('#main');
-  const line=document.createElement('div');line.className='dropline';document.body.append(line);
+  const line=DOC.createElement('div');line.className='dropline';DOC.body.append(line);
   main.addEventListener('pointerdown',ev=>{
     const grip=ev.target.closest('.grip');
     if(!grip||!main.contains(grip)||!reorder)return;
@@ -1087,7 +1122,7 @@ function initTreeDnD(){
     const multi=kind==='e'&&selMode&&sel.has(id)&&sel.size>1;
     const src=kind==='g'?el.querySelector('.gh'):el,rect=src.getBoundingClientRect();
     const ghost=src.cloneNode(true);ghost.classList.add('ghost');
-    ghost.style.width=rect.width+'px';ghost.style.left=rect.left+'px';document.body.append(ghost);
+    ghost.style.width=rect.width+'px';ghost.style.left=rect.left+'px';DOC.body.append(ghost);
     if(multi){ghost.dataset.n=sel.size;ghost.classList.add('multi');$$('.card',main).forEach(c=>{if(sel.has(c.dataset.id))c.classList.add('dragging')})}
     const offY=ev.clientY-rect.top;let x=ev.clientX,y=ev.clientY,target=null,raf=0,hi=null;
     try{grip.setPointerCapture(ev.pointerId)}catch(_){}
@@ -1095,7 +1130,7 @@ function initTreeDnD(){
     const clearHi=()=>{if(hi){hi.classList.remove('dropin');hi=null}};
     const upd=()=>{
       ghost.style.top=(y-offY)+'px';
-      const t=dropTarget(document.elementFromPoint(x,y),y,el);
+      const t=dropTarget(DOC.elementFromPoint(x,y),y,el);
       if(t!==undefined)target=t;
       clearHi();
       if(target){
@@ -1104,10 +1139,10 @@ function initTreeDnD(){
         if(target.inside){hi=target.inside;hi.classList.add('dropin')}
       }else line.style.display='none';
     };
-    const loop=()=>{const d=y<80?-14:y>innerHeight-80?14:0;if(d)window.scrollBy(0,d);upd();raf=requestAnimationFrame(loop)};
+    const loop=()=>{const d=y<80?-14:y>WIN.innerHeight-80?14:0;if(d)WIN.scrollBy(0,d);upd();raf=WIN.requestAnimationFrame(loop)};
     const mv=e=>{x=e.clientX;y=e.clientY};
     const end=e2=>{
-      cancelAnimationFrame(raf);
+      WIN.cancelAnimationFrame(raf);
       grip.removeEventListener('pointermove',mv);grip.removeEventListener('pointerup',end);grip.removeEventListener('pointercancel',end);
       ghost.remove();line.style.display='none';clearHi();$$('.dragging').forEach(c=>c.classList.remove('dragging'));
       if(e2.type==='pointercancel'||!target)return;
@@ -1155,7 +1190,7 @@ async function newGroup(parentId){
 function groupMenu(gid){
   const g=grp(gid);if(!g)return;
   let more=false;
-  const sh=sheet({title:g.name,body:document.createElement('div')});
+  const sh=sheet({title:g.name,body:DOC.createElement('div')});
   const draw=()=>{
     const I=(a,l)=>'<button data-a="'+a+'">'+l+'</button>';
     sh.body.innerHTML='<div class="menu">'+I('gaddrec','＋ Добавить запись в группу')+I('grename','✎ Переименовать')+I('gsub','Подгруппа')+I('garchive','В архив')+I('gdelete','🗑 Удалить группу')+
@@ -1270,9 +1305,9 @@ function relPath(e,gid){
 function openBundle(gid){
   const g=grp(gid);if(!g)return;
   const where=g.status==='trash'?'корзине':'архиве';
-  const body=document.createElement('div');
-  const bAll=Object.assign(document.createElement('button'),{className:'btn',textContent:'Восстановить группу целиком'});
-  const bRest=Object.assign(document.createElement('button'),{className:'btn pri',textContent:'Восстановить выбранные'});
+  const body=DOC.createElement('div');
+  const bAll=Object.assign(DOC.createElement('button'),{className:'btn',textContent:'Восстановить группу целиком'});
+  const bRest=Object.assign(DOC.createElement('button'),{className:'btn pri',textContent:'Восстановить выбранные'});
   const sh=sheet({title:'📁 '+g.name,body,foot:[bAll,bRest]});
   const bg=S.groups.filter(x=>x.bundle===gid&&x.id!==gid),be=bundleEntries(gid);
   const kids=pid=>{
@@ -1359,14 +1394,14 @@ async function bundleForever(gid){
   fixRefs();save();render();toast('Группа удалена навсегда');
 }
 
-function renderFab(){const on=view==='tab'&&curTab&&S.tabs.length&&!selMode;$('#fab').style.display=on?'block':'none';document.body.classList.toggle('nofab',!on);const qa=(view==='tab'||view==='fav')&&!selMode;$('#fab2').style.display=qa?'block':'none';document.body.classList.toggle('qa',qa)}
+function renderFab(){const on=view==='tab'&&curTab&&S.tabs.length&&!selMode;$('#fab').style.display=on?'block':'none';DOC.body.classList.toggle('nofab',!on);const qa=(view==='tab'||view==='fav')&&!selMode;$('#fab2').style.display=qa?'block':'none';DOC.body.classList.toggle('qa',qa)}
 
 /* ===== Навигация и события ===== */
-function gotoTab(id){view='tab';curTab=id;reorder=false;S.settings.lastTab=id;save();render();window.scrollTo(0,0)}
+function gotoTab(id){view='tab';curTab=id;reorder=false;S.settings.lastTab=id;save();render();WIN.scrollTo(0,0)}
 $('#tabs').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
   if(b.dataset.t)gotoTab(b.dataset.t);
-  else if(b.dataset.v==='fav'){view='fav';reorder=false;render();window.scrollTo(0,0)}
+  else if(b.dataset.v==='fav'){view='fav';reorder=false;render();WIN.scrollTo(0,0)}
   else if(b.dataset.v==='tabs')openTabs();
 });
 $('#btnScope').onclick=()=>{scope=scope==='all'?'tab':'all';render()};
@@ -1381,7 +1416,7 @@ $('#btnFold').onclick=()=>{
   gs.forEach(g=>{g.collapsed=open});save();render();
 };
 let lastProf=null;
-window.addEventListener('resize',()=>{const p=profile();if(lastProf&&p!==lastProf){lastProf=p;render()}lastProf=p});
+onWin('resize',()=>{const p=profile();if(lastProf&&p!==lastProf){lastProf=p;render()}lastProf=p});
 function viewHTML(){
   const v=vset();
     const pc=profile()==='pc';
@@ -1412,13 +1447,13 @@ function viewClick(b,v){
   applyWidths();save();render();return true;
 }
 function openTabList(){
-  const el=document.createElement('div');el.className='menu';
+  const el=DOC.createElement('div');el.className='menu';
   const cnt=id=>S.entries.filter(e=>e.tabId===id&&e.status==='active').length;
   el.innerHTML='<button data-v="fav">★ Избранное и недавние</button>'+S.tabs.map(t=>'<button data-t="'+t.id+'">'+(view==='tab'&&t.id===curTab?'✓ ':'')+esc(t.name)+'<span class="n">'+cnt(t.id)+'</span></button>').join('');
   const sh=sheet({title:'Перейти к вкладке',body:el});
   el.addEventListener('click',e=>{
     const b=e.target.closest('button');if(!b)return;sh.close();
-    if(b.dataset.t)gotoTab(b.dataset.t);else{view='fav';reorder=false;render();window.scrollTo(0,0)}
+    if(b.dataset.t)gotoTab(b.dataset.t);else{view='fav';reorder=false;render();WIN.scrollTo(0,0)}
   });
 }
 let qT;
@@ -1433,8 +1468,8 @@ $('#banner').addEventListener('click',e=>{
   if(b.dataset.b==='export')doExport();
   else{S.settings.snoozeUntil=Date.now()+3*DAY;save();renderBanner()}
 });
-window.addEventListener('scroll',()=>{$('#top').style.display=(scrollY>400&&!stack.length)?'block':'none'},{passive:true});
-$('#top').onclick=()=>window.scrollTo({top:0,behavior:'smooth'});
+onWin('scroll',()=>{$('#top').style.display=(WIN.scrollY>400&&!stack.length)?'block':'none'},{passive:true});
+$('#top').onclick=()=>WIN.scrollTo({top:0,behavior:'smooth'});
 
 $('#main').addEventListener('click',async ev=>{
   if(lpFired){lpFired=false;return}
@@ -1515,27 +1550,27 @@ function entryHTML(e){
   return h+ordOf(e).map(k=>B[k]||'').join('')+'<h4>Изменено</h4><div class="hint">'+fmt(e.updated)+'</div></div>';
 }
 async function copyText(t,msg){
-  try{await navigator.clipboard.writeText(t);toast(msg)}catch(_){
-    const ta=document.createElement('textarea');ta.value=t;document.body.append(ta);ta.select();
-    try{document.execCommand('copy');toast(msg)}catch(__){toast('Не удалось скопировать')}ta.remove()}
+  try{await WIN.navigator.clipboard.writeText(t);toast(msg)}catch(_){
+    const ta=DOC.createElement('textarea');ta.value=t;DOC.body.append(ta);ta.select();
+    try{DOC.execCommand('copy');toast(msg)}catch(__){toast('Не удалось скопировать')}ta.remove()}
 }
 /* подсветка найденных слов в открытой записи (только пока идёт поиск) */
 function markTerms(root,terms){
   const ts=terms.filter(Boolean);if(!ts.length)return;
   const re=new RegExp('('+ts.map(t=>reEsc(t).replace(/е/g,'[еёЕЁ]')).join('|')+')','gi');
-  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>{
+  const w=DOC.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>{
     if(!n.nodeValue.trim())return NodeFilter.FILTER_REJECT;
     const p=n.parentElement;if(!p||p.closest('h4,.badge,script,style,[data-a],.khd .chv,.khd .cnt,.hint'))return NodeFilter.FILTER_REJECT;
     re.lastIndex=0;return re.test(n.nodeValue)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT}});
   const list=[];while(w.nextNode())list.push(w.currentNode);
   list.forEach(n=>{
-    const parts=n.nodeValue.split(re),fr=document.createDocumentFragment();
-    parts.forEach((t,i)=>{if(!t)return;if(i%2){const m=document.createElement('mark');m.className='sm';m.textContent=t;fr.append(m)}else fr.append(document.createTextNode(t))});
+    const parts=n.nodeValue.split(re),fr=DOC.createDocumentFragment();
+    parts.forEach((t,i)=>{if(!t)return;if(i%2){const m=DOC.createElement('mark');m.className='sm';m.textContent=t;fr.append(m)}else fr.append(DOC.createTextNode(t))});
     n.replaceWith(fr)});
 }
 function showEntry(id){
   {const e0=get(id);if(e0&&e0.status==='active'){e0.opens=(e0.opens||0)+1;e0.opened=Date.now();try{save()}catch(_){}}}
-  const sh=sheet({noHead:true,body:document.createElement('div')});
+  const sh=sheet({noHead:true,body:DOC.createElement('div')});
   const draw=()=>{
     const e=get(id);if(!e){sh.close();return}
     sh.body.innerHTML=entryHTML(e);
@@ -1550,7 +1585,7 @@ function showEntry(id){
   sh.redraw=draw;draw();
   sh.el.addEventListener('click',ev=>{
     const tg=ev.target.closest('[data-tag]');
-    if(tg){sh.close();tagF=new Set([tg.dataset.tag.toLowerCase()]);keyQ='';q='';$('#q').value='';scope='all';view='tab';render();window.scrollTo(0,0);return}
+    if(tg){sh.close();tagF=new Set([tg.dataset.tag.toLowerCase()]);keyQ='';q='';$('#q').value='';scope='all';view='tab';render();WIN.scrollTo(0,0);return}
     const c=ev.target.closest('[data-copy]');
     if(c){const t=c.dataset.copy;copyText(t,'Скопировано: '+(t.length>40?t.slice(0,40)+'…':t));return}
     const kh=ev.target.closest('[data-kh]');
@@ -1581,7 +1616,7 @@ async function entryAction(id,a,sh){
 }
 function entryMenu(id,parent){
   const e=get(id);if(!e)return;
-  const el=document.createElement('div');el.className='menu';
+  const el=DOC.createElement('div');el.className='menu';
   const I=(a,l)=>'<button data-a="'+a+'">'+l+'</button>';
   el.innerHTML=I('edit','✎ Редактировать')+I('fav',e.fav?'★ Открепить сверху':'☆ Закрепить наверху')+I('favg',e.favG?'Убрать из Избранного (вкладка ★)':'Разместить в Избранном (вкладка ★)')+I('dup','Дублировать')+I('move','Переместить в другое место')+I('sel','☑ Выбрать несколько')+I('archive','В архив')+I('trash','🗑 Удалить')+
     ((view!=='tab'||curTab!==e.tabId||q)&&tab(e.tabId)?I('show','Показать во вкладке'):'');
@@ -1609,7 +1644,7 @@ function dupEntry(id){
 async function pickDest(title,text,tabId,groupId,o={}){
   const tabs=S.tabs.filter(t=>t.id!==o.excludeTab);
   if(!tabs.length)return null;
-  const el=document.createElement('div');
+  const el=DOC.createElement('div');
   el.innerHTML=(text?'<p>'+esc(text)+'</p>':'')+(o.lockTab?'':'<div class="fld"><label>Вкладка</label><select data-d="t"></select></div>')+'<div class="fld"><label>Группа</label><select data-d="g"></select></div>';
   const sT=$('[data-d=t]',el),sG=$('[data-d=g]',el);
   const t0=tabs.some(t=>t.id===tabId)?tabId:tabs[0].id;
@@ -1680,18 +1715,18 @@ function splitCombo(text){
   if(tk.length>1&&tk.every(x=>KEYLIKE(x)))return tk;
   return [t];
 }
-const HKCAP_UI=()=>!(window.matchMedia&&matchMedia('(pointer:coarse)').matches);
+const HKCAP_UI=()=>!(WIN.matchMedia&&WIN.matchMedia('(pointer:coarse)').matches);
 /* одно сочетание или несколько вариантов через «или» */
 function hotkeyMulti(initial,onChange,collapsible){
-  const el=document.createElement('div');el.className='hkm';
-  const list=document.createElement('div');el.append(list);
-  const addBtn=document.createElement('button');addBtn.type='button';addBtn.className='btn lnk sm';addBtn.textContent='+ ещё вариант сочетания («или»)';el.append(addBtn);
+  const el=DOC.createElement('div');el.className='hkm';
+  const list=DOC.createElement('div');el.append(list);
+  const addBtn=DOC.createElement('button');addBtn.type='button';addBtn.className='btn lnk sm';addBtn.textContent='+ ещё вариант сочетания («или»)';el.append(addBtn);
   const ws=[];
   const addW=v=>{
-    const first=!ws.length,box=document.createElement('div');box.className='hkv';
+    const first=!ws.length,box=DOC.createElement('div');box.className='hkv';
     let w;
     if(!first){
-      const hd=document.createElement('div');hd.className='hkv-h';hd.innerHTML='<span>или</span><button type="button" class="btn lnk sm">× убрать вариант</button>';box.append(hd);
+      const hd=DOC.createElement('div');hd.className='hkv-h';hd.innerHTML='<span>или</span><button type="button" class="btn lnk sm">× убрать вариант</button>';box.append(hd);
       $('button',hd).onclick=()=>{const i=ws.indexOf(w);if(i>0)ws.splice(i,1);box.remove();onChange()};
     }
     w=hotkeyWidget(v,onChange,collapsible,!first);box.append(w.el);list.append(box);ws.push(w);return w;
@@ -1706,7 +1741,7 @@ function hotkeyWidget(initial,onChange,collapsible,extra){
   while(keys.length<2)keys.push('');
   let act=keys.findIndex(k=>!k);if(act<0)act=keys.length-1;
   let cat=act===0?'mod':'let';
-  const el=document.createElement('div');el.className='hk';
+  const el=DOC.createElement('div');el.className='hk';
   el.innerHTML='<div class="hk-slots"></div>'+(HKCAP_UI()?'<div class="hk-cap"><button type="button" class="btn lnk sm hk-capb" data-cap></button><div class="hint hk-caph"></div></div>':'')+(collapsible?'<button type="button" class="btn sm hk-tg" data-tg></button>':'')+'<div class="hk-pick"><div class="hk-cats"></div><div class="hk-chips"></div></div>';
   const pick=$('.hk-pick',el),tg=$('[data-tg]',el);
   let xo=false;
@@ -1774,7 +1809,7 @@ function hotkeyWidget(initial,onChange,collapsible,extra){
     slots.innerHTML='';
     keys.forEach((k,i)=>{
       if(i)slots.insertAdjacentHTML('beforeend','<span class="plus">+</span>');
-      const w=document.createElement('span');w.className='slot'+(i===act?' act':'');
+      const w=DOC.createElement('span');w.className='slot'+(i===act?' act':'');
       w.innerHTML='<input autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="клавиша" aria-label="Клавиша '+(i+1)+'"><button type="button" class="x" aria-label="Очистить">×</button>';
       const inp=$('input',w);inp.value=k;
       inp.addEventListener('focus',()=>{act=i;markAct();drawChips()});
@@ -1837,13 +1872,13 @@ function wrapKeysInText(t){
   });
 }
 function caretFollow(t){
-  requestAnimationFrame(()=>{
+  WIN.requestAnimationFrame(()=>{
     const sb=t.closest('.sheet-body');if(!sb||t.selectionStart==null)return;
     if(t.closest('.sheet.typing'))return;
-    const cs=getComputedStyle(t),m=document.createElement('div');
+    const cs=WIN.getComputedStyle(t),m=DOC.createElement('div');
     m.style.cssText='position:absolute;visibility:hidden;left:-9999px;top:0;box-sizing:border-box;white-space:pre-wrap;overflow-wrap:break-word;width:'+t.clientWidth+'px;padding:'+cs.padding+';font:'+cs.font+';letter-spacing:'+cs.letterSpacing;
-    m.textContent=t.value.slice(0,t.selectionStart);const mk=document.createElement('span');mk.textContent='\u200b';m.appendChild(mk);
-    document.body.appendChild(m);const lh=parseFloat(cs.lineHeight)||22,y=mk.offsetTop;m.remove();
+    m.textContent=t.value.slice(0,t.selectionStart);const mk=DOC.createElement('span');mk.textContent='\u200b';m.appendChild(mk);
+    DOC.body.appendChild(m);const lh=parseFloat(cs.lineHeight)||22,y=mk.offsetTop;m.remove();
     const r=t.getBoundingClientRect(),inT=Math.max(0,Math.min(t.clientHeight-lh,y-t.scrollTop));
     const top=r.top+inT,bot=top+lh+14,b=sb.getBoundingClientRect(),tl=t.closest('.opt'),tools=tl&&tl.querySelector('.tools'),th=tools?tools.offsetHeight:0;
     const lim=b.bottom-th-6;
@@ -1937,9 +1972,9 @@ const SYMS=[
  ['Рамки и линии','─ │ ┌ ┐ └ ┘ ├ ┤ ┬ ┴ ┼ ═ ║ ╔ ╗ ╚ ╝ ╠ ╣ ╦ ╩ ╬ ░ ▒ ▓ █ ▀ ▄']
 ];
 function pickSymbols(ta,onIns){
-  const el=document.createElement('div');
+  const el=DOC.createElement('div');
   el.innerHTML=SYMS.map(([t,l])=>'<div class="lsub">'+t+'</div><div class="symg">'+l.split(' ').map(c=>'<button type="button" class="sym" data-c="'+c+'">'+c+'</button>').join('')+'</div>').join('');
-  const done=Object.assign(document.createElement('button'),{className:'btn pri',textContent:'Готово'});
+  const done=Object.assign(DOC.createElement('button'),{className:'btn pri',textContent:'Готово'});
   const sh=sheet({title:'Вставить символ',body:el,foot:[done]});
   done.onclick=()=>{sh.close();ta.focus()};
   el.addEventListener('click',ev=>{
@@ -2028,12 +2063,12 @@ function parseCmdLines(text){
 function pasteList(kind,existing){
   return new Promise(res=>{
     const isK=kind==='keys';
-    const body=document.createElement('div');
+    const body=DOC.createElement('div');
     body.innerHTML=(isK?'<div class="segs" data-ord style="margin-bottom:10px"><button type="button" class="seg on" data-o="auto">Авто</button><button type="button" class="seg" data-o="kd">Клавиши → расшифровка</button><button type="button" class="seg" data-o="dk">Расшифровка → клавиши</button></div>':'')+'<div class="fld"><label>Вставьте текст: одна строка — '+(isK?'одно сочетание клавиш':'одна команда')+'</label><textarea rows="6" data-t placeholder="'+(isK?'Ctrl+B — Перестроить модель&#10;F5 Обновить&#10;Ctrl+Shift+Z: Повторить':'rebuild — Пересборка модели&#10;git status: состояние репозитория')+'"></textarea></div>'+
       '<p class="hint">Разделитель между '+(isK?'клавишами':'командой')+' и расшифровкой: тире, двоеточие или табуляция'+(isK?' (можно просто пробел)':'')+'. Если расшифровки нет, поле останется пустым. «Авто» понимает и порядок «расшифровка → клавиши». Строки из таблицы Excel или Word вставляются как есть.</p><div class="pv"></div>';
     const ta=$('textarea',body),pv=$('.pv',body);
-    const cancel=Object.assign(document.createElement('button'),{className:'btn',textContent:'Отмена'});
-    const add=Object.assign(document.createElement('button'),{className:'btn pri',textContent:'Добавить'});
+    const cancel=Object.assign(DOC.createElement('button'),{className:'btn',textContent:'Отмена'});
+    const add=Object.assign(DOC.createElement('button'),{className:'btn pri',textContent:'Добавить'});
     const have=new Set((existing||[]).map(i=>(i.a+'|'+i.b).toLowerCase()));
     let rows=[];
     const sh=sheet({cls:'fs',title:isK?'Вставить список клавиш':'Вставить список команд',body,foot:[cancel,add]});
@@ -2059,15 +2094,15 @@ function pasteList(kind,existing){
 }
 function listEditor(kind,items,eid){
   const isK=kind==='keys';
-  const el=document.createElement('div');el.className='le';
-  const rows=document.createElement('div');el.append(rows);
-  const bar=document.createElement('div');bar.className='le-bar';el.append(bar);
-  const addBtn=document.createElement('button');addBtn.type='button';addBtn.className='btn sm';addBtn.textContent='+ Строка';
-  const pasteBtn=document.createElement('button');pasteBtn.type='button';pasteBtn.className='btn sm';pasteBtn.textContent='Вставить списком';
+  const el=DOC.createElement('div');el.className='le';
+  const rows=DOC.createElement('div');el.append(rows);
+  const bar=DOC.createElement('div');bar.className='le-bar';el.append(bar);
+  const addBtn=DOC.createElement('button');addBtn.type='button';addBtn.className='btn sm';addBtn.textContent='+ Строка';
+  const pasteBtn=DOC.createElement('button');pasteBtn.type='button';pasteBtn.className='btn sm';pasteBtn.textContent='Вставить списком';
   bar.append(addBtn,pasteBtn);
-  const topBtn=document.createElement('button'),endBtn=document.createElement('button');
+  const topBtn=DOC.createElement('button'),endBtn=DOC.createElement('button');
   [topBtn,endBtn].forEach(x=>{x.type='button';x.className='btn sm';x.hidden=true});
-  const foldAll=document.createElement('button');foldAll.type='button';foldAll.className='btn sm';foldAll.hidden=true;bar.append(foldAll);
+  const foldAll=DOC.createElement('button');foldAll.type='button';foldAll.className='btn sm';foldAll.hidden=true;bar.append(foldAll);
   foldAll.onclick=()=>{const hs=$$('.le-row',el).filter(r=>r.dataset.h==='1'&&r.dataset.s!=='1');const any=hs.some(r=>!r.classList.contains('fold'));hs.forEach(r=>{r.classList.toggle('fold',any);if(eid)kcSet(kcKey(eid,isK,$('.b',r).value.trim()),any)});applyFold()};
   const setHead=r=>{const on=r.dataset.h==='1';r.classList.toggle('hd',on);const bb=$('.b',r);bb.placeholder=on?'заголовок раздела':'расшифровка';if(r.dataset.s==='1'){bb.placeholder='— строки вне разделов —';bb.disabled=true;bb.value=''}else bb.disabled=false;bb.setAttribute('aria-label',on?'Заголовок раздела':'Расшифровка');const hb=$('[data-r=head]',r);if(hb)hb.classList.toggle('fa',on);const ab=$('[data-r=add]',r);if(ab)ab.title=on?'Добавить строку в начало раздела':'Добавить строку ниже';const u=$('[data-r=up]',r),w=$('[data-r=down]',r);if(u)u.title=on?'Раздел вверх (вместе со строками)':'Строку вверх';if(w)w.title=on?'Раздел вниз (вместе со строками)':'Строку вниз'};
   const secOf=r=>{const a=[r];let n=r.nextElementSibling;while(n&&n.dataset.h!=='1'){a.push(n);n=n.nextElementSibling}return a};
@@ -2078,7 +2113,7 @@ function listEditor(kind,items,eid){
     r.scrollIntoView({block:'nearest'})};
   const applyFold=()=>{let hid=false;$$('.le-row',el).forEach(r=>{if(r.dataset.h==='1'){if(r.dataset.s==='1')r.classList.remove('fold');hid=r.classList.contains('fold');const f=$('[data-r=fold]',r);if(f)f.textContent=hid?'▸':'▾';r.classList.remove('fhid')}else r.classList.toggle('fhid',hid)});const hs=$$('.le-row',el).filter(r=>r.dataset.h==='1'&&r.dataset.s!=='1');foldAll.hidden=hs.length<2;{const any=$$('.le-row',el).some(r=>r.dataset.h==='1');topBtn.hidden=endBtn.hidden=!any}foldAll.textContent=hs.some(r=>!r.classList.contains('fold'))?'▾ Свернуть все разделы':'▸ Развернуть все разделы'};
   const add=(a,b,focus,after,h,sep)=>{
-    const r=document.createElement('div');r.className='le-row';
+    const r=DOC.createElement('div');r.className='le-row';
     r.innerHTML='<div class="le-top"><input class="a'+(isK?'':' mono')+'" placeholder="'+(isK?'сочетание клавиш':'команда')+'" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="'+(isK?'Клавиши':'Команда')+'">'+(isK?'<button type="button" class="mv" data-r="pick" aria-label="Выбрать клавиши">⌨</button>':'')+'<button type="button" class="mv" data-r="add" title="Добавить строку ниже" aria-label="Добавить строку ниже">+</button><button type="button" class="mv" data-r="fold" title="Свернуть или развернуть раздел" aria-label="Свернуть раздел">▾</button><button type="button" class="mv" data-r="head" title="Сделать строку заголовком раздела" aria-label="Заголовок раздела">Т</button><button type="button" class="mv" data-r="up" aria-label="Вверх">↑</button><button type="button" class="mv" data-r="down" aria-label="Вниз">↓</button><button type="button" class="mv" data-r="del" aria-label="Удалить строку">×</button></div><input class="b" placeholder="расшифровка" autocomplete="off" aria-label="Расшифровка">';
     r.dataset.h=h?'1':'';r.dataset.s=h&&sep?'1':'';r.classList.toggle('sep',!!(h&&sep));setHead(r);
     if(h&&eid&&kcHas(kcKey(eid,isK,b||'')))r.classList.add('fold');
@@ -2090,7 +2125,7 @@ function listEditor(kind,items,eid){
   };
   (items&&items.length?items:[{a:'',b:''}]).forEach(i=>add(i.a,i.b,false,null,i.h,i.h&&!i.b));
   addBtn.onclick=()=>add('','',true);
-  const headBtn=document.createElement('button');headBtn.type='button';headBtn.className='btn sm';headBtn.textContent='+ Заголовок раздела';bar.insertBefore(headBtn,pasteBtn);
+  const headBtn=DOC.createElement('button');headBtn.type='button';headBtn.className='btn sm';headBtn.textContent='+ Заголовок раздела';bar.insertBefore(headBtn,pasteBtn);
   headBtn.onclick=()=>{add('','',false,null,1);const rs=$$('.le-row',el);$('.b',rs[rs.length-1]).focus()};
   topBtn.textContent='↑ Строка вне раздела (в начало)';endBtn.textContent='↓ Строка вне раздела (в конец)';
   bar.insertBefore(topBtn,pasteBtn);bar.insertBefore(endBtn,pasteBtn);
@@ -2138,7 +2173,7 @@ function openForm(id,ctx){
   const shown=new Set();
   if(!e&&ctx&&ctx.groupId&&gs.some(g=>g.id===ctx.groupId))shown.add('group');
   if(e){opts.forEach(([k])=>{if(k==='group'?(e.groupId&&gs.some(g=>g.id===e.groupId)):(Array.isArray(e[k])?e[k].length:e[k]))shown.add(k)})}
-  const body=document.createElement('div');body.className='edf';
+  const body=DOC.createElement('div');body.className='edf';
   const wrap=(k,l,inner)=>'<div class="fld opt" data-o="'+k+'" hidden><label>'+(OPT_LBL[k]||l)+'<button type="button" class="btn lnk" data-rm="'+k+'">убрать</button>'+(k==='group'?'':'<button type="button" class="btn lnk omv" data-mv="1" title="Блок ниже" aria-label="Блок ниже">↓</button><button type="button" class="btn lnk omv" data-mv="-1" title="Блок выше" aria-label="Блок выше">↑</button>')+'</label>'+inner+'</div>';
   const tools='<div class="tools"><button type="button" class="btn sm ur" data-ins="undo" title="Отменить (Ctrl+Z)" aria-label="Отменить" disabled>↶</button><button type="button" class="btn sm ur" data-ins="redo" title="Повторить (Ctrl+Y)" aria-label="Повторить" disabled>↷</button><button type="button" class="btn sm pvt" data-ins="pv" title="Показать или скрыть предпросмотр без значков разметки" aria-pressed="false">👁 Вид</button><button type="button" class="btn sm pvs" data-ins="sync" title="Синхронная прокрутка текста и предпросмотра" aria-pressed="true">⇅ Синхр.</button><button type="button" class="btn sm" data-ins="keys">⌨ Вставить клавиши</button><button type="button" class="btn sm" data-ins="code">‹/› Команда</button><button type="button" class="btn sm" data-ins="sym" title="Вставить символ: стрелки, галочки, значки интерфейса, клавиши">Ω Символы</button><button type="button" class="btn sm" data-ins="cp" title="Выделенный фрагмент можно будет скопировать нажатием при просмотре">⧉ Копируемое</button><button type="button" class="btn sm fm" data-ins="b" title="Жирный" aria-label="Жирный"><b>Ж</b></button><button type="button" class="btn sm fm" data-ins="i" title="Курсив" aria-label="Курсив"><i>К</i></button><button type="button" class="btn sm fm" data-ins="h" title="Выделение маркером" aria-label="Выделение маркером"><mark class="hlt">М</mark></button><button type="button" class="btn sm fm" data-ins="s" title="Зачёркнутый" aria-label="Зачёркнутый"><s>З</s></button><button type="button" class="btn sm fm" data-ins="big" title="Крупнее (нажмите ещё раз — ещё крупнее)" aria-label="Крупнее">A+</button><button type="button" class="btn sm fm" data-ins="small" title="Мельче (нажмите ещё раз — ещё мельче)" aria-label="Мельче">A−</button><button type="button" class="btn sm fm" data-ins="ul" title="Маркированный список" aria-label="Маркированный список">• список</button></div>';
   const inner={
@@ -2173,21 +2208,21 @@ function openForm(id,ctx){
     if(sh.classList.contains('typing'))return Math.max(150,sb.clientHeight-120);
     if(sh.classList.contains('wide'))return Math.max(320,sb.clientHeight-190);return 320};
   const fit=t=>{if(isPhone()||body.closest('.sheet.wide')){t.style.height='';return}t.style.height='auto';t.style.height=Math.min(t.scrollHeight+2,fitMax())+'px'};
-  const isPhone=()=>window.matchMedia&&matchMedia('(max-width:699px)').matches;
+  const isPhone=()=>WIN.matchMedia&&WIN.matchMedia('(max-width:699px)').matches;
   const refit=()=>$$('textarea',body).forEach(t=>{if(!t.closest('.opt').hidden){fit(t);pvDraw(t)}});
-  const pvOn=()=>S.settings.edPv===undefined?window.innerWidth>=700:!!S.settings.edPv;
+  const pvOn=()=>S.settings.edPv===undefined?WIN.innerWidth>=700:!!S.settings.edPv;
   const pvDraw=t=>{const bx=t.parentNode.querySelector('.pvbox'),on=pvOn();if(!bx)return;
     bx.hidden=!on;t.parentNode.classList.toggle('pv',on);
-    bx.style.height=on&&t.parentNode.classList.contains('pv')&&innerWidth>=900?t.offsetHeight+'px':'';
+    bx.style.height=on&&t.parentNode.classList.contains('pv')&&WIN.innerWidth>=900?t.offsetHeight+'px':'';
     if(on){const v=t.value;bx.innerHTML=v.trim()?v.split('\n').map(l=>'<div class="pl">'+(l?rich(l,0,1):'\u200b')+'</div>').join(''):'<span class="pvh">Так запись будет выглядеть при просмотре</span>'}};
   const syOn=()=>S.settings.edSync!==false;
   const pvAll=()=>{$$('.pvs',body).forEach(b=>{b.setAttribute('aria-pressed',syOn());b.classList.toggle('on',syOn())});$$('.edw textarea',body).forEach(t=>{if(!t.closest('.opt').hidden)pvDraw(t)});$$('.pvt',body).forEach(b=>b.setAttribute('aria-pressed',pvOn()));$$('.pvt',body).forEach(b=>b.classList.toggle('on',pvOn()))};
   body.addEventListener('mousedown',ev=>{if(ev.target.closest('.tools'))ev.preventDefault()});
-  {let ut=0;const upd=()=>{if(!body.isConnected){document.removeEventListener('selectionchange',upd);return}clearTimeout(ut);ut=setTimeout(()=>{const a=document.activeElement;if(a&&a.tagName==='TEXTAREA'&&body.contains(a))updateFmt(a)},120)};
-   document.addEventListener('selectionchange',upd)}
+  {let ut=0;const upd=()=>{if(!body.isConnected){DOC.removeEventListener('selectionchange',upd);return}clearTimeout(ut);ut=setTimeout(()=>{const a=DOC.activeElement;if(a&&a.tagName==='TEXTAREA'&&body.contains(a))updateFmt(a)},120)};
+   DOC.addEventListener('selectionchange',upd)}
   $$('textarea',body).forEach(t=>{t.addEventListener('input',()=>{fit(t);pvDraw(t);caretFollow(t);updateFmt(t)});t.addEventListener('focus',()=>updateFmt(t));t.addEventListener('keyup',ev=>{if(/^(Arrow|Page|Home|End)/.test(ev.key))caretFollow(t)});t.addEventListener('click',()=>caretFollow(t))});
   {
-   const tTops=t=>{const cs=getComputedStyle(t),m=document.createElement('div');
+   const tTops=t=>{const cs=WIN.getComputedStyle(t),m=DOC.createElement('div');
      m.style.cssText='position:absolute;visibility:hidden;left:-9999px;top:0;box-sizing:border-box;white-space:pre-wrap;overflow-wrap:break-word;width:'+t.clientWidth+'px;padding:'+cs.padding+';font:'+cs.font+';letter-spacing:'+cs.letterSpacing;
      m.innerHTML=t.value.split('\n').map(l=>'<div>'+(l?esc(l):'\u200b')+'</div>').join('');
      t.parentNode.appendChild(m);const a=[...m.children].map(c=>c.offsetTop);a.push(m.scrollHeight);m.remove();return a};
@@ -2254,7 +2289,7 @@ function openForm(id,ctx){
       if(t){d<0?t.before(el):t.after(el);refresh();refit();el.scrollIntoView({block:'nearest'})}return}
     if(mo){moreOpen=!moreOpen;refresh()}
     else if(ins){
-      if(ins.dataset.ins==='done'){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();return}
+      if(ins.dataset.ins==='done'){if(DOC.activeElement&&DOC.activeElement.blur)DOC.activeElement.blur();return}
       if(ins.dataset.ins==='undo'){hgo(-1);return}
       if(ins.dataset.ins==='redo'){hgo(1);return}
       hpush();
@@ -2268,7 +2303,7 @@ function openForm(id,ctx){
         if(ins.dataset.ins==='code')wrapCode(ta);
         else if(ins.dataset.ins==='cp')wrapCp(ta);
         else fmtText(ta,ins.dataset.ins);
-        rs();requestAnimationFrame(rs);updateFmt(ta);hpush()}
+        rs();WIN.requestAnimationFrame(rs);updateFmt(ta);hpush()}
     }else if(a&&a.closest('.adds')){
       const k=a.dataset.add;shown.add(k);moreOpen=false;refresh();
       const f=$('[data-o='+k+'] [data-f]',body)||$('[data-o='+k+'] .a',body)||$('[data-o='+k+'] .slot.act input',body)||$('[data-o='+k+'] .slot input',body);if(f&&k!=='group')f.focus();
@@ -2282,15 +2317,15 @@ function openForm(id,ctx){
       shown.delete(k);refresh();
     }
   });
-  const cancel=Object.assign(document.createElement('button'),{className:'btn',textContent:'Отмена'});
-  const ok=Object.assign(document.createElement('button'),{className:'btn pri',textContent:'Сохранить'});
-  const more=Object.assign(document.createElement('button'),{className:'btn',textContent:'Сохранить и добавить ещё'});
+  const cancel=Object.assign(DOC.createElement('button'),{className:'btn',textContent:'Отмена'});
+  const ok=Object.assign(DOC.createElement('button'),{className:'btn pri',textContent:'Сохранить'});
+  const more=Object.assign(DOC.createElement('button'),{className:'btn',textContent:'Сохранить и добавить ещё'});
   const sh=sheet({cls:'fs',title:(e?'Редактирование':'Новая запись · '+tabName(tabId)),body,foot:e?[cancel,ok]:[cancel,more,ok],
     guard:async()=>JSON.stringify(raw())===init||await ask('Закрыть без сохранения?','Внесённые изменения будут потеряны.','Закрыть без сохранения',true)});
   {const shel=sh.el.querySelector('.sheet');let ft=0;
-   if(isPhone()){let kt=0;body.addEventListener('focusin',ev=>{clearTimeout(kt);if(ev.target.tagName==='TEXTAREA')shel.classList.add('kbm');shel.classList.toggle('tgf',!!(ev.target.closest&&ev.target.closest('.tagsf')))});body.addEventListener('focusout',()=>{clearTimeout(kt);kt=setTimeout(()=>{const a=document.activeElement;if(!(a&&a.closest&&a.closest('.tagsf')))shel.classList.remove('tgf');if(a&&body.contains(a)&&(/^(INPUT|TEXTAREA)$/.test(a.tagName)||a.closest('.tools')))return;shel.classList.remove('kbm')},250)})}
+   if(isPhone()){let kt=0;body.addEventListener('focusin',ev=>{clearTimeout(kt);if(ev.target.tagName==='TEXTAREA')shel.classList.add('kbm');shel.classList.toggle('tgf',!!(ev.target.closest&&ev.target.closest('.tagsf')))});body.addEventListener('focusout',()=>{clearTimeout(kt);kt=setTimeout(()=>{const a=DOC.activeElement;if(!(a&&a.closest&&a.closest('.tagsf')))shel.classList.remove('tgf');if(a&&body.contains(a)&&(/^(INPUT|TEXTAREA)$/.test(a.tagName)||a.closest('.tools')))return;shel.classList.remove('kbm')},250)})}
    const hd=shel.querySelector('.sh-head'),xb=hd&&hd.querySelector('[data-x]');
-   if(hd&&xb){const wb=document.createElement('button');wb.className='ibtn wbtn';wb.type='button';wb.setAttribute('aria-label','Развернуть окно');wb.title='Развернуть или вернуть окно редактирования';wb.textContent='⤢';
+   if(hd&&xb){const wb=DOC.createElement('button');wb.className='ibtn wbtn';wb.type='button';wb.setAttribute('aria-label','Развернуть окно');wb.title='Развернуть или вернуть окно редактирования';wb.textContent='⤢';
      wb.onclick=()=>{S.settings.edWide=!S.settings.edWide;save();shel.classList.toggle('wide',!!S.settings.edWide);refit()};hd.insertBefore(wb,xb);
      if(S.settings.edWide){shel.classList.add('wide');setTimeout(refit,30)}}}
   curDirty=()=>JSON.stringify(raw())!==init;
@@ -2357,12 +2392,12 @@ const KEYNAME=ev=>{
   const k=ev.key||'';return k.length===1?k.toUpperCase():k;
 };
 async function openKeySearch(){
-  const node=document.createElement('div');
+  const node=DOC.createElement('div');
   node.innerHTML='<p class="hint">Нажмите сочетание на клавиатуре (кнопка ниже) или выберите клавиши. Найду записи с этой клавишей: в поле «Горячая клавиша», в списках клавиш и в тексте в двойных скобках.</p><button type="button" class="btn kscap">⌨ Нажать сочетание на клавиатуре</button><div class="kshost"></div>';
   const host=$('.kshost',node),cap=$('.kscap',node);let w;
   const mount=init=>{w=hotkeyWidget(init||'',()=>{});host.innerHTML='';host.append(w.el)};
   mount(keyQ);
-  const stopCap=()=>{cap.classList.remove('on');cap.textContent='⌨ Нажать сочетание на клавиатуре';document.removeEventListener('keydown',onKey,true)};
+  const stopCap=()=>{cap.classList.remove('on');cap.textContent='⌨ Нажать сочетание на клавиатуре';DOC.removeEventListener('keydown',onKey,true)};
   function onKey(ev){
     if(['Control','Shift','Alt','Meta','AltGraph'].includes(ev.key)){ev.preventDefault();return}
     ev.preventDefault();ev.stopPropagation();
@@ -2371,7 +2406,7 @@ async function openKeySearch(){
   }
   cap.onclick=()=>{
     if(cap.classList.contains('on')){stopCap();return}
-    cap.classList.add('on');cap.textContent='Нажмите сочетание… (повторное нажатие кнопки отменяет)';document.addEventListener('keydown',onKey,true);
+    cap.classList.add('on');cap.textContent='Нажмите сочетание… (повторное нажатие кнопки отменяет)';DOC.addEventListener('keydown',onKey,true);
   };
   const btns=[{label:'Отмена',value:null}];if(keyQ)btns.push({label:'Сбросить',value:'clear'});btns.push({label:'Найти',value:'ok',kind:'pri'});
   const pr=dlg({title:'Поиск по клавишам',node,noFocus:true,cls:'dwide',buttons:btns});
@@ -2379,7 +2414,7 @@ async function openKeySearch(){
   const r=await pr;
   stopCap();
   if(r.v==='clear'){keyQ='';render();return}
-  if(r.v==='ok'){const c=w.get();if(!c){keyQ='';render();return}keyQ=c;view='tab';reorder=false;render();window.scrollTo(0,0)}
+  if(r.v==='ok'){const c=w.get();if(!c){keyQ='';render();return}keyQ=c;view='tab';reorder=false;render();WIN.scrollTo(0,0)}
 }
 const dupIgn=()=>Array.isArray(S.settings.dupIgnore)?S.settings.dupIgnore:[];
 function keyConflicts(all){
@@ -2394,7 +2429,7 @@ function keyConflicts(all){
   return out;
 }
 function openDups(){
-  const el=document.createElement('div');
+  const el=DOC.createElement('div');
   const sh=sheet({title:'Проверка дублей клавиш',body:el});
   const draw=()=>{
     const list=keyConflicts(true),vis=list.filter(c=>!c.ig),hid=list.filter(c=>c.ig);
@@ -2419,11 +2454,11 @@ function openDups(){
 }
 function ensureInbox(){let t=tab('inbox');if(!t){t={id:'inbox',name:'Входящие',arch:'show',archOpen:false,m:0,sh:''};S.tabs.unshift(t)}return t}
 function openQuick(){
-  const body=document.createElement('div');
+  const body=DOC.createElement('div');
   body.innerHTML='<div class="fld"><label>Что узнали или не хотите потерять</label><textarea rows="7" placeholder="Например: Ctrl+Shift+E — выделить до конца строки"></textarea></div><p class="hint">Запись попадёт во вкладку «Входящие». Разобрать её и переложить куда нужно можно потом.</p>';
   const ta=$('textarea',body);
-  const cancel=Object.assign(document.createElement('button'),{className:'btn',textContent:'Отмена'});
-  const ok=Object.assign(document.createElement('button'),{className:'btn pri',textContent:'Сохранить во «Входящие»'});
+  const cancel=Object.assign(DOC.createElement('button'),{className:'btn',textContent:'Отмена'});
+  const ok=Object.assign(DOC.createElement('button'),{className:'btn pri',textContent:'Сохранить во «Входящие»'});
   const sh=sheet({title:'Быстрая запись',body,foot:[cancel,ok],guard:async()=>!ta.value.trim()||await ask('Закрыть без сохранения?','Введённый текст будет потерян.','Закрыть без сохранения',true)});
   cancel.onclick=()=>sh.tryClose();
   const go=()=>{
@@ -2441,7 +2476,7 @@ function openQuick(){
 
 /* ===== Менеджеры вкладок и групп ===== */
 function openManager(cfg){
-  const sh=sheet({title:cfg.title,body:document.createElement('div')});
+  const sh=sheet({title:cfg.title,body:DOC.createElement('div')});
   const draw=()=>{
     const items=cfg.items();
     sh.body.innerHTML=(cfg.hint?'<p class="hint">'+cfg.hint+'</p>':'')+
@@ -2484,12 +2519,13 @@ function openTabs(){
 /* ===== Меню и настройки ===== */
 function openMenu(){
   const cnt=s=>S.entries.filter(e=>e.status===s&&!e.bundle).length+S.groups.filter(g=>g.status===s&&g.bundle===g.id).length;
-  const el=document.createElement('div');el.className='menu';
+  const el=DOC.createElement('div');el.className='menu';
   let more=false;
   const draw=()=>{
     el.innerHTML='<button data-m="quick">⚡ Быстрая запись во «Входящие»</button>'+(S.tabs.length?'<button data-m="sel">☑ Выбрать несколько записей</button>':'')+(S.tabs.length&&curTab?'<button data-m="gnew">＋ Новая группа в этой вкладке</button>':'')+
       '<button data-m="tabsmgr">Настройки вкладок</button><button data-m="look">Оформление и размеры</button>'+
       '<button data-m="dups">Проверка дублей клавиш</button>'+
+      (miniOk()?'<button data-m="mini">'+(pip?'Вернуть из мини-окна':'Мини-окно поверх всех окон')+'<span class="n">Ctrl+M</span></button>':'')+
       (lkRec()?'<button data-m="lockNow">🔒 Заблокировать сейчас</button>':'')+
       '<button data-m="trash">Корзина<span class="n">'+cnt('trash')+'</span></button>'+
       '<button data-m="export" class="mhl">Экспорт в файл (резервная копия)</button>'+
@@ -2509,11 +2545,12 @@ function openMenu(){
     else if(m==='look')openLookMenu();
     else if(m==='quick')openQuick();
     else if(m==='dups')openDups();
+    else if(m==='mini')openMini();
     else if(m==='lock')openLock();
     else if(m==='lockNow')lkLockNow();
     else if(m==='update')checkUpdate();
     else if(m==='sync')syncNow();
-    else if(['fav','archive','trash'].includes(m)){view=m;reorder=false;render();window.scrollTo(0,0)}
+    else if(['fav','archive','trash'].includes(m)){view=m;reorder=false;render();WIN.scrollTo(0,0)}
     else if(m==='export')doExport();else if(m==='text')doTextExport();else if(m==='import')doImport();else openSettings();
   });
 }
@@ -2522,7 +2559,7 @@ function readBackup(){
   return null;
 }
 function openSettings(){
-  const el=document.createElement('div'),st=S.settings,b=readBackup();
+  const el=DOC.createElement('div'),st=S.settings,b=readBackup();
   const size=(JSON.stringify(S).length/1024).toFixed(0);
   el.innerHTML='<div class="vh">Копии</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-a="auto">Автоматические копии</button></div>'+'<div class="vh">Напоминания и данные</div><div class="chk"><input type="checkbox" id="stRem"'+(st.remind?' checked':'')+'><label for="stRem">Напоминать об экспорте, если прошло больше 14 дней</label></div>'+
    '<p class="hint">Последний экспорт: '+(st.lastExport?fmt(st.lastExport):'ещё не выполнялся')+'.<br>Последний импорт: '+(st.lastImport?fmt(st.lastImport):'ещё не выполнялся')+'.<br>Размер базы: около '+size+' КБ. Записей: '+S.entries.length+'.</p>'+
@@ -2541,8 +2578,8 @@ function doExport(){
   const stamp=now.getFullYear()+'-'+p(now.getMonth()+1)+'-'+p(now.getDate())+'_'+p(now.getHours())+'-'+p(now.getMinutes());
   const d={app:'tech-base',format:1,appVersion:APP_VERSION,exportedAt:now.toISOString(),tabs:S.tabs,groups:S.groups,entries:S.entries};
   const blob=new Blob([JSON.stringify(d,null,1)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='моя-техническая-база_'+stamp+'.json';
-  document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  const a=DOC.createElement('a');a.href=URL.createObjectURL(blob);a.download='моя-техническая-база_'+stamp+'.json';
+  DOC.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
   S.settings.lastExport=Date.now();save();render();
   toast('Файл экспорта сформирован. Он в папке «Загрузки».');
 }
@@ -2592,15 +2629,15 @@ async function doTextExport(){
   const stamp=now.getFullYear()+'-'+p2(now.getMonth()+1)+'-'+p2(now.getDate())+'_'+p2(now.getHours())+'-'+p2(now.getMinutes());
   const nm=r.v==='tab'?tab(curTab).name.replace(/[\\/:*?"<>|]/g,'').trim().replace(/\s+/g,'-'):'вся-база';
   const blob=new Blob([out],{type:'text/plain;charset=utf-8'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='моя-техническая-база_'+nm+'_'+stamp+'.txt';
-  document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  const a=DOC.createElement('a');a.href=URL.createObjectURL(blob);a.download='моя-техническая-база_'+nm+'_'+stamp+'.txt';
+  DOC.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
   toast('Текстовый файл сформирован ('+n+' '+pl(n,['запись','записи','записей'])+'). Он в папке «Загрузки».');
 }
 function makeBackup(){
   try{const p=JSON.stringify({at:Date.now(),data:S});localStorage.setItem(BKEY,p);return localStorage.getItem(BKEY)===p}catch(e){return false}
 }
 function doImport(){
-  const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';
+  const inp=DOC.createElement('input');inp.type='file';inp.accept='.json,application/json';
   inp.onchange=async()=>{
     const f=inp.files[0];if(!f)return;
     let d;
@@ -2655,7 +2692,7 @@ async function importReplace(d){
   if(!await ask('Заменить все данные?','Текущая база ('+n+' '+pl(n,['запись','записи','записей'])+') будет заменена данными из файла ('+m+' '+pl(m,['запись','записи','записей'])+'). Резервная копия текущей базы создана, её можно восстановить в «Настройках».','Заменить данные',true))return;
   const old=S;S=normalize(d,Object.assign({},old.settings,{lastImport:Date.now()}));resetKnown();
   if(!save()){S=old;render();return info('Замена не выполнена','Не удалось записать данные в браузер. Текущая база сохранена без изменений.')}
-  curTab=S.tabs[0]?S.tabs[0].id:null;view='tab';q='';$('#q').value='';render();window.scrollTo(0,0);
+  curTab=S.tabs[0]?S.tabs[0].id:null;view='tab';q='';$('#q').value='';render();WIN.scrollTo(0,0);
   toast('Данные заменены',()=>restoreBackup(true));
 }
 async function restoreBackup(silent){
@@ -2692,7 +2729,7 @@ function toggleGroupSel(gid){
   syncSel();
 }
 function renderSelBar(){
-  const b=$('#selbar');document.body.classList.toggle('selon',selMode);
+  const b=$('#selbar');DOC.body.classList.toggle('selon',selMode);
   if(!selMode){b.hidden=true;b.innerHTML='';return}
   b.hidden=false;
   const n=orderedSel().length,st=selStat();
@@ -2753,7 +2790,7 @@ async function massMove(copy){
 }
 function massMore(){
   const es=orderedSel().filter(e=>e.status==='active');if(!es.length)return;
-  const el=document.createElement('div');el.className='menu';
+  const el=DOC.createElement('div');el.className='menu';
   const I=(a,l)=>'<button data-a="'+a+'">'+l+'</button>';
   el.innerHTML=I('pin','☆ Закрепить наверху')+I('unpin','★ Открепить сверху')+I('favg','В Избранное (вкладка ★)')+I('unfavg','Убрать из Избранного')+I('copy','Копировать в другое место')+I('dup','Дублировать');
   const sh=sheet({title:'Выбрано: '+plE(es.length),body:el});
@@ -2783,7 +2820,7 @@ async function massRestore(){
 }
 async function massMerge(){
   const es=orderedSel().filter(e=>e.status==='active');if(es.length<2)return;
-  const el=document.createElement('div');
+  const el=DOC.createElement('div');
   el.innerHTML='<p>Клавиши и команды всех записей соберутся в списки с расшифровкой: одиночная клавиша или команда становится строкой, а расшифровкой служит название записи. Описание, инструкция и примечание допишутся в конец. Куда объединить?</p>'+
     es.map((e,i)=>'<label class="chk"><input type="radio" name="mt" value="'+e.id+'"'+(i===0?' checked':'')+'><span>В запись «'+esc(titleOf(e))+'»</span></label>').join('')+
     '<label class="chk"><input type="radio" name="mt" value="__new"><span>В новую запись</span></label><div class="fld"><input data-nt autocomplete="off" value="Объединённый список" aria-label="Название новой записи"></div>'+
@@ -2833,7 +2870,7 @@ async function massMerge(){
   });
   main.addEventListener('pointermove',ev=>{if(lp&&Math.hypot(ev.clientX-lp.x,ev.clientY-lp.y)>8)clr()});
   ['pointerup','pointercancel'].forEach(t=>main.addEventListener(t,clr));
-  window.addEventListener('scroll',clr,{passive:true});
+  WIN.addEventListener('scroll',clr,{passive:true});
   main.addEventListener('contextmenu',ev=>{if(lp||lpFired)ev.preventDefault()});
 })();
 
@@ -2861,7 +2898,7 @@ function lset(){const st=S.settings;if(!st.look||typeof st.look!=='object')st.lo
 function lum(hex){const c=[1,3,5].map(i=>parseInt(hex.substr(i,2),16)/255).map(v=>v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4));return 0.2126*c[0]+0.7152*c[1]+0.0722*c[2]}
 const CXL=[['1','Бледнее','color-mix(in srgb,var(--mut) 65%,var(--surf))'],['2','Стандарт','var(--mut)'],['3','Темнее','color-mix(in srgb,var(--mut) 45%,var(--ink))'],['4','Чёрный','var(--ink)']];
 function applyLook(){
-  const L=lset(),root=document.documentElement;
+  const L=lset(),root=DOC.documentElement;
   let sysDark=false;try{sysDark=!!(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches)}catch(e){}
   const th=L.theme==='auto'?(sysDark?'dark':'light'):(PAL[L.theme]?L.theme:'light'),dk=DARKTH.includes(th);
   const v=Object.assign({},PAL[th]);
@@ -2903,7 +2940,7 @@ function groupize(h){
 }
 function openLookMenu(focus){
   if(focus)lookOpen.add(focus);
-  const L=lset(),el=document.createElement('div');
+  const L=lset(),el=DOC.createElement('div');
   const draw=()=>{
     el.innerHTML=groupize('\u0001theme|Тема\u0002<div class="segs">'+THEMES.map(([k,l])=>'<button class="seg'+(L.theme===k?' on':'')+'" data-th="'+k+'">'+l+'</button>').join('')+'</div>'+
       '\u0001view|Режим отображения\u0002'+viewHTML()+'\u0001size|Размер текста\u0002<div class="sizestep"><button class="btn" data-step="-1" aria-label="Меньше">A−</button><span>'+(SIZES.find(x=>x[0]===L.size)||SIZES[3])[2]+' px</span><button class="btn" data-step="1" aria-label="Больше">A+</button></div><div class="segs">'+SIZES.map(([k,l])=>'<button class="seg'+(L.size===k?' on':'')+'" data-sz="'+k+'">'+l+'</button>').join('')+'</div>'+
@@ -2998,12 +3035,12 @@ async function fsBackup(){
   names.sort();while(names.length>c.keep){try{await h.removeEntry(names.shift())}catch(e){break}}
   return 'ok';
 }
-document.addEventListener('click',async()=>{
+onDoc('click',async()=>{
   if(!fsNeedPerm)return;fsNeedPerm=false;
   try{const h=await fsHandle();if(h&&await h.requestPermission({mode:'readwrite'})==='granted')await fsBackup()}catch(e){}
 },{capture:true});
 async function openAutoMenu(){
-  const c=autoCfg(),el=document.createElement('div');
+  const c=autoCfg(),el=DOC.createElement('div');
   let fsName=null;try{const h=await fsHandle();fsName=h?h.name:null}catch(e){}
   const draw=()=>{
     const list=readAuto();
@@ -3104,7 +3141,7 @@ try{
 }catch(e){}
 
 /* ===== Защита входа: пароль / ПИН и биометрия (всё необязательно) ===== */
-const LKEY='techbase_lock',LHTML=document.documentElement;
+const LKEY='techbase_lock';
 const LK_AUTO=[[0,'Сразу при сворачивании'],[60,'Через 1 минуту'],[300,'Через 5 минут'],[900,'Через 15 минут'],[-1,'Только при открытии приложения']];
 const LK_IDLE=[[0,'Не блокировать'],[60,'Через 1 минуту'],[300,'Через 5 минут'],[900,'Через 15 минут']];
 let lkAct=Date.now(),lkHiddenAt=0,lkUnlockedAt=0,lkBusy=false,lkTimer=0,lkBioTried=false;
@@ -3112,7 +3149,7 @@ const lkb64=u=>{let t='';u.forEach(c=>{t+=String.fromCharCode(c)});return btoa(t
 const lkun64=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
 function lkRec(){try{const r=JSON.parse(localStorage.getItem(LKEY)||'null');return r&&r.hash&&r.salt?r:null}catch(e){return null}}
 function lkSave(r){try{if(r)localStorage.setItem(LKEY,JSON.stringify(r));else localStorage.removeItem(LKEY);return true}catch(e){return false}}
-const lkIsLocked=()=>LHTML.classList.contains('applock');
+const lkIsLocked=()=>DOC.documentElement.classList.contains('applock');
 const lkCrypto=()=>!!(window.crypto&&crypto.subtle);
 const lkWord=k=>k==='pin'?'ПИН-код':'пароль';
 async function lkHash(pw,salt,iter){
@@ -3164,7 +3201,7 @@ function lkTick(){
 function lkShow(){
   const r=lkRec();
   if(!r){lkUnlock();return}
-  LHTML.classList.add('applock');
+  DOC.documentElement.classList.add('applock');
   const inp=$('#lkIn');
   inp.value='';inp.disabled=false;$('#lkGo').disabled=false;
   inp.inputMode=r.kind==='pin'?'numeric':'text';inp.setAttribute('aria-label',r.kind==='pin'?'ПИН-код':'Пароль');
@@ -3178,13 +3215,13 @@ function lkShow(){
   }
 }
 function lkUnlock(){
-  LHTML.classList.remove('applock');lkUnlockedAt=Date.now();lkAct=Date.now();lkHiddenAt=0;clearTimeout(lkTimer);
+  DOC.documentElement.classList.remove('applock');lkUnlockedAt=Date.now();lkAct=Date.now();lkHiddenAt=0;clearTimeout(lkTimer);
   try{$('#lkIn').value=''}catch(e){}
 }
 function lkLockNow(){
   if(!lkRec())return;
   lkBioTried=false;
-  try{if(document.activeElement)document.activeElement.blur()}catch(e){}
+  try{if(DOC.activeElement)DOC.activeElement.blur()}catch(e){}
   lkShow();
 }
 function keepUnl(){try{if(!lkIsLocked()&&lkRec())sessionStorage.setItem('techbase_keep',String(Date.now()))}catch(e){}}
@@ -3226,15 +3263,16 @@ function lkWipe(){
   $('#lkBack').addEventListener('click',()=>{$('#lkWipe').hidden=true;$('#lkMain').hidden=false});
   $('#lkWipeGo').addEventListener('click',lkWipe);
   /* пока закрыто, клавиши не доходят до программы под экраном (Esc закрыл бы окна) */
-  document.addEventListener('keydown',e=>{if(lkIsLocked()&&e.key==='Escape'){e.stopImmediatePropagation();e.preventDefault()}},true);
+  onDoc('keydown',e=>{if(lkIsLocked()&&e.key==='Escape'){e.stopImmediatePropagation();e.preventDefault()}},true);
   document.addEventListener('visibilitychange',()=>{
+    if(pip)return;
     const r=lkRec();
     if(document.visibilityState==='hidden'){
       if(!r||lkBusy)return;
-      LHTML.classList.add('pcov');
+      DOC.documentElement.classList.add('pcov');
       if(!lkIsLocked()){lkHiddenAt=Date.now();if(r.auto===0)lkLockNow()}
     }else{
-      LHTML.classList.remove('pcov');lkAct=Date.now();
+      DOC.documentElement.classList.remove('pcov');lkAct=Date.now();
       if(!r||lkBusy){lkHiddenAt=0;return}
       if(!lkIsLocked()&&lkHiddenAt&&Date.now()-lkUnlockedAt>2000&&r.auto>=0&&Date.now()-lkHiddenAt>=r.auto*1000)lkLockNow();
       lkHiddenAt=0;
@@ -3242,15 +3280,15 @@ function lkWipe(){
     }
   });
   /* простой: блокировка, если в открытой программе давно нет действий */
-  ['pointerdown','keydown','touchstart','wheel','scroll'].forEach(t=>document.addEventListener(t,()=>{lkAct=Date.now()},{capture:true,passive:true}));
-  setInterval(()=>{const r=lkRec();if(!r||!r.idle||lkIsLocked()||lkBusy||document.visibilityState!=='visible')return;if(Date.now()-lkAct>=r.idle*1000)lkLockNow()},5000);
+  ['pointerdown','keydown','touchstart','wheel','scroll'].forEach(t=>onDoc(t,()=>{lkAct=Date.now()},{capture:true,passive:true}));
+  setInterval(()=>{const r=lkRec();if(!r||!r.idle||lkIsLocked()||lkBusy||(document.visibilityState!=='visible'&&!pip))return;if(Date.now()-lkAct>=r.idle*1000)lkLockNow()},5000);
   if(lkIsLocked())lkShow();
 })();
 /* форма ввода пароля: создание (с повтором) или проверка текущего */
 function lkForm({title,intro,pick,kind,okLabel,repeat,check}){
   return new Promise(resolve=>{
     let k=kind||'pass',done=false;
-    const el=document.createElement('div');el.className='lkf';
+    const el=DOC.createElement('div');el.className='lkf';
     el.innerHTML=(intro?'<p class="hint">'+intro+'</p>':'')+
       (pick?'<div class="segs" style="margin-bottom:10px"><button type="button" class="seg" data-k="pin">ПИН-код (цифры)</button><button type="button" class="seg" data-k="pass">Пароль</button></div><p class="hint" data-r></p>':'')+
       '<div class="fld"><input type="text" class="mask" data-i="1" autocomplete="off" autocapitalize="off" spellcheck="false"></div>'+
@@ -3264,8 +3302,8 @@ function lkForm({title,intro,pick,kind,okLabel,repeat,check}){
       i1.placeholder=k==='pin'?'ПИН-код':'Пароль';err.textContent='';
     };
     setKind();
-    const cancel=document.createElement('button');cancel.className='btn';cancel.textContent='Отмена';
-    const ok=document.createElement('button');ok.className='btn pri';ok.textContent=okLabel||'Готово';
+    const cancel=DOC.createElement('button');cancel.className='btn';cancel.textContent='Отмена';
+    const ok=DOC.createElement('button');ok.className='btn pri';ok.textContent=okLabel||'Готово';
     const sh=sheet({title,body:el,foot:[cancel,ok]});
     const fin=v=>{if(done)return;done=true;resolve(v)};
     const oc=sh.close;sh.close=()=>{oc();fin(null)};
@@ -3307,7 +3345,7 @@ async function lkSetNew(title,intro,keep){
 }
 async function openLock(){
   const bs=await bioSupported(),cr=lkCrypto();
-  const el=document.createElement('div');
+  const el=DOC.createElement('div');
   const sh=sheet({title:'Защита входа',body:el});
   const draw=()=>{
     const r=lkRec();
@@ -3468,7 +3506,7 @@ function syncPreview(items){
     return '<li><b>Вкладки и группы</b> <span class="hint">· '+p.join(', ')+(names?' ('+names+(o.length>6?'…':'')+')':'')+'</span></li>'};
   const sec=(t,a)=>{const ents=a.filter(i=>i.k==='e'),st=struct(a);return (ents.length||st)?'<h4>'+t+' ('+a.length+')</h4><ul>'+st+ents.slice(0,25).map(line).join('')+(ents.length>25?'<li class="hint">…и ещё '+(ents.length-25)+'</li>':'')+'</ul>':''};
   const down=items.filter(i=>i.dir==='down'),up=items.filter(i=>i.dir==='up');
-  const n=document.createElement('div');n.className='sydiff';
+  const n=DOC.createElement('div');n.className='sydiff';
   n.innerHTML='<p class="hint">Пока ничего не применено. Если запись менялась на обоих устройствах, останется более новая версия, а другая сохранится рядом с пометкой «(другая версия)».</p>'+sec('Придёт с другого устройства',down)+sec('Уйдёт на другое устройство',up);
   return dlg({title:'Что изменится при синхронизации',node:n,noFocus:true,buttons:[{label:'Отмена',value:null},{label:'Применить',value:'ok',kind:'pri'}]}).then(r=>r.v==='ok');
 }
@@ -3506,7 +3544,7 @@ let syncing=false;
 function syncBusy(on,text){
   let o=$('#syncbusy');
   if(!on){if(o)o.remove();return}
-  if(!o){o=document.createElement('div');o.id='syncbusy';o.className='ov center';o.innerHTML='<div class="dlg" role="alertdialog"><h3>Синхронизация</h3><div class="dbody"><p></p></div></div>';document.body.append(o)}
+  if(!o){o=DOC.createElement('div');o.id='syncbusy';o.className='ov center';o.innerHTML='<div class="dlg" role="alertdialog"><h3>Синхронизация</h3><div class="dbody"><p></p></div></div>';DOC.body.append(o)}
   $('p',o).textContent=text;
 }
 async function syncOnce(cfg){
@@ -3592,7 +3630,7 @@ async function runCleanDups(){
   act(()=>{list.forEach(trashEntry)},'В корзину перенесено: '+list.length);
 }
 function syncSettingsNode(){
-  const cfg=syncCfg(),box=document.createElement('div');box.className='sybox';
+  const cfg=syncCfg(),box=DOC.createElement('div');box.className='sybox';
   box.innerHTML='<div class="vh">Синхронизация через GitHub</div><p class="hint">Телефон и компьютер обмениваются записями через ваш <b>приватный</b> репозиторий по кнопке ⟳ в шапке или пункту меню «Синхронизировать». Подключение общее для всех ваших приложений на этом сайте. Первую синхронизацию делайте на устройстве, где больше данных, потом на втором.</p>'+
     '<label class="hint">Репозиторий (имя/репозиторий)</label><input class="inp repo" placeholder="mrtekhnik/sync" autocomplete="off" autocapitalize="off" spellcheck="false">'+
     '<label class="hint">Токен доступа</label><input class="inp tok" type="password" placeholder="github_pat_…" autocomplete="off" autocapitalize="off" spellcheck="false">'+
@@ -3622,15 +3660,100 @@ function syncSettingsNode(){
   return box;
 }
 
+
+/* ===== Мини-окно поверх всех окон (Chrome на ПК, Document Picture-in-Picture) ===== */
+/* Если приложение открыто во врезке лаунчера «Мои приложения», окно запрашивается у лаунчера (тот же сайт):
+   из вложенной страницы Chrome отвечает «only allowed from a top-level browsing context». */
+function pipHost(){
+  try{if(window.top!==window&&window.top.documentPictureInPicture)return window.top}catch(e){}
+  return 'documentPictureInPicture' in window?window:null;
+}
+const miniOk=()=>!!pipHost();
+const MINI={full:{w:420,h:640,n:'обычное'},compact:{w:380,h:420,n:'компактное'},line:{w:380,h:230,n:'поиск и одна запись'}};
+const MINI_ORDER=['full','compact','line'];
+const MINI_KEY='techbase_mini';
+function miniMode(){let m='full';try{m=localStorage.getItem(MINI_KEY)||'full'}catch(e){}return MINI[m]?m:'full'}
+const scAll=()=>scope==='all'||(!!pip&&miniMode()!=='full');
+function markMini(){
+  const m=$('#main');if(!m)return;
+  $$('.m1',m).forEach(x=>x.classList.remove('m1'));
+  m.classList.remove('nohit');
+  if(!pip||miniMode()!=='line')return;
+  const has=termsOf(q).length||keyQ||tagF.size;
+  const c=has?$('.card',m):null;
+  if(c)c.classList.add('m1');else if(!has)m.classList.add('nohit');
+}
+{const rm0=renderMain;renderMain=function(){rm0.apply(this,arguments);markMini()}}
+function setMiniMode(m,resize){
+  if(!MINI[m])m='full';
+  try{localStorage.setItem(MINI_KEY,m)}catch(e){}
+  if(!pip)return;
+  MINI_ORDER.forEach(k=>DOC.body.classList.toggle('m-'+k,k===m));
+  if(resize){try{pip.resizeTo(MINI[m].w+(pip.outerWidth-pip.innerWidth),MINI[m].h+(pip.outerHeight-pip.innerHeight))}catch(e){}}
+  render();
+  if(m==='line'){try{$('#q').focus()}catch(e){}}
+}
+function stepMini(dir){
+  const i=MINI_ORDER.indexOf(miniMode());
+  setMiniMode(MINI_ORDER[(i+dir+MINI_ORDER.length)%MINI_ORDER.length],true);
+}
+async function openMini(){
+  if(pip){pip.close();return}
+  if(!miniOk()){
+    info('Мини-окно недоступно','Мини-окно поверх всех окон работает только в Chrome на компьютере (версия 116 или новее). В этом браузере или на этом устройстве такой возможности нет.');
+    return;
+  }
+  const mm=MINI[miniMode()];
+  let w;
+  try{w=await pipHost().documentPictureInPicture.requestWindow({width:mm.w,height:mm.h})}
+  catch(e){
+    dlg({title:'Мини-окно не открылось',html:'<p>Браузер ответил: <b>'+esc((e&&e.name)||'')+'</b> '+esc((e&&e.message)||'')+'</p>'+
+      '<p>Возможные причины: функция отключена настройками или политикой компьютера (часто на рабочих ПК); старая версия Chrome (нужна 116 или новее); окно уже открыто из другой вкладки; приложение открыто в окне, где браузер не разрешает мини-окно (нужна обычная вкладка или окно установленного приложения).</p>'+
+      '<p>Если это не помогло, перешлите этот текст разработчику.</p>',buttons:[{label:'Понятно',value:'ok',kind:'pri'}]});
+    return;
+  }
+  const main=document,pd=w.document;
+  pip=w;
+  pd.title=main.title||'Моя техническая база';
+  for(const a of main.documentElement.attributes)pd.documentElement.setAttribute(a.name,a.value);
+  pd.documentElement.style.cssText=main.documentElement.style.cssText;
+  pd.documentElement.style.removeProperty('--vvh');pd.documentElement.style.removeProperty('--vvt');
+  for(const st of main.querySelectorAll('style'))pd.head.appendChild(st.cloneNode(true));
+  const vm=pd.createElement('meta');vm.name='viewport';vm.content='width=device-width,initial-scale=1';pd.head.appendChild(vm);
+  pd.body.className=main.body.className+' mini';
+  const moved=[...main.body.children].filter(e=>e.tagName!=='SCRIPT'&&e.tagName!=='NOSCRIPT');
+  for(const e of moved)pd.body.appendChild(e);
+  const note=main.createElement('div');note.id='miniNote';
+  note.innerHTML='<div>Приложение открыто в мини-окне</div><button class="btn pri">Вернуть сюда</button>';
+  note.querySelector('button').onclick=()=>pip&&pip.close();
+  main.body.insertBefore(note,main.body.firstChild);
+  DOC=pd;WIN=w;
+  GL.forEach(([isWin,t,f,o])=>(isWin?w:pd).addEventListener(t,f,o));
+  w.addEventListener('pagehide',()=>{
+    const first=main.querySelector('body > script');
+    for(const e of [...pd.body.children])main.body.insertBefore(e,first);
+    note.remove();
+    main.body.className=pd.body.className.replace(/\bmini\b|\bm-(full|compact|line)\b/g,'').replace(/\s+/g,' ').trim();
+    main.documentElement.className=pd.documentElement.className;
+    DOC=main;WIN=window;pip=null;
+    try{applyLook()}catch(e){}
+    render();lockSync();
+  });
+  setMiniMode(miniMode(),false);
+}
+$('#btnMini').onclick=openMini;
+$('#btnSize').onclick=()=>stepMini(1);
+if(miniOk())document.documentElement.classList.add('mok');
+
 /* ===== Запуск ===== */
 initTreeDnD();
 (function(){
   const v=window.visualViewport;if(!v)return;
-  const r=document.documentElement.style;
+  const r=DOC.documentElement.style;
   const f=()=>{
     if(v.scale>1.01)return;
     r.setProperty('--vvh',v.height+'px');r.setProperty('--vvt',v.offsetTop+'px');
-    const a=document.activeElement;
+    const a=DOC.activeElement;
     if(a&&a.matches&&a.matches('.sheet-body input,.sheet-body textarea,.sheet-body select')&&!(a.tagName==='TEXTAREA'&&a.closest('.edf')))setTimeout(()=>{try{a.scrollIntoView({block:'center'})}catch(_){}},60);
   };
   f();v.addEventListener('resize',f);v.addEventListener('scroll',f);
@@ -3643,7 +3766,7 @@ curTab=(S.tabs.find(t=>t.id===S.settings.lastTab)||S.tabs[0]||{}).id||null;
  const tp=(x.type||'').toLowerCase();if(tp==='password'){x.setAttribute('autocomplete','new-password')}else x.setAttribute('autocomplete','off');
  if(!x.name)x.name='f'+(++n)+Math.random().toString(36).slice(2,6);
  x.setAttribute('data-lpignore','true');x.setAttribute('data-1p-ignore','true');x.setAttribute('data-bwignore','true');x.setAttribute('data-form-type','other')})}catch(_){}};
- fix(document.body);new MutationObserver(m=>m.forEach(r=>r.addedNodes.forEach(nd=>{if(nd.nodeType===1)fix(nd)}))).observe(document.body,{childList:true,subtree:true})})();
+ fix(DOC.body);new MutationObserver(m=>m.forEach(r=>r.addedNodes.forEach(nd=>{if(nd.nodeType===1)fix(nd)}))).observe(DOC.body,{childList:true,subtree:true})})();
 render();
 try{autoBackup(false)}catch(e){}
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
