@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Тех. база">
 <title>Моя техническая база</title>
-<!-- Моя техническая база, версия 1.82 -->
+<!-- Моя техническая база, версия 1.83 -->
 <script>
 /* защита входа: экран блокировки включается до отрисовки программы */
 try{if(localStorage.getItem('techbase_lock')){var _k=+sessionStorage.getItem('techbase_keep')||0;sessionStorage.removeItem('techbase_keep');if(!(_k&&Date.now()-_k<10000))document.documentElement.classList.add('applock')}}catch(e){}
@@ -418,16 +418,17 @@ body.mini{padding-bottom:12px}
 body.mini #fab,body.mini #fab2,body.mini #top{display:none!important}
 body.mini .top .ibtn{width:38px;height:38px;font-size:20px}
 body.mini .top .ttl{font-size:1.05rem}
-body.m-compact #btnFold,body.m-compact #btnView,body.m-compact #btnReorder,body.m-line #btnFold,body.m-line #btnView,body.m-line #btnReorder,body.m-line #btnSync{display:none!important}
-body.m-compact #banner,body.m-line #banner{display:none}
+body.m-compact #btnFold,body.m-compact #btnView{display:none!important}
+body.mini #btnReorder{display:none!important}
+#btnStrip{display:none}
+body.mini #btnStrip{display:inline-block!important}
+body.m-strip .top .row0 .ibtn:not(#btnStrip):not(#btnMini){display:none!important}
+body.m-strip .tabrow,body.m-strip .sbar,body.m-strip #banner,body.m-strip #main,body.m-strip #selbar,body.m-strip #updbar,body.m-strip #modalRoot{display:none!important}
+body.m-strip{padding-bottom:0}
+.help h4{margin:18px 0 6px;font-size:1.02rem}.help h4:first-child{margin-top:0}.help p,.help li{line-height:1.45}.help ul{margin:6px 0 6px 0;padding-left:20px}.help kbd{font-family:inherit;border:1px solid var(--line);border-radius:5px;padding:0 5px;font-size:.9em}
+body.m-compact #banner{display:none}
 body.m-compact .card .c-desc,body.m-compact .card .c-loc,body.m-compact .card .c-tags,body.m-compact .card .c-cmd{display:none}
 body.m-compact .card{padding-top:6px;padding-bottom:6px}
-body.m-line .tabrow,body.m-line #btnKeys,body.m-line #btnScope,body.m-line #btnArch{display:none!important}
-body.m-line #main .resline,body.m-line #main .sech,body.m-line #main .tagbar,body.m-line #main .card:not(.m1){display:none}
-body.m-line #main.nohit>*{display:none}
-body.m-line #main.nohit::before{content:'Введите запрос';display:block;padding:14px 16px;color:var(--mut)}
-body.m-line .card .c-desc,body.m-line .card .c-tags,body.m-line .card .c-loc{display:none}
-body.m-line .card .star,body.m-line .card .dots{display:none}
 </style>
 </head>
 <body>
@@ -438,6 +439,7 @@ body.m-line .card .star,body.m-line .card .dots{display:none}
     <button class="ibtn" id="btnView" aria-label="Режим отображения" title="Режим отображения" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="16" rx="1"/><rect x="17" y="4" width="4" height="16" rx="1"/></svg></button>
     <button class="ibtn" id="btnReorder" aria-label="Режим порядка и перетаскивания" title="Порядок и перетаскивание" hidden>↕</button>
     <button class="ibtn" id="btnSync" aria-label="Синхронизировать" title="Синхронизировать" hidden>⟳</button>
+    <button class="ibtn" id="btnStrip" aria-label="Свернуть в полоску" title="Свернуть в полоску"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 16h14"/></svg></button>
     <button class="ibtn" id="btnSize" aria-label="Размер мини-окна" title="Размер мини-окна (Ctrl+↑ / Ctrl+↓)"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4v16M4 8l4-4 4 4M16 20V4M12 16l4 4 4-4"/></svg></button>
     <button class="ibtn" id="btnMini" aria-label="Мини-окно поверх всех окон" title="Мини-окно поверх всех окон (Ctrl+M)"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><rect x="11" y="12" width="8" height="6" rx="1" fill="currentColor"/></svg></button>
     <button class="ibtn" id="btnMenu" aria-label="Меню">☰</button>
@@ -493,7 +495,7 @@ body.m-line .card .star,body.m-line .card .dots{display:none}
 <script>
 'use strict';
 /* ===== Константы и состояние ===== */
-const APP_VERSION='1.82';
+const APP_VERSION='1.83';
 const KEY='techbase_v1', BKEY='techbase_v1_backup', AKEY='techbase_v1_auto';
 const DEF_TABS=['Windows','SolidWorks','Excel','AutoCAD','Inventor','Chrome','Компьютер / ноутбук','Оргтехника'];
 const FIELDS=[['title','Название'],['hotkey','Горячая клавиша'],['command','Команда'],['desc','Описание'],['steps','Инструкция'],['note','Примечание']];
@@ -704,6 +706,7 @@ window.addEventListener('beforeunload',e=>{if(curDirty&&curDirty()){e.preventDef
 /* ===== Перетаскивание ===== */
 function makeSortable(box,sel,done){
   box.addEventListener('pointerdown',ev=>{
+    if(pip)return;
     const g=ev.target.closest('.grip');if(!g||!box.contains(g))return;
     const item=g.closest(sel);if(!item||item.parentElement!==box)return;
     const items=[...box.children].filter(c=>c.matches(sel));const n=items.length;if(n<2)return;
@@ -1406,7 +1409,7 @@ $('#tabs').addEventListener('click',e=>{
 });
 $('#btnScope').onclick=()=>{scope=scope==='all'?'tab':'all';render()};
 $('#btnArch').onclick=()=>{inclArch=!inclArch;render()};
-$('#btnReorder').onclick=()=>{reorder=!reorder;render()};
+$('#btnReorder').onclick=()=>{if(pip)return;reorder=!reorder;render()};
 $('#btnSync').onclick=()=>syncNow();
 $('#tabDrop').onclick=openTabList;
 $('#tabSet').onclick=()=>openTabs();
@@ -1494,7 +1497,7 @@ $('#main').addEventListener('click',async ev=>{
       case 'gadd':openForm(null,{groupId:gid});break;
       case 'gmenu':groupMenu(gid);break;
       case 'tabs':openTabs();break;
-      case 'reorder':reorder=!reorder;render();break;
+      case 'reorder':if(pip)break;reorder=!reorder;render();break;
       case 'gtoggle':{const g=grp(gid);g.collapsed=!g.collapsed;save();render();break}
       case 'gopen':openBundle(gid);break;
       case 'grestore':await restoreGroup(gid);break;
@@ -2524,7 +2527,9 @@ function openMenu(){
   const draw=()=>{
     el.innerHTML='<button data-m="quick">⚡ Быстрая запись во «Входящие»</button>'+(S.tabs.length?'<button data-m="sel">☑ Выбрать несколько записей</button>':'')+(S.tabs.length&&curTab?'<button data-m="gnew">＋ Новая группа в этой вкладке</button>':'')+
       '<button data-m="tabsmgr">Настройки вкладок</button><button data-m="look">Оформление и размеры</button>'+
+      '<button data-m="help">❓ Справка</button>'+
       '<button data-m="dups">Проверка дублей клавиш</button>'+
+      (miniOk()?'<button data-m="minicfg">Мини-окно: режимы и размеры</button>':'')+
       (miniOk()?'<button data-m="mini">'+(pip?'Вернуть из мини-окна':'Мини-окно поверх всех окон')+'<span class="n">Ctrl+M</span></button>':'')+
       (lkRec()?'<button data-m="lockNow">🔒 Заблокировать сейчас</button>':'')+
       '<button data-m="trash">Корзина<span class="n">'+cnt('trash')+'</span></button>'+
@@ -2546,6 +2551,8 @@ function openMenu(){
     else if(m==='quick')openQuick();
     else if(m==='dups')openDups();
     else if(m==='mini')openMini();
+    else if(m==='minicfg')openMiniSettings();
+    else if(m==='help')openHelp();
     else if(m==='lock')openLock();
     else if(m==='lockNow')lkLockNow();
     else if(m==='update')checkUpdate();
@@ -3669,33 +3676,65 @@ function pipHost(){
   return 'documentPictureInPicture' in window?window:null;
 }
 const miniOk=()=>!!pipHost();
-const MINI={full:{w:420,h:640,n:'обычное'},compact:{w:380,h:420,n:'компактное'},line:{w:380,h:230,n:'поиск и одна запись'}};
-const MINI_ORDER=['full','compact','line'];
-const MINI_KEY='techbase_mini';
-function miniMode(){let m='full';try{m=localStorage.getItem(MINI_KEY)||'full'}catch(e){}return MINI[m]?m:'full'}
-const scAll=()=>scope==='all'||(!!pip&&miniMode()!=='full');
-function markMini(){
-  const m=$('#main');if(!m)return;
-  $$('.m1',m).forEach(x=>x.classList.remove('m1'));
-  m.classList.remove('nohit');
-  if(!pip||miniMode()!=='line')return;
-  const has=termsOf(q).length||keyQ||tagF.size;
-  const c=has?$('.card',m):null;
-  if(c)c.classList.add('m1');else if(!has)m.classList.add('nohit');
+const MINI={large:{n:'крупное',w:560,h:820},full:{n:'обычное',w:420,h:640},compact:{n:'компактное',w:380,h:420}};
+const MINI_ORDER=['large','full','compact']; /* от большего к меньшему */
+const MINI_KEY='techbase_mini',MINI_CFG='techbase_minicfg',STRIP_H=56;
+function miniCfg(){
+  let c={};try{c=JSON.parse(localStorage.getItem(MINI_CFG))||{}}catch(e){}
+  const cl=(v,d,lo,hi)=>{v=Math.round(+v);return v>=lo&&v<=hi?v:d},r={};
+  for(const k of MINI_ORDER){const x=c[k]||{};r[k]={on:x.on!==false,w:cl(x.w,MINI[k].w,240,1600),h:cl(x.h,MINI[k].h,120,1600)}}
+  if(!MINI_ORDER.some(k=>r[k].on))for(const k of MINI_ORDER)r[k].on=true;
+  return r;
 }
-{const rm0=renderMain;renderMain=function(){rm0.apply(this,arguments);markMini()}}
+const miniList=()=>{const c=miniCfg();return MINI_ORDER.filter(k=>c[k].on)};
+function miniMode(){let m='full';try{m=localStorage.getItem(MINI_KEY)||'full'}catch(e){}const l=miniList();return l.includes(m)?m:(l.includes('full')?'full':l[0])}
+const miniSize=m=>{const c=miniCfg()[m];return{w:c.w,h:c.h}};
+const scAll=()=>scope==='all'||(!!pip&&miniMode()==='compact');
+let strip=null;
 function setMiniMode(m,resize){
-  if(!MINI[m])m='full';
+  const l=miniList();if(!l.includes(m))m=l.includes('full')?'full':l[0];
   try{localStorage.setItem(MINI_KEY,m)}catch(e){}
   if(!pip)return;
+  strip=null;DOC.body.classList.remove('m-strip');stripBtn();
   MINI_ORDER.forEach(k=>DOC.body.classList.toggle('m-'+k,k===m));
-  if(resize){try{pip.resizeTo(MINI[m].w+(pip.outerWidth-pip.innerWidth),MINI[m].h+(pip.outerHeight-pip.innerHeight))}catch(e){}}
+  if(resize){const z=miniSize(m);try{pip.resizeTo(z.w+(pip.outerWidth-pip.innerWidth),z.h+(pip.outerHeight-pip.innerHeight))}catch(e){}}
   render();
-  if(m==='line'){try{$('#q').focus()}catch(e){}}
 }
 function stepMini(dir){
-  const i=MINI_ORDER.indexOf(miniMode());
-  setMiniMode(MINI_ORDER[(i+dir+MINI_ORDER.length)%MINI_ORDER.length],true);
+  const l=miniList(),i=l.indexOf(miniMode());
+  setMiniMode(l[(i+dir+l.length)%l.length],true);
+}
+function stripBtn(){
+  const bt=$('#btnStrip');if(!bt)return;
+  bt.title=strip?'Развернуть из полоски':'Свернуть в полоску';bt.setAttribute('aria-label',bt.title);
+  bt.firstElementChild.innerHTML=strip?'<rect x="5" y="6" width="14" height="12" rx="1.5"/>':'<path d="M5 16h14"/>';
+}
+function toggleStrip(){
+  if(!pip)return;
+  const dy=pip.outerHeight-pip.innerHeight;
+  if(strip){const z=strip;strip=null;DOC.body.classList.remove('m-strip');try{pip.resizeTo(z.w,z.h)}catch(e){}}
+  else{strip={w:pip.outerWidth,h:pip.outerHeight};DOC.body.classList.add('m-strip');try{pip.resizeTo(pip.outerWidth,dy+STRIP_H)}catch(e){}}
+  stripBtn();
+}
+function openMiniSettings(){
+  const c=miniCfg(),el=DOC.createElement('div');
+  el.innerHTML='<p class="hint">Какие размеры мини-окна переключаются кнопкой со стрелками и клавишами Ctrl+↑ / Ctrl+↓, и какого они размера (ширина × высота внутри окна, в пикселях). Хранится на этом устройстве. Новый размер применяется при следующем нажатии кнопки размера или при открытии окна.</p>'+
+   MINI_ORDER.map(k=>'<div class="fld"><label style="color:var(--ink)"><input type="checkbox" style="width:auto" data-on="'+k+'"'+(c[k].on?' checked':'')+'> Мини-окно «'+MINI[k].n+'»</label><div style="display:flex;gap:8px;align-items:center"><input type="number" style="flex:1;min-width:0" data-w="'+k+'" min="240" max="1600" value="'+c[k].w+'" aria-label="Ширина"> × <input type="number" style="flex:1;min-width:0" data-h="'+k+'" min="120" max="1600" value="'+c[k].h+'" aria-label="Высота"></div></div>').join('')+
+   '<div style="margin-top:12px"><button class="btn" data-reset>Сбросить размеры</button></div>';
+  const sh=sheet({title:'Мини-окно: режимы и размеры',body:el});
+  const read=(chg)=>{
+    const r={};
+    for(const k of MINI_ORDER)r[k]={on:$('[data-on='+k+']',el).checked,w:+$('[data-w='+k+']',el).value,h:+$('[data-h='+k+']',el).value};
+    if(!MINI_ORDER.some(k=>r[k].on)){if(chg)$('[data-on='+chg+']',el).checked=true;if(chg)r[chg].on=true}
+    try{localStorage.setItem(MINI_CFG,JSON.stringify(r))}catch(e){}
+  };
+  el.addEventListener('change',e=>{const t=e.target;read(t.dataset.on)});
+  el.addEventListener('click',e=>{if(!e.target.closest('[data-reset]'))return;try{localStorage.removeItem(MINI_CFG)}catch(x){}sh.close();openMiniSettings()});
+}
+function openHelp(){
+  const t=$('#helpTpl'),b=DOC.createElement('div');b.className='help';
+  b.innerHTML=t?t.innerHTML:'<p>Справка подключается при сборке программы и в этой копии отсутствует. Откройте программу по адресу сайта.</p>';
+  sheet({title:'Справка',body:b});
 }
 async function openMini(){
   if(pip){pip.close();return}
@@ -3703,7 +3742,7 @@ async function openMini(){
     info('Мини-окно недоступно','Мини-окно поверх всех окон работает только в Chrome на компьютере (версия 116 или новее). В этом браузере или на этом устройстве такой возможности нет.');
     return;
   }
-  const mm=MINI[miniMode()];
+  const mm=miniSize(miniMode());
   let w;
   try{w=await pipHost().documentPictureInPicture.requestWindow({width:mm.w,height:mm.h})}
   catch(e){
@@ -3713,7 +3752,7 @@ async function openMini(){
     return;
   }
   const main=document,pd=w.document;
-  pip=w;
+  pip=w;reorder=false;strip=null;
   pd.title=main.title||'Моя техническая база';
   for(const a of main.documentElement.attributes)pd.documentElement.setAttribute(a.name,a.value);
   pd.documentElement.style.cssText=main.documentElement.style.cssText;
@@ -3733,9 +3772,9 @@ async function openMini(){
     const first=main.querySelector('body > script');
     for(const e of [...pd.body.children])main.body.insertBefore(e,first);
     note.remove();
-    main.body.className=pd.body.className.replace(/\bmini\b|\bm-(full|compact|line)\b/g,'').replace(/\s+/g,' ').trim();
+    main.body.className=pd.body.className.replace(/\bmini\b|\bm-(large|full|compact|strip)\b/g,'').replace(/\s+/g,' ').trim();
     main.documentElement.className=pd.documentElement.className;
-    DOC=main;WIN=window;pip=null;
+    DOC=main;WIN=window;pip=null;strip=null;
     try{applyLook()}catch(e){}
     render();lockSync();
   });
@@ -3743,6 +3782,7 @@ async function openMini(){
 }
 $('#btnMini').onclick=openMini;
 $('#btnSize').onclick=()=>stepMini(1);
+$('#btnStrip').onclick=toggleStrip;
 if(miniOk())document.documentElement.classList.add('mok');
 
 /* ===== Запуск ===== */
@@ -3773,5 +3813,94 @@ try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}
 if(corruptFound)info('Данные не прочитаны','Сохранённая база в браузере оказалась повреждена. Её копия отложена отдельно, приложение запущено с чистой базой. Если у вас есть файл экспорта, импортируйте его.');
 if(storageFailed)renderBanner();
 </script>
+<template id="helpTpl">
+<h4>Что это</h4>
+<p>Личная база горячих клавиш, команд и приёмов. Работает без интернета, данные хранятся в браузере этого устройства. Чтобы не потерять их, делайте экспорт в файл (меню) или включите автоматические копии и синхронизацию.</p>
+
+<h4>Структура: вкладки, группы, записи</h4>
+<ul>
+<li><b>Вкладки</b> — верхний уровень (например, SolidWorks, Inventor, Windows). Переключение — нажатием на вкладку, список всех вкладок — стрелка ▾ слева, управление (добавить, переименовать, порядок, удалить) — значок настроек справа от вкладок или меню ☰ → «Настройки вкладок».</li>
+<li><b>Группы</b> — папки внутри вкладки, могут быть вложенными (подгруппы). Меню группы: добавить запись, переименовать, подгруппа, в архив, удалить, а в разделе «Ещё» — дублировать, переместить в группу, перенести в другую вкладку и др. Нажатие на название группы сворачивает и разворачивает её, кнопка со стрелками в шапке — все папки сразу.</li>
+<li><b>Записи</b> — карточки с названием и содержимым. Нажатие на карточку открывает запись.</li>
+</ul>
+
+<h4>Запись: из чего состоит</h4>
+<p>Обязательно только название. Остальные блоки добавляются кнопкой «Добавить» в редакторе и убираются кнопкой «убрать»:</p>
+<ul>
+<li><b>Горячая клавиша</b> — одно сочетание. Можно ввести с клавиатуры или нажать нужные клавиши в поле захвата. Несколько вариантов разделяйте знаками «;», « / » или словом «или» — они показываются как альтернативы.</li>
+<li><b>Команда</b> — текст команды для командной строки или программы.</li>
+<li><b>Список клавиш</b> и <b>Список команд</b> — таблицы «клавиша (команда) — пояснение». В списке можно делать заголовки-разделы и разделители, а также менять колонки местами (в записи и в настройках записи).</li>
+<li><b>Описание</b>, <b>Инструкция</b>, <b>Примечание</b> — свободный текст с разметкой (ниже).</li>
+<li><b>Группа</b> — в какую папку вкладки поместить запись.</li>
+<li><b>Теги</b> — метки для быстрого отбора (включаются в «Оформление и размеры» → «Функции»).</li>
+</ul>
+<p>Порядок блоков внутри записи можно менять — у блоков в редакторе есть стрелки. Списки клавиш и команд в просмотре и редакторе можно сворачивать под заголовком, состояние запоминается.</p>
+
+<h4>Копирование одним нажатием</h4>
+<p>В открытой записи нажатие на горячую клавишу, команду, строку списка или выделенный фрагмент копирует его в буфер обмена. Рядом со списками есть кнопки «копировать список». Копирование подсвечивается.</p>
+
+<h4>Разметка текста</h4>
+<ul>
+<li><code>[[Ctrl+C]]</code> — значок клавиш; <code>`команда`</code> — код, копируется нажатием;</li>
+<li><code>**жирный**</code>, <code>*курсив*</code>, <code>~~зачёркнутый~~</code>, <code>==выделение==</code>;</li>
+<li><code>{+добавлено+}</code> и <code>{-удалено-}</code> — цветные пометки;</li>
+<li><code>((фрагмент))</code> — текст, копируемый нажатием; ссылки на сайты становятся активными сами.</li>
+</ul>
+<p>В редакторе над полем есть кнопки: отмена и повтор, «Вид» (предпросмотр без значков разметки), «Синхр.» (синхронная прокрутка), «Вставить клавиши», «Команда».</p>
+
+<h4>Поиск</h4>
+<ul>
+<li>Строка поиска ищет по всем словам (порядок не важен), найденные слова подсвечиваются в списке и в открытой записи. Крестик очищает.</li>
+<li>Кнопка «Вкладка / Везде» — искать только в текущей вкладке или во всех.</li>
+<li>Кнопка «Архив» — искать и в архиве.</li>
+<li>Кнопка ⌨ — поиск по сочетанию клавиш: нажмите нужные клавиши, найдутся записи с этим сочетанием (в том числе среди альтернатив).</li>
+<li>Теги: нажатие на тег отбирает записи с ним, повторное нажатие или крестик сбрасывает.</li>
+</ul>
+
+<h4>Избранное и последние</h4>
+<p>Звёздочка на карточке закрепляет запись наверху своего списка. В меню записи («⋯») пункт «Избранное» добавляет её во вкладку ★, где также видны недавно открытые записи.</p>
+
+<h4>Быстрая запись</h4>
+<p>Кнопка ⚡ или меню ☰ → «Быстрая запись во «Входящие»»: впишите найденное или прочитанное одним куском текста, оформить можно позже — запись попадёт во вкладку «Входящие».</p>
+
+<h4>Работа с несколькими записями и порядок</h4>
+<ul>
+<li>Меню ☰ → «Выбрать несколько записей»: отмечайте карточки (у папки есть отметка для всех записей). Доступно: переместить, объединить, в архив, удалить, а для архива и корзины — восстановить.</li>
+<li>Кнопка ↕ в шапке — режим порядка: тяните значок ⠿ или пользуйтесь стрелками, чтобы переставлять записи и группы, в том числе переносить в другие группы и выносить в корень вкладки. В мини-окне этой кнопки нет.</li>
+</ul>
+
+<h4>Архив и корзина</h4>
+<p>«В архив» убирает запись из обычных списков, но сохраняет (ищется кнопкой «Архив»). «Удалить» отправляет в корзину (меню ☰ → «Корзина»), откуда можно восстановить или удалить навсегда.</p>
+
+<h4>Проверка дублей клавиш</h4>
+<p>Меню ☰ → «Проверка дублей клавиш» показывает сочетания, записанные в нескольких записях одной вкладки. Если контекст разный (разные режимы программы), дубль можно пометить как допустимый.</p>
+
+<h4>Оформление и размеры</h4>
+<p>Меню ☰ → «Оформление и размеры»: тема (светлая, тёмная и др.), размер текста, число строк в карточке, размер и шрифт клавиш и команд, цвет акцента, оттенок фона, включение тегов, поведение отмены в редакторе. Кнопка в шапке «Режим отображения» выбирает вид списка (несколько вариантов, в том числе для широкого экрана).</p>
+
+<h4>Резервные копии и перенос данных</h4>
+<ul>
+<li><b>Экспорт в файл</b> — файл со всей базой (папка «Загрузки»), <b>Импорт из файла</b> — загрузка: «Добавить к текущим» или «Заменить все данные». Перед заменой программа сохраняет резервную копию, её можно восстановить в «Ещё» → «Синхронизация, копии и данные».</li>
+<li><b>Автоматические копии</b> — по расписанию (не чаще раза в час, раз в день, раз в неделю), хранится заданное число последних.</li>
+<li>Напоминание об экспорте можно включить или выключить там же.</li>
+</ul>
+
+<h4>Синхронизация телефон ↔ ПК через GitHub</h4>
+<p>Кнопка ⟳ или «Ещё» → «Синхронизировать». Подключение (репозиторий и токен) настраивается в «Ещё» → «Синхронизация, копии и данные». Первую синхронизацию делайте на устройстве, где больше данных. Правки в обе стороны объединяются; если одну запись изменили на обоих устройствах, остаётся более новая версия, а другая сохраняется рядом с пометкой «(другая версия)».</p>
+
+<h4>Защита входа</h4>
+<p>«Ещё» → «Защита входа»: ПИН-код (цифры) или пароль при открытии программы, по желанию с биометрией. Программа блокируется при бездействии и при сворачивании; «Заблокировать сейчас» в меню блокирует сразу. Пароль восстановить нельзя (можно только стереть все данные программы), поэтому держите свежий экспорт.</p>
+
+<h4>Мини-окно поверх всех окон (Chrome на ПК)</h4>
+<ul>
+<li>Кнопка в шапке (значок окошка) или <kbd>Ctrl+M</kbd> (<kbd>Ctrl+Ь</kbd>) — весь интерфейс переходит в маленькое окно поверх всех программ; в основном окне остаётся надпись и кнопка «Вернуть сюда». Закрытие мини-окна возвращает всё обратно, данные не теряются.</li>
+<li>Размеры: кнопка со стрелками или <kbd>Ctrl+↓</kbd> (меньше) / <kbd>Ctrl+↑</kbd> (больше). Режимы: крупное, обычное, компактное (в нём список без описаний и поиск по всем вкладкам). Размеры и набор режимов — меню ☰ → «Мини-окно: режимы и размеры». Мышью границы тянуть можно, кнопка размера возвращает точный размер.</li>
+<li>Кнопка «Свернуть в полоску» оставляет только шапку (мини-окно не закрывается); повторное нажатие возвращает прежний размер.</li>
+<li>В мини-окне нет кнопки порядка и перетаскивания. Если окно не открылось, программа покажет ответ браузера и возможные причины.</li>
+</ul>
+
+<h4>Обновление программы</h4>
+<p>Новая версия ждёт вашего решения: внизу появится «Доступна новая версия — Обновить». Вручную — «Ещё» → «Проверить обновление». Данные при обновлении не затрагиваются. Номер версии указан внизу меню.</p>
+</template>
 </body>
 </html>
